@@ -1,0 +1,3 @@
+graft src/Atlas/sphinx_build/html
+recursive-include src/Atlas/test *.py
+
