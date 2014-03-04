@@ -1,0 +1,3 @@
+dragCylinder(10,1) == 1.7274
+
+dragCylinder(123, 45) == 2.8822

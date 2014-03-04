@@ -1,0 +1,231 @@
+Ns =
+
+    10
+
+
+strain =
+
+   1.0e-04 *
+
+  Columns 1 through 10
+
+    0.4590    0.4405    0.3903    0.3024    0.1792    0.0962    0.5624    0.3873    0.1995    0.0509
+         0         0         0         0         0         0         0         0         0         0
+   -0.3435   -0.3934   -0.4427   -0.5075   -0.5903   -0.6640   -0.6818   -0.6228   -0.4765   -0.2047
+
+  Column 11
+
+         0
+         0
+         0
+
+
+theta =
+
+    0.3491
+    0.3491
+    0.3491
+    0.3491
+    0.3491
+    0.3491
+    0.3491
+    0.3491
+    0.3491
+    0.3491
+
+
+nCap =
+
+     0
+
+
+flags =
+
+             Opt: 0
+         ConFail: 0
+     ConWireCont: 0
+      ConJigCont: 0
+          ConDef: 0
+      MultiPoint: 1
+            Quad: 1
+        FreeWake: 1
+        PlotWake: 0
+    DynamicClimb: 0
+           Cover: 0
+            Load: 0
+           Cdfit: 1
+           GWing: 1
+         AeroStr: 1
+           Movie: 0
+        wingWarp: 0
+        CFRPType: 1
+        WireType: 1
+
+
+cap =
+
+     0     0     0     0     0     0     0     0     0     0     0
+     0     0     0     0     0     0     0     0     0     0     0
+     0     0     0     0     0     0     0     0     0     0     0
+
+
+plus =
+
+  Columns 1 through 10
+
+    0.0031    0.0027    0.0021    0.0011   -0.0007   -0.0031    0.0029    0.0015    0.0003   -0.0005
+    0.0063    0.0064    0.0063    0.0058    0.0052    0.0049    0.0093    0.0073    0.0047    0.0017
+   -0.0016   -0.0016   -0.0016   -0.0016   -0.0016   -0.0016   -0.0025   -0.0020   -0.0014   -0.0005
+
+  Column 11
+
+         0
+         0
+         0
+
+
+minus =
+
+  Columns 1 through 10
+
+    0.0053    0.0053    0.0050    0.0044    0.0036    0.0030    0.0073    0.0056    0.0034    0.0011
+    0.0021    0.0017    0.0009   -0.0001   -0.0003   -0.0005    0.0010   -0.0000   -0.0002   -0.0001
+    0.0001   -0.0001   -0.0002   -0.0005   -0.0009   -0.0012   -0.0004   -0.0006   -0.0007   -0.0003
+
+  Column 11
+
+         0
+         0
+         0
+------------------
+Ns =
+
+     1
+
+
+strain =
+
+   -0.0054
+         0
+         0
+
+
+theta =
+
+    0.6109
+
+
+nCap =
+
+     0
+
+
+flags =
+
+             Opt: 0
+         ConFail: 0
+     ConWireCont: 0
+      ConJigCont: 0
+          ConDef: 0
+      MultiPoint: 1
+            Quad: 1
+        FreeWake: 1
+        PlotWake: 0
+    DynamicClimb: 0
+           Cover: 0
+            Load: 0
+           Cdfit: 1
+           GWing: 1
+         AeroStr: 1
+           Movie: 0
+        wingWarp: 0
+        CFRPType: 1
+        WireType: 1
+
+
+cap =
+
+     0     0
+     0     0
+     0     0
+
+
+plus =
+
+   -0.9098         0
+   -0.1196         0
+    0.1420         0
+
+
+minus =
+
+   -0.9098         0
+   -0.1196         0
+   -0.1420         0
+
+---------------------------
+
+Ns =
+
+     1
+
+
+strain =
+
+         0
+         0
+    0.0031
+
+
+theta =
+
+    0.6109
+
+
+nCap =
+
+     0
+
+
+flags =
+
+             Opt: 0
+         ConFail: 0
+     ConWireCont: 0
+      ConJigCont: 0
+          ConDef: 0
+      MultiPoint: 1
+            Quad: 1
+        FreeWake: 1
+        PlotWake: 0
+    DynamicClimb: 0
+           Cover: 0
+            Load: 0
+           Cdfit: 1
+           GWing: 1
+         AeroStr: 1
+           Movie: 0
+        wingWarp: 0
+        CFRPType: 1
+        WireType: 1
+
+
+cap =
+
+     0     0
+     0     0
+     0     0
+
+
+plus =
+
+    0.1489         0
+   -0.0463         0
+    0.0297         0
+
+
+minus =
+
+   -0.3603         0
+    0.2759         0
+    0.0297         0

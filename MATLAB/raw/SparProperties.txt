@@ -1,0 +1,76 @@
+yN =
+
+         0   14.5057
+
+
+d =
+
+    0.1016
+
+
+theta =
+
+    0.6109
+
+
+nTube =
+
+     4
+
+
+nCap =
+
+     0     0
+
+
+lBiscuit =
+
+    0.3048
+
+
+flags = 
+
+             Opt: 1
+         ConFail: 0
+     ConWireCont: 0
+      ConJigCont: 0
+          ConDef: 0
+      MultiPoint: 4
+            Quad: 1
+        FreeWake: 1
+        PlotWake: 0
+    DynamicClimb: 0
+           Cover: 0
+            Load: 0
+           Cdfit: 1
+           GWing: 1
+         AeroStr: 1
+           Movie: 0
+        wingWarp: 0
+        CFRPType: 1
+        WireType: 1
+
+=================================
+EIx =
+
+   2.3706e+04
+
+
+EIz =
+
+   2.3706e+04
+
+
+EA =
+
+   1.8169e+07
+
+
+GJ =
+
+   2.2828e+04
+
+
+mSpar =
+
+    4.7244

@@ -1,0 +1,26 @@
+HeliCalc() -- assembly-like ++
+
+ChordProperties()
+
+DiscretizeProperties()
+
+dragCoefficient()+
+
+DragCoefficientFit()+
+
+dragCylinder()+
+
+FailureCalc()
+
+PrepregProperties()
+
+SparProperties()
+
+StrCalc()
+
+AeroCalc()++
+
+VortexWakeCover()
+
+WireProperties()
+
