@@ -5,7 +5,6 @@
 *.egg-info
 *openmdao_log.txt
 *~
-generated_images/
 repo_lock/
 devenv/
 build/
