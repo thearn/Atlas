@@ -84,14 +84,74 @@ for t in xrange(Nw):
 
     # proceed with substeps
     for tt in xrange(Ntt):
-
+        # Compute induced velocity on all ix(Ns+1) rings from all iix(Ns+1) rings
         ring["vz"] = np.zeros((Nw+1, Ns+1))
         ring["vr"] = np.zeros((Nw+1, Ns+1))
 
-        for ii in xrange(t):
-            for ss in xrange(1, Ns+1):
+        # for each disc
+        for i in xrange(t):
+            # and each ring
+            for s in xrange(Ns+1):
 
-                zr = ring["z"][ii,ss]
+                # add velocity induced from each disc
+                for ii in xrange(t):
+                    # and each ring on each disc (inner ring cancels itself out)
+                    for ss in xrange(1, Ns+1):
+
+                        zr = ring["z"][ii,ss]
+                        r = ring["r"][ii,ss]
+                        zp = ring["z"][i,s]
+                        yp = ring["r"][i,s]
+
+                        M = ring["Gamma"][ii, ss]*r*dtheta/(2*np.pi)
+                        X2 = (-r*np.sin(thetaArray))**2
+                        Y2 = (yp - r*np.cos(thetaArray))**2
+                        Z2 = (zp - zr)**2
+                        Normal = np.sqrt(X2 + Y2 + Z2)
+
+                        Normal[Normal < cr] = cr
+
+                        Norm3 = Normal**3
+
+                        ring["vr"][i, s] += sum(-np.cos(thetaArray) * (zp - zr)/Norm3)*M
+                        ring["vz"][i, s] += sum((np.cos(thetaArray)*yp-r)/Norm3)*M
+
+                        # ground effect ring
+                        zr = -2*h - ring["z"][ii, ss]
+                        Z2 = (zp - zr)**2
+                        Normal = np.sqrt(X2 + Y2 + Z2)
+                        Normal[Normal < cr] = cr
+                        Norm3 = Normal**3
+
+                        ring["vr"][i, s] += -sum(-np.cos(thetaArray) * (zp - zr)/Norm3)*M
+                        ring["vz"][i, s] += -sum((np.cos(thetaArray)*yp-r)/Norm3)*M
+
+        # compute altitude and time power approximation
+        if tt == 0:
+            PiApprox = 8*sum(dT*vi)
+        realtime = 2*np.pi/Omega/b*((t - 1)*Ntt + tt)/Ntt
+        altitude = vc*realtime
+
+        # convect rings downstream
+        dt = 2*np.pi/Omega/b/Ntt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
