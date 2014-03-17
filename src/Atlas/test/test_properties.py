@@ -11,7 +11,7 @@ def relative_err(x, y):
 
 class AtlasTestProperties(unittest.TestCase):
 
-    def qqqtest_wireProperties(self):
+    def test_wireProperties(self):
         comp = wireProperties()
         comp.type_flag = 1
 
@@ -21,7 +21,7 @@ class AtlasTestProperties(unittest.TestCase):
         self.assertAlmostEquals(comp.E, 2.1e11, 3)
         self.assertAlmostEquals(comp.ULTIMATE, 2.62e9, 3)
     
-    def qqqtest_discretizeProperties(self):
+    def test_discretizeProperties(self):
         comp = discretizeProperties()
         comp.Ns = 10
         comp.ycmax = np.array([1.4656, 3.2944])
