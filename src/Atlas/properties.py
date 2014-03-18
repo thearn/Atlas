@@ -346,7 +346,7 @@ class discretizeProperties(Component):
     xtU_ = Array( iotype='in', desc='description')
     xtL_ = Array( iotype='in', desc='description')
     xEA_ = Array( iotype='in', desc='description')
-    yWire = Float(0, iotype='in', desc='description')
+    yWire = Array( iotype='in', desc='description')
     d_ = Array( iotype='in', desc='description')
     theta_ = Array( iotype='in', desc='description')
     nTube_ = Array( iotype='in', desc='description')
@@ -357,7 +357,7 @@ class discretizeProperties(Component):
     cE = Array( iotype='out', desc='description')
     cN = Array( iotype='out', desc='description')
     c100 = Array(np.zeros(100), iotype='out', desc='description')
-    cl = Array( iotype='out', desc='description')
+    Cl = Array( iotype='out', desc='description')
     Cm = Array( iotype='out', desc='description')
     t = Array( iotype='out', desc='description')
     xtU = Array( iotype='out', desc='description')
@@ -368,131 +368,135 @@ class discretizeProperties(Component):
     nTube = Array( iotype='out', desc='description')
     nCap = Array( iotype='out', desc='description')
     lBiscuit = Array( iotype='out', desc='description')
-
+    yN = Array( iotype='out', desc='description')
+    yE = Array( iotype='out', desc='description')
 
     def execute(self):
 
-        yN=np.zeros(Ns + 1,1)
-        cN=np.zeros(Ns + 1,1)
-        yE=np.zeros(Ns,1)
-        cR=np.zeros(Ns,1)
-        cZ=np.zeros(Ns,1)
-        cE=np.zeros(Ns,1)
-        Cl=np.zeros(Ns,1)
-        Cm=np.zeros(Ns,1)
-        t=np.zeros(Ns,1)
-        xtU=np.zeros(Ns,1)
-        xtL=np.zeros(Ns,1)
-        xEA=np.zeros(Ns,1)
-        d=np.zeros(Ns,1)
-        theta=np.zeros(Ns,1)
-        nTube=np.zeros(Ns,1)
-        nCap=np.zeros(Ns,1)
-        lBiscuit=np.zeros(Ns,1)
+        self.yN=np.zeros(self.Ns + 1)
+        self.cN=np.zeros(self.Ns + 1)
+        sTrans=np.zeros(self.Ns + 1)
+        self.yE=np.zeros(self.Ns)
+        cR=np.zeros(self.Ns)
+        cZ=np.zeros(self.Ns)
+        self.cE=np.zeros(self.Ns)
+        self.Cl=np.zeros(self.Ns)
+        self.Cm=np.zeros(self.Ns)
+        self.t=np.zeros(self.Ns)
+        self.xtU=np.zeros(self.Ns)
+        self.xtL=np.zeros(self.Ns)
+        self.xEA=np.zeros(self.Ns)
+        self.d=np.zeros(self.Ns)
+        self.theta=np.zeros(self.Ns)
+        self.nTube=np.zeros(self.Ns)
+        self.nCap=np.zeros(self.Ns)
+        self.lBiscuit=np.zeros(self.Ns)
         Ns100=100
-        yN100=np.zeros(Ns100 + 1,1)
-        yE100=np.zeros(Ns100,1)
-        cR100=np.zeros(100,1)
-        cZ100=np.zeros(100,1)
-        c100=np.zeros(100,1)
-        for s in range(1,(Ns + 1+1)):
-            yN[(s-1)]=R / Ns * (s - 1)
-            if yN[(s-1)] < ycmax[0]:
+        yN100=np.zeros(Ns100 + 1)
+        yE100=np.zeros(Ns100)
+        cR100=np.zeros(100)
+        cZ100=np.zeros(100)
+        self.c100=np.zeros(100)
+        for s in range(1,(self.Ns + 1+1)):
+            self.yN[(s-1)]=self.R / self.Ns * (s - 1)
+            if self.yN[(s-1)] < self.ycmax[0]:
                 sTrans[0]=s
-            if yN[(s-1)] < ycmax[1]:
+            if self.yN[(s-1)] < self.ycmax[1]:
                 sTrans[1]=s
-        for s in range(1,(Ns+1)):
-            yE[(s-1)]=0.5 * (yN[(s-1)] + yN[(s + 1-1)])
-        for s in range(1,(Ns+1)):
+        for s in range(1,(self.Ns+1)):
+            self.yE[(s-1)]=0.5 * (self.yN[(s-1)] + self.yN[(s + 1-1)])
+        for s in range(1,(self.Ns+1)):
             if s < sTrans[0]:
-                x=yE[(s-1)] / ycmax[0]
-                cE[(s-1)]=c_[0] + x * (c_[1] - c_[0])
+                x=self.yE[(s-1)] / self.ycmax[0]
+                self.cE[(s-1)]=self.c_[0] + x * (self.c_[1] - self.c_[0])
             else:
-                x=(yE[(s-1)] - ycmax[0]) / (R - ycmax[0])
-                pStart=c_[2]
-                pCurve=c_[3]
-                pEnd=c_[4]
-                xx=x * (1 - pCurve) + sin(x * math.pi / 2) * pCurve
+                x=(self.yE[(s-1)] - self.ycmax[0]) / (self.R - self.ycmax[0])
+                pStart=self.c_[2]
+                pCurve=self.c_[3]
+                pEnd=self.c_[4]
+                xx=x * (1 - pCurve) + math.sin(x * math.pi / 2) * pCurve
                 cZ[(s-1)]=pStart + (pEnd - pStart) * xx
-                c3=c_[2] / (c_[4] * R / ycmax[0])
-                cR[(s-1)]=c_[4] * R / yE[(s-1)] * (c3 + (1 - c3) * x)
-                cE[(s-1)]=cR[(s-1)] + (cZ[(s-1)] - cR[(s-1)]) * c_[1]
-            if cE[(s-1)] == 0:
-                cE[(s-1)]=0.001
+                c3=self.c_[2] / (self.c_[4] * self.R / self.ycmax[0])
+                cR[(s-1)]=self.c_[4] * self.R / self.yE[(s-1)] * (c3 + (1 - c3) * x)
+                self.cE[(s-1)]=cR[(s-1)] + (cZ[(s-1)] - cR[(s-1)]) * self.c_[1]
+            if self.cE[(s-1)] == 0:
+                self.cE[(s-1)]=0.001
         for s in range(1,(Ns100 + 1+1)):
-            yN100[(s-1)]=R / Ns100 * (s - 1)
-            if yN100[(s-1)] < ycmax:
+            yN100[(s-1)]=self.R / Ns100 * (s - 1)
+            if all( yN100[(s-1)] < self.ycmax ):
                 sTrans100=s
         for s in range(1,(Ns100+1)):
             yE100[(s-1)]=0.5 * (yN100[(s-1)] + yN100[(s + 1-1)])
         for s in range(1,(Ns100+1)):
             if s < sTrans100:
-                x=yE100[(s-1)] / ycmax[0]
-                c100[(s-1)]=c_[0] + x * (c_[1] - c_[0])
+                x=yE100[(s-1)] / self.ycmax[0]
+                self.c100[(s-1)]=self.c_[0] + x * (self.c_[1] - self.c_[0])
             else:
-                x=(yE100[(s-1)] - ycmax[0]) / (R - ycmax[0])
-                pStart=c_[2]
-                pCurve=c_[3]
-                pEnd=c_[4]
-                xx=x * (1 - pCurve) + sin(x * math.pi / 2) * pCurve
+                x=(yE100[(s-1)] - self.ycmax[0]) / (self.R - self.ycmax[0])
+                pStart=self.c_[2]
+                pCurve=self.c_[3]
+                pEnd=self.c_[4]
+                xx=x * (1 - pCurve) + math.sin(x * math.pi / 2) * pCurve
                 cZ100[(s-1)]=pStart + (pEnd - pStart) * xx
-                c3=c_[2] / (c_[4] * R / ycmax[0])
-                cR100[(s-1)]=c_[4] * R / yE100[(s-1)] * (c3 + (1 - c3) * x)
-                c100[(s-1)]=cR100[(s-1)] + (cZ100[(s-1)] - cR100[(s-1)]) * c_[1]
-            if c100[(s-1)] == 0:
-                c100[(s-1)]=0.001
-        Y=np.array([ycmax[0],ycmax[1],R]).reshape(1,-1)
-        for s in range(1,(Ns+1)):
+                c3=self.c_[2] / (self.c_[4] * self.R / self.ycmax[0])
+                cR100[(s-1)]=self.c_[4] * self.R / yE100[(s-1)] * (c3 + (1 - c3) * x)
+                self.c100[(s-1)]=cR100[(s-1)] + (cZ100[(s-1)] - cR100[(s-1)]) * self.c_[1]
+            if self.c100[(s-1)] == 0:
+                self.c100[(s-1)]=0.001
+        #% Compute aero properties for each element
+        # Y = [ycmax(1) ycmax(2) R];
+        Y=np.array([self.ycmax[0],self.ycmax[1],self.R])
+        for s in range(1,(self.Ns+1)):
             if s < sTrans[0]:
-                Cl[(s-1)]=Cl_[0]
-                Cm[(s-1)]=Cm_[0]
-                t[(s-1)]=t_[0]
-                xEA[(s-1)]=xEA_[0]
+                self.Cl[(s-1)]=self.Cl_[0]
+                self.Cm[(s-1)]=self.Cm_[0]
+                self.t[(s-1)]=self.t_[0]
+                self.xEA[(s-1)]=self.xEA_[0]
             else:
                 for j in range(1,(max(Y.shape)+1)):
-                    if Y[(j-1)] > yE[(s-1)]:
+                    if Y[(j-1)] > self.yE[(s-1)]:
                         break
                 if s == sTrans[0]:
                     j=2
-                x=(yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
-                Cl[(s-1)]=Cl_[(j - 1-1)] + x * (Cl_[(j-1)] - Cl_[(j - 1-1)])
-                Cm[(s-1)]=Cm_[(j - 1-1)] + x * (Cm_[(j-1)] - Cm_[(j - 1-1)])
-                t[(s-1)]=t_[(j - 1-1)] + x * (t_[(j-1)] - t_[(j - 1-1)])
-                xEA[(s-1)]=xEA_[(j - 1-1)] + x * (xEA_[(j-1)] - xEA_[(j - 1-1)])
-        Cl[(Ns-1)]=Cl[(Ns-1)] * 2 / 3
-        for s in range(1,(Ns + 1+1)):
-            if yN[(s-1)] < ycmax[0]:
+                x=(self.yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
+                self.Cl[(s-1)]=self.Cl_[(j - 1-1)] + x * (self.Cl_[(j-1)] - self.Cl_[(j - 1-1)])
+                self.Cm[(s-1)]=self.Cm_[(j - 1-1)] + x * (self.Cm_[(j-1)] - self.Cm_[(j - 1-1)])
+                self.t[(s-1)]=self.t_[(j - 1-1)] + x * (self.t_[(j-1)] - self.t_[(j - 1-1)])
+                self.xEA[(s-1)]=self.xEA_[(j - 1-1)] + x * (self.xEA_[(j-1)] - self.xEA_[(j - 1-1)])
+        self.Cl[(self.Ns-1)]=self.Cl[(self.Ns-1)] * 2 / 3
+        for s in range(1,(self.Ns + 1+1)):
+            if self.yN[(s-1)] < self.ycmax[0]:
                 sTrans[0]=s
-            if yN[(s-1)] < xtU_[1]:
+            if self.yN[(s-1)] < self.xtU_[1]:
                 sTrans[1]=s
-        for s in range(1,(Ns+1)):
+        for s in range(1,(self.Ns+1)):
             if s < sTrans[0]:
-                xtU[(s-1)]=0.05
-                xtL[(s-1)]=0.05
+                self.xtU[(s-1)]=0.05
+                self.xtL[(s-1)]=0.05
             else:
                 if s < sTrans[1]:
-                    xtU[(s-1)]=xtU_[0]
-                    xtL[(s-1)]=xtL_[0]
+                    self.xtU[(s-1)]=self.xtU_[0]
+                    self.xtL[(s-1)]=self.xtL_[0]
                 else:
                     if s == sTrans[1]:
-                        x=(xtU_[1] - yN[(s-1)]) / (yN[(s-1)] - yN[(s - 1-1)])
-                        xtU[(s-1)]=(1 - x) * xtU_[0] + x * xtU_[2]
-                        xtL[(s-1)]=(1 - x) * xtL_[0] + x * xtL_[2]
+                        x=(self.xtU_[1] - self.yN[(s-1)]) / (self.yN[(s-1)] - self.yN[(s - 1-1)])
+                        self.xtU[(s-1)]=(1 - x) * self.xtU_[0] + x * self.xtU_[2]
+                        self.xtL[(s-1)]=(1 - x) * self.xtL_[0] + x * self.xtL_[2]
                     else:
                         if s > sTrans[1]:
-                            xtU[(s-1)]=xtU_[2]
-                            xtL[(s-1)]=xtL_[2]
-        Y=np.array([0,yWire[0],R]).reshape(1,-1)
-        for s in range(1,(Ns+1)):
+                            self.xtU[(s-1)]=self.xtU_[2]
+                            self.xtL[(s-1)]=self.xtL_[2]
+        Y=np.array([0,self.yWire[0],self.R])
+        for s in range(1,(self.Ns+1)):
             for j in range(1,(max(Y.shape)+1)):
-                if Y[(j-1)] > yE[(s-1)]:
+                if Y[(j-1)] > self.yE[(s-1)]:
                     break
-            x=(yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
-            d[(s-1)]=d_[(j - 1-1)] + x * (d_[(j-1)] - d_[(j - 1-1)])
-            theta[(s-1)]=theta_[(j - 1-1)] + x * (theta_[(j-1)] - theta_[(j - 1-1)])
-            nTube[(s-1)]=nTube_[(j - 1-1)] + x * (nTube_[(j-1)] - nTube_[(j - 1-1)])
-            nCap[(s-1)]=nCap_[(j - 1-1)] + x * (nCap_[(j-1)] - nCap_[(j - 1-1)])
-            lBiscuit[(s-1)]=lBiscuit_[(j - 1-1)] + x * (lBiscuit_[(j-1)] - lBiscuit_[(j - 1-1)])
+            x=(self.yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
+            self.d[(s-1)]=self.d_[(j - 1-1)] + x * (self.d_[(j-1)] - self.d_[(j - 1-1)])
+            self.theta[(s-1)]=self.theta_[(j - 1-1)] + x * (self.theta_[(j-1)] - self.theta_[(j - 1-1)])
+            self.nTube[(s-1)]=self.nTube_[(j - 1-1)] + x * (self.nTube_[(j-1)] - self.nTube_[(j - 1-1)])
+            self.nCap[(s-1)]=self.nCap[(j - 1-1)] + x * (self.nCap[(j-1)] - self.nCap[(j - 1-1)])
+            self.lBiscuit[(s-1)]=self.lBiscuit_[(j - 1-1)] + x * (self.lBiscuit_[(j-1)] - self.lBiscuit_[(j - 1-1)])
     
 
 

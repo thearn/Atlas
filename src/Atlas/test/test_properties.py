@@ -9,6 +9,9 @@ from openmdao.util.testutil import assert_rel_error
 def relative_err(x, y):
     return (np.abs(x-y)/np.linalg.norm(x)).max()
 
+def absolute_err(x, y):
+    return np.abs(x-y).max()
+
 class AtlasTestProperties(unittest.TestCase):
 
     def test_wireProperties(self):
@@ -34,7 +37,7 @@ class AtlasTestProperties(unittest.TestCase):
         comp.xtU_ = np.array([0.1500, 7.0000, 0.1500])
         comp.xtL_ = np.array([0.3000, 7.0000, 0.3000])
         comp.xEA_ = np.array([0.2700, 0.3300, 0.2400])
-        comp.yWire = 5.8852
+        comp.yWire = np.array([5.8852,])
         comp.d_ = np.array([0.0874, 0.0505, 0.0315])
         comp.theta_ = np.array([0.3491, 0.3491, 0.3491])
         comp.nTube_ = np.array([4, 4 , 4])
@@ -48,7 +51,7 @@ class AtlasTestProperties(unittest.TestCase):
         self.assertLess(relative_err(cE, comp.cE), 1e4)
 
         cN = np.array([0,0,0,0,0,0,0,0,0,0,0])
-        self.assertLess(relative_err(cN, comp.cN), 1e4)
+        self.assertLess(absolute_err(cN, comp.cN), 1e4)
 
         c100 =np.array([0.0273, 0.0819, 0.1365, 0.1910, 0.2456, 0.3002, 0.3548,
                         0.4094, 0.4640, 0.5186, 0.5731, 0.6277, 0.6823, 0.7369, 
@@ -103,7 +106,7 @@ class AtlasTestProperties(unittest.TestCase):
         self.assertLess(relative_err(nTube, comp.nTube), 1e4)
 
         nCap = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        self.assertLess(relative_err(nCap, comp.nCap), 1e4)
+        self.assertLess(absolute_err(nCap, comp.nCap), 1e4)
 
         lBiscuit = np.array([0.3048, 0.3048, 0.3048, 0.3048, 0.3048, 0.3048, 0.2820, 0.2450, 0.2080, 0.1709])
         self.assertLess(relative_err(lBiscuit, comp.lBiscuit), 1e4)
