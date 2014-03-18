@@ -1,4 +1,4 @@
-from Atlas import discretizeProperties, wireProperties, sparProperties
+from Atlas import discretizeProperties, wireProperties, sparProperties, chordProperties
 #from Atlas import sparProperties
 import numpy as np
 import unittest
@@ -20,6 +20,7 @@ class AtlasTestProperties(unittest.TestCase):
         self.assertAlmostEquals(comp.RHO, 7850, 4)
         self.assertAlmostEquals(comp.E, 2.1e11, 3)
         self.assertAlmostEquals(comp.ULTIMATE, 2.62e9, 3)
+
     
     def test_discretizeProperties(self):
         comp = discretizeProperties()
@@ -132,6 +133,55 @@ class AtlasTestProperties(unittest.TestCase):
         assert_rel_error(self, comp.EA[0], 18167620.0, tol)
         assert_rel_error(self, comp.GJ[0], 2.2828e4, tol)
         assert_rel_error(self, comp.mSpar[0], 4.7244, tol)
+
+
+    def test_chordProperties(self):
+        
+        comp = chordProperties()
+        comp.yN = np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ],dtype=np.float64)
+        comp.c = np.array([ 0.2729, 1.3903, 1.1757, 1.0176, 0.8818, 0.7602, 0.6507, 0.5528, 0.4666, 0.3925 ])
+        comp.d = np.array([ 0.0843, 0.0780, 0.0718, 0.0655, 0.0592, 0.0530, 0.0477, 0.0431, 0.0384, 0.0338 ])
+        comp.flagGWing = 1
+        comp.xtU = np.array([ 0.0500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500 ])
+
+        comp.run()
+
+        tol = 0.001
+        expected_mChord = [ 0.018497, 0.167168, 0.133574, 0.110904, 0.092785, 0.077596, 0.064695, 0.053795, 0.044734, 0.037342 ]
+        expected_xCGChord = [ 0.37481, 0.29252, 0.29447, 0.29634, 0.29838, 0.30073, 0.30350, 0.30677, 0.31059, 0.31498 ]
+        for i, ( e_mChord, e_xCGChord ) in enumerate( zip( expected_mChord, expected_xCGChord )) :
+            assert_rel_error(self, comp.mChord[i], e_mChord, tol)
+            assert_rel_error(self, comp.xCGChord[i],e_xCGChord , tol)
+
+
+
+
+# mChord =
+
+#     0.0185
+#     0.1672
+#     0.1336
+#     0.1109
+#     0.0928
+#     0.0776
+#     0.0647
+#     0.0538
+#     0.0447
+#     0.0373
+
+
+# xCGChord =
+
+#     0.3748
+#     0.2925
+#     0.2945
+#     0.2963
+#     0.2984
+#     0.3007
+#     0.3035
+#     0.3068
+#     0.3106
+#     0.3150
 
 
 if __name__ == "__main__":

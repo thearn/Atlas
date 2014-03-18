@@ -4,6 +4,8 @@ from openmdao.lib.datatypes.api import Float, Array, Int, Str
 import numpy as np
 import math
 
+#from __future__ import division
+
 # Material properties of the CFRP prepregs used in the HPH Project. 
 # Input Variables:
 #   	type_flag - flag indicating prepreg to be used
@@ -127,6 +129,7 @@ prepregProperties = \
 
 
 class sparProperties(Component):
+
     yN = Array( iotype='in', desc='description')
     d = Array( iotype='in', desc='description')
     theta = Array( iotype='in', desc='description')
@@ -325,63 +328,181 @@ class sparProperties(Component):
             #print A_tube, RHO_TUBE , A_cap , RHO_CAP, dy[(s-1)] , mass_biscuit
             self.mSpar[(s-1)] = (A_tube * RHO_TUBE + A_cap * RHO_CAP) * dy[(s-1)] + mass_biscuit
             
-# class sparProperties(Component):
-#     yN = Array(np.zeros(2), iotype='in', desc='description')
-#     d = Float(0, iotype='in', desc='description')
-#     theta = Float(0, iotype='in', desc='description')
-#     nTube = Int(0, iotype='in', desc='description')
-#     nCap = Array(np.zeros(2), iotype='in', desc='description')
-#     lBiscuit = Float(0, iotype='in', desc='description')
-#     CFRPType = Int(0, iotype='in', desc='description')
-
-#     EIx = Float(0, iotype='in', desc='description')
-#     EIz = Float(0, iotype='in', desc='description')
-#     EA = Float(0, iotype='in', desc='description')
-#     GJ = Float(0, iotype='in', desc='description')
-#     mSpar = Float(0, iotype='in', desc='description')
-
-#     def execute(self):
-#         pass
 
 class discretizeProperties(Component):
     """
     Computes discretized Properties
     """
-    Ns = Int(0, iotype='in', desc='description')
-    ycmax = Array(np.zeros(2), iotype='in', desc='description')
-    R = Float(0, iotype='in', desc='description')
-    c_ = Array(np.zeros(2), iotype='in', desc='description')
-    Cl_ = Array(np.zeros(2), iotype='in', desc='description')
-    Cm_ = Array(np.zeros(2), iotype='in', desc='description')
-    t_ = Array(np.zeros(2), iotype='in', desc='description')
-    xtU_ = Array(np.zeros(2), iotype='in', desc='description')
-    xtL_ = Array(np.zeros(2), iotype='in', desc='description')
-    xEA_ = Array(np.zeros(2), iotype='in', desc='description')
-    yWire = Float(0, iotype='in', desc='description')
-    d_ = Array(np.zeros(2), iotype='in', desc='description')
-    theta_ = Array(np.zeros(2), iotype='in', desc='description')
-    nTube_ = Array(np.zeros(2), iotype='in', desc='description')
-    nCap_ = Array(np.zeros(2), iotype='in', desc='description')
-    lBiscuit_ = Array(np.zeros(2), iotype='in', desc='description')
 
-    cE = Array(np.zeros(2), iotype='out', desc='description')
-    cN = Array(np.zeros(2), iotype='out', desc='description')
+    #def DiscretizeProperties(Ns,ycmax,R,c_,Cl_,Cm_,t_,xtU_,xtL_,xEA_,yWire,d_,theta_,nTube_,nCap_,lBiscuit_):
+
+    Ns = Int(0, iotype='in', desc='description')
+    ycmax = Array( iotype='in', desc='description')
+    R = Float(0, iotype='in', desc='description')
+    c_ = Array( iotype='in', desc='description')
+    Cl_ = Array( iotype='in', desc='description')
+    Cm_ = Array( iotype='in', desc='description')
+    t_ = Array( iotype='in', desc='description')
+    xtU_ = Array( iotype='in', desc='description')
+    xtL_ = Array( iotype='in', desc='description')
+    xEA_ = Array( iotype='in', desc='description')
+    yWire = Float(0, iotype='in', desc='description')
+    d_ = Array( iotype='in', desc='description')
+    theta_ = Array( iotype='in', desc='description')
+    nTube_ = Array( iotype='in', desc='description')
+    nCap_ = Array( iotype='in', desc='description')
+    lBiscuit_ = Array( iotype='in', desc='description')
+
+    #return cE,cN,c100,Cl,Cm,t,xtU,xtL,xEA,d,theta,nTube,nCap,lBiscuit,yN,yE
+    cE = Array( iotype='out', desc='description')
+    cN = Array( iotype='out', desc='description')
     c100 = Array(np.zeros(100), iotype='out', desc='description')
-    cl = Array(np.zeros(2), iotype='out', desc='description')
-    Cm = Array(np.zeros(2), iotype='out', desc='description')
-    t = Array(np.zeros(2), iotype='out', desc='description')
-    xtU = Array(np.zeros(2), iotype='out', desc='description')
-    xtL = Array(np.zeros(2), iotype='out', desc='description')
-    xEA = Array(np.zeros(2), iotype='out', desc='description')
-    d = Array(np.zeros(2), iotype='out', desc='description')
-    theta = Array(np.zeros(2), iotype='out', desc='description')
-    nTube = Array(np.zeros(2), iotype='out', desc='description')
-    nCap = Array(np.zeros(2), iotype='out', desc='description')
-    lBiscuit = Array(np.zeros(2), iotype='out', desc='description')
+    cl = Array( iotype='out', desc='description')
+    Cm = Array( iotype='out', desc='description')
+    t = Array( iotype='out', desc='description')
+    xtU = Array( iotype='out', desc='description')
+    xtL = Array( iotype='out', desc='description')
+    xEA = Array( iotype='out', desc='description')
+    d = Array( iotype='out', desc='description')
+    theta = Array( iotype='out', desc='description')
+    nTube = Array( iotype='out', desc='description')
+    nCap = Array( iotype='out', desc='description')
+    lBiscuit = Array( iotype='out', desc='description')
 
 
     def execute(self):
-        pass
+
+        yN=np.zeros(Ns + 1,1)
+        cN=np.zeros(Ns + 1,1)
+        yE=np.zeros(Ns,1)
+        cR=np.zeros(Ns,1)
+        cZ=np.zeros(Ns,1)
+        cE=np.zeros(Ns,1)
+        Cl=np.zeros(Ns,1)
+        Cm=np.zeros(Ns,1)
+        t=np.zeros(Ns,1)
+        xtU=np.zeros(Ns,1)
+        xtL=np.zeros(Ns,1)
+        xEA=np.zeros(Ns,1)
+        d=np.zeros(Ns,1)
+        theta=np.zeros(Ns,1)
+        nTube=np.zeros(Ns,1)
+        nCap=np.zeros(Ns,1)
+        lBiscuit=np.zeros(Ns,1)
+        Ns100=100
+        yN100=np.zeros(Ns100 + 1,1)
+        yE100=np.zeros(Ns100,1)
+        cR100=np.zeros(100,1)
+        cZ100=np.zeros(100,1)
+        c100=np.zeros(100,1)
+        for s in range(1,(Ns + 1+1)):
+            yN[(s-1)]=R / Ns * (s - 1)
+            if yN[(s-1)] < ycmax[0]:
+                sTrans[0]=s
+            if yN[(s-1)] < ycmax[1]:
+                sTrans[1]=s
+        for s in range(1,(Ns+1)):
+            yE[(s-1)]=0.5 * (yN[(s-1)] + yN[(s + 1-1)])
+        for s in range(1,(Ns+1)):
+            if s < sTrans[0]:
+                x=yE[(s-1)] / ycmax[0]
+                cE[(s-1)]=c_[0] + x * (c_[1] - c_[0])
+            else:
+                x=(yE[(s-1)] - ycmax[0]) / (R - ycmax[0])
+                pStart=c_[2]
+                pCurve=c_[3]
+                pEnd=c_[4]
+                xx=x * (1 - pCurve) + sin(x * math.pi / 2) * pCurve
+                cZ[(s-1)]=pStart + (pEnd - pStart) * xx
+                c3=c_[2] / (c_[4] * R / ycmax[0])
+                cR[(s-1)]=c_[4] * R / yE[(s-1)] * (c3 + (1 - c3) * x)
+                cE[(s-1)]=cR[(s-1)] + (cZ[(s-1)] - cR[(s-1)]) * c_[1]
+            if cE[(s-1)] == 0:
+                cE[(s-1)]=0.001
+        for s in range(1,(Ns100 + 1+1)):
+            yN100[(s-1)]=R / Ns100 * (s - 1)
+            if yN100[(s-1)] < ycmax:
+                sTrans100=s
+        for s in range(1,(Ns100+1)):
+            yE100[(s-1)]=0.5 * (yN100[(s-1)] + yN100[(s + 1-1)])
+        for s in range(1,(Ns100+1)):
+            if s < sTrans100:
+                x=yE100[(s-1)] / ycmax[0]
+                c100[(s-1)]=c_[0] + x * (c_[1] - c_[0])
+            else:
+                x=(yE100[(s-1)] - ycmax[0]) / (R - ycmax[0])
+                pStart=c_[2]
+                pCurve=c_[3]
+                pEnd=c_[4]
+                xx=x * (1 - pCurve) + sin(x * math.pi / 2) * pCurve
+                cZ100[(s-1)]=pStart + (pEnd - pStart) * xx
+                c3=c_[2] / (c_[4] * R / ycmax[0])
+                cR100[(s-1)]=c_[4] * R / yE100[(s-1)] * (c3 + (1 - c3) * x)
+                c100[(s-1)]=cR100[(s-1)] + (cZ100[(s-1)] - cR100[(s-1)]) * c_[1]
+            if c100[(s-1)] == 0:
+                c100[(s-1)]=0.001
+        Y=np.array([ycmax[0],ycmax[1],R]).reshape(1,-1)
+        for s in range(1,(Ns+1)):
+            if s < sTrans[0]:
+                Cl[(s-1)]=Cl_[0]
+                Cm[(s-1)]=Cm_[0]
+                t[(s-1)]=t_[0]
+                xEA[(s-1)]=xEA_[0]
+            else:
+                for j in range(1,(max(Y.shape)+1)):
+                    if Y[(j-1)] > yE[(s-1)]:
+                        break
+                if s == sTrans[0]:
+                    j=2
+                x=(yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
+                Cl[(s-1)]=Cl_[(j - 1-1)] + x * (Cl_[(j-1)] - Cl_[(j - 1-1)])
+                Cm[(s-1)]=Cm_[(j - 1-1)] + x * (Cm_[(j-1)] - Cm_[(j - 1-1)])
+                t[(s-1)]=t_[(j - 1-1)] + x * (t_[(j-1)] - t_[(j - 1-1)])
+                xEA[(s-1)]=xEA_[(j - 1-1)] + x * (xEA_[(j-1)] - xEA_[(j - 1-1)])
+        Cl[(Ns-1)]=Cl[(Ns-1)] * 2 / 3
+        for s in range(1,(Ns + 1+1)):
+            if yN[(s-1)] < ycmax[0]:
+                sTrans[0]=s
+            if yN[(s-1)] < xtU_[1]:
+                sTrans[1]=s
+        for s in range(1,(Ns+1)):
+            if s < sTrans[0]:
+                xtU[(s-1)]=0.05
+                xtL[(s-1)]=0.05
+            else:
+                if s < sTrans[1]:
+                    xtU[(s-1)]=xtU_[0]
+                    xtL[(s-1)]=xtL_[0]
+                else:
+                    if s == sTrans[1]:
+                        x=(xtU_[1] - yN[(s-1)]) / (yN[(s-1)] - yN[(s - 1-1)])
+                        xtU[(s-1)]=(1 - x) * xtU_[0] + x * xtU_[2]
+                        xtL[(s-1)]=(1 - x) * xtL_[0] + x * xtL_[2]
+                    else:
+                        if s > sTrans[1]:
+                            xtU[(s-1)]=xtU_[2]
+                            xtL[(s-1)]=xtL_[2]
+        Y=np.array([0,yWire[0],R]).reshape(1,-1)
+        for s in range(1,(Ns+1)):
+            for j in range(1,(max(Y.shape)+1)):
+                if Y[(j-1)] > yE[(s-1)]:
+                    break
+            x=(yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
+            d[(s-1)]=d_[(j - 1-1)] + x * (d_[(j-1)] - d_[(j - 1-1)])
+            theta[(s-1)]=theta_[(j - 1-1)] + x * (theta_[(j-1)] - theta_[(j - 1-1)])
+            nTube[(s-1)]=nTube_[(j - 1-1)] + x * (nTube_[(j-1)] - nTube_[(j - 1-1)])
+            nCap[(s-1)]=nCap_[(j - 1-1)] + x * (nCap_[(j-1)] - nCap_[(j - 1-1)])
+            lBiscuit[(s-1)]=lBiscuit_[(j - 1-1)] + x * (lBiscuit_[(j-1)] - lBiscuit_[(j - 1-1)])
+    
+
+
+
+
+
+
+
+
+
 
 class wireProperties(Component):
     """
@@ -394,4 +515,130 @@ class wireProperties(Component):
     ULTIMATE = Float(0, iotype='out', desc='description')
 
     def execute(self):
-        pass
+        if self.type_flag == 1:
+            self.RHO=7850.0
+            self.E=2.1e+11
+            self.ULTIMATE=2620000000.0
+            #D=np.array([0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.72]).reshape(1,-1)
+        elif self.type_flag == 2:
+            self.RHO=1106.5
+            self.E=39210000000.0
+            self.ULTIMATE=982800000.0
+            #D=np.array([1.5,2]).reshape(1,-1)
+
+
+
+
+
+
+
+class chordProperties(Component):
+    """
+    Computes wire properties
+    """
+
+    yN = Array( iotype='in', desc='description')
+    c = Array( iotype='in', desc='description')
+    d = Array( iotype='in', desc='description')
+    flagGWing = Int(iotype='in', desc='description')
+    xtU = Array( iotype='in', desc='description')
+    
+    mChord = Array(iotype='out', desc='description')
+    xCGChord = Array(iotype='out', desc='description')
+
+    def execute(self):
+
+        Ns=max(self.yN.shape) - 1
+        dy=np.zeros(Ns)
+        for s in range(1,(Ns+1)):
+            dy[(s-1)]=self.yN[(s)] - self.yN[(s-1)]
+        self.mChord=np.zeros(Ns)
+        self.xCGChord=np.zeros(Ns)
+        RHO_BALSA=160.0
+        RHO_BASSWOOD=387.0
+        RHO_CARBON=1610.6
+        T_PLY_CARBON=0.000147
+        RHO_EPS=16.0
+        RHO_KEVLAR=1300.0
+        T_PLY_KEVLAR=0.000127
+        RHO_MYLAR=1400.0
+        T_MYLAR=1.2e-05
+        RHO_STRUCTURAL_FOAM=31.0
+        RHO_XPS=24.67
+        RHO_STEEL_WIRE=7850.0
+        AREA_AIRFOIL=0.08233
+        PERIMETER_AIRFOIL=2.06814
+        XCG_AIRFOIL=0.39003
+        thickness_rib=0.005
+        rib_spacing=12 * (0.0254)
+        thickness_LE_sheeting=0.003
+        thickness_rib_caps=(1.0 / 32) * (0.0254)
+        percent_rib_caps=0.97
+        thickness_spar_plate=(1.0 / 32) * (0.0254)
+        percent_radius_spar_plate=0.0632
+        percent_LE_sheeting_top=0.6
+        percent_LE_sheeting_top_GWing=self.xtU
+        percent_LE_sheeting_bottom=0.1
+        d_TE_spar=(3.0 / 4) * (0.0254)
+        nTube_TE_spar=4
+        d_comp_member=(3.0 / 4) * (0.0254)
+        nTube_comp_member=4
+        spacing_comp_member=3
+        percent_length_comp_member=0.782 - 0.25
+        d_cross_bracing=0.001
+        height_TE_foam=0.007
+        length_TE_foam=0.0505
+        percent_height_TE_plate=0.05
+        percent_length_TE_plate=0.24
+        thickness_TE_plate=(1.0 / 32) * (0.0254)
+        diameter_piano_wire=(0.022) * (0.0254)
+        spar_location=0.25
+        AF_ribs=1.569
+        AF_TE=1.602
+        AF_leading_edge_sheeting=1.302
+        AF_leading_edge_sheeting_GWing=1.21
+        AF_covering=0.972
+        AF_TE_spar=0.529
+        AF_comp_member=1.0
+        AF_cross_bracing=4.603
+        for s in range(1,(Ns+1)):
+            mass_rib_foam=RHO_EPS * (thickness_rib * ((self.c[(s-1)] ** 2) * AREA_AIRFOIL))
+            mass_rib_caps=RHO_BASSWOOD * (thickness_rib * thickness_rib_caps * (percent_rib_caps * PERIMETER_AIRFOIL * self.c[(s-1)]))
+            mass_rib_plate_spar=RHO_BALSA * (thickness_spar_plate * (math.pi * (((self.c[(s-1)] * percent_radius_spar_plate) ** 2) - ((self.d[(s-1)] / 2) ** 2))))
+            if self.flagGWing == 0:
+                mass_rib_plate_TE=RHO_BALSA * (thickness_TE_plate * ((1.0 / 2) * (self.c[(s-1)] ** 2) * percent_height_TE_plate * percent_length_TE_plate))
+                mass_rib=AF_ribs * ((dy[(s-1)] / rib_spacing) * (mass_rib_foam + mass_rib_caps + 2 * mass_rib_plate_spar + 2 * mass_rib_plate_TE))
+                Xcg_rib=XCG_AIRFOIL
+            else:
+                mass_rib=AF_ribs * (0.66) * ((dy[(s-1)] / rib_spacing) * (mass_rib_foam + mass_rib_caps + 2 * mass_rib_plate_spar))
+                Xcg_rib=((XCG_AIRFOIL + (2.0 / 3) * (spar_location)) / 2)
+            if self.flagGWing == 0:
+                mass_TE=AF_TE * (RHO_STRUCTURAL_FOAM * dy[(s-1)] * ((1.0 / 2) * (length_TE_foam * height_TE_foam)) + RHO_KEVLAR * dy[(s-1)] * T_PLY_KEVLAR * (length_TE_foam + height_TE_foam + sqrt(length_TE_foam ** 2 + height_TE_foam ** 2)))
+                Xcg_TE=(self.c[(s-1)] - (2.0 / 3) * length_TE_foam) / self.c[(s-1)]
+            else:
+                mass_TE=RHO_STEEL_WIRE * dy[(s-1)] * math.pi * ((diameter_piano_wire / 2) ** 2)
+                Xcg_TE=1
+            if self.flagGWing == 0:
+                mass_LE_sheeting=AF_leading_edge_sheeting * (RHO_XPS * dy[(s-1)] * self.c[(s-1)] * (percent_LE_sheeting_top + percent_LE_sheeting_bottom) * PERIMETER_AIRFOIL * thickness_LE_sheeting)
+                Xcg_LE_sheeting=(1.0 / 2) * ((1.0 / 2) * (percent_LE_sheeting_top) + (1.0 / 2) * (percent_LE_sheeting_bottom))
+            else:
+                mass_LE_sheeting=AF_leading_edge_sheeting_GWing * (RHO_EPS * dy[(s-1)] * self.c[(s-1)] * (percent_LE_sheeting_top_GWing[(s-1)] + percent_LE_sheeting_bottom) * PERIMETER_AIRFOIL * thickness_LE_sheeting) + RHO_STEEL_WIRE * dy[(s-1)] * math.pi * ((diameter_piano_wire / 2) ** 2)
+                Xcg_LE_sheeting=(1.0 / 2) * ((1.0 / 2) * (percent_LE_sheeting_top_GWing[(s-1)]) + (1.0 / 2) * (percent_LE_sheeting_bottom))
+            mass_covering=AF_covering * (RHO_MYLAR * dy[(s-1)] * self.c[(s-1)] * PERIMETER_AIRFOIL * T_MYLAR)
+            Xcg_covering=0.5
+            if self.flagGWing == 0:
+                mass_TE_spar=AF_TE_spar * (RHO_CARBON * dy[(s-1)] * (math.pi * (((d_TE_spar / 2) + nTube_TE_spar * T_PLY_CARBON) ** 2 - (d_TE_spar / 2) ** 2)))
+                Xcg_TE_spar=0.9
+                mass_comp_member=AF_comp_member * (dy[(s-1)] / spacing_comp_member) * RHO_CARBON * (self.c[(s-1)] * percent_length_comp_member) * (math.pi * (((d_comp_member / 2) + nTube_comp_member * T_PLY_CARBON) ** 2 - (d_comp_member / 2) ** 2))
+                Xcg_comp_member=0.25 + (1.0 / 2) * (percent_length_comp_member)
+                mass_cross_bracing=AF_cross_bracing * RHO_KEVLAR * (dy[(s-1)] / spacing_comp_member) * 2 * (math.pi * (d_cross_bracing / 2) ** 2) * ((((self.c[(s-1)] * percent_length_comp_member) ** 2) + ((spacing_comp_member) ** 2)) ** (1.0 / 2))
+                Xcg_cross_bracing=0.25 + (1.0 / 2) * (percent_length_comp_member)
+            else:
+                mass_TE_spar=0
+                Xcg_TE_spar=0
+                mass_comp_member=0
+                Xcg_comp_member=0
+                mass_cross_bracing=0
+                Xcg_cross_bracing=0
+            self.mChord[(s-1)]=mass_rib + mass_TE + (mass_LE_sheeting) + (mass_covering) + (mass_TE_spar + mass_comp_member + mass_cross_bracing)
+            self.xCGChord[(s-1)]=((mass_rib * Xcg_rib) + (mass_TE * Xcg_TE) + (mass_LE_sheeting * Xcg_LE_sheeting) + (mass_covering * Xcg_covering) + (mass_TE_spar * Xcg_TE_spar) + (mass_comp_member * Xcg_comp_member) + (mass_cross_bracing * Xcg_cross_bracing)) / (mass_rib + mass_TE + mass_LE_sheeting + mass_covering + mass_TE_spar + mass_comp_member + mass_cross_bracing)
