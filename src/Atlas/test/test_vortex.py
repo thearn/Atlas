@@ -1,4 +1,4 @@
-from Atlas import vortexWakeCover
+from Atlas import vortexWake
 import numpy as np
 import unittest
 
@@ -8,7 +8,7 @@ def relative_err(x, y):
 class AtlasTestVortex(unittest.TestCase):
 
     def test_vortexWakeCover(self):
-        comp = vortexWakeCover()
+        comp = vortexWake()
         comp.yN = np.array([0,1,2,3,4,5,6,7,8,9,10])
         comp.rho = 1.18
         comp.dT = np.array([0.0649,  1.5887,  6.8049, 11.2556, 15.7854, 19.8941, 23.2617, 25.7216, 27.2537, 18.6446])
