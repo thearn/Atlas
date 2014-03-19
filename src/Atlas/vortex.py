@@ -79,24 +79,26 @@ ring["Gamma"][0, -1] = GammaBound[-1]
 ring["r"][0,:] = yN
 ring["z"][0,:] = qh
 
+quit()
+
 # free wake time step
-for t in xrange(Nw):
+for t in xrange(1, Nw+1):
 
     # proceed with substeps
-    for tt in xrange(Ntt):
+    for tt in xrange(1, Ntt + 1):
         # Compute induced velocity on all ix(Ns+1) rings from all iix(Ns+1) rings
         ring["vz"] = np.zeros((Nw+1, Ns+1))
         ring["vr"] = np.zeros((Nw+1, Ns+1))
 
         # for each disc
-        for i in xrange(t):
+        for i in xrange(1,t+1):
             # and each ring
-            for s in xrange(Ns+1):
+            for s in xrange(1, Ns+1):
 
                 # add velocity induced from each disc
-                for ii in xrange(t):
+                for ii in xrange(1, t+1):
                     # and each ring on each disc (inner ring cancels itself out)
-                    for ss in xrange(1, Ns+1):
+                    for ss in xrange(2, Ns+1):
 
                         zr = ring["z"][ii,ss]
                         r = ring["r"][ii,ss]
@@ -127,21 +129,70 @@ for t in xrange(Nw):
                         ring["vz"][i, s] += -sum((np.cos(thetaArray)*yp-r)/Norm3)*M
 
         # compute altitude and time power approximation
-        if tt == 0:
+        if tt == 1:
             PiApprox = 8*sum(dT*vi)
         realtime = 2*np.pi/Omega/b*((t - 1)*Ntt + tt)/Ntt
         altitude = vc*realtime
 
         # convect rings downstream
         dt = 2*np.pi/Omega/b/Ntt
+        for i in xrange(t):
+            for s in xrange(Ns+1):
+                ring["z"][i, s] += ring["vz"][i, s]*dt
+                ring["r"][i, s] += ring["vr"][i, s]*dt
+
+    # shift elements in ring array
+    for i in range(t, 2, -1):
+        ring["Gamma"][i+1,:] = ring["Gamma"][i,:]
+        ring["r"][i+1,:] = ring["r"][i,:]
+        ring["z"][i+1,:] = ring["z"][i,:]
+
+    # create nacent vortex rings
+    GammaBound = dt / (rho*(Omega*yE)*dy)
+    ring["Gamma"][0,0] = -GammaBound[0]
+    for s in xrange(1,Ns):
+        ring["Gamma"][0,s] = GammaBound[s-1] - GammaBound[s]
+    ring["Gamma"][0, -1] = GammaBound[-1]
+
+#print ring["Gamma"]
+# compute induced velocity on rotor
+for s in xrange(Ns):
+    vi[s] = 0
+    for ii in xrange(t):
+        ringFrac = 1
+        if ii == 0:
+            ringFrac = 0.675
+        for ss in xrange(1, Ns+1):
+            zr = ring["z"][ii, ss]
+            r = ring["r"][ii, ss]
+            zp = (qh[s] + qh[s+1]) / 2.
+            yp = yE[s]
+
+            M = ring["Gamma"][ii, ss]*r*dtheta/(2+np.pi)
+
+            X2 = (-r*np.sin(thetaArray))**2
+            Y2 = (yp-r*np.cos(thetaArray))**2
+            Z2 = (zp - zr)**2
+            Normal = np.sqrt(X2 + Y2 + Z2)
+            Normal[Normal < cr] = cr
+            Norm3 = Normal**3
+
+            vi[s] += ringFrac*sum((np.cos(thetaArray)*yp-r)/Norm3)*M
+
+            # ground effect ring
+            zr = -2*h - ring["z"][ii, ss]
+            Z2 = (zp - zr)**2
+            Normal = np.sqrt(X2 + Y2 + Z2)
+            Normal[Normal < cr] = cr
+            Norm3 = Normal**3
+
+            vi[s] += -ringFrac*sum((np.cos(thetaArray)*yp-r)/Norm3)*M
 
 
 
+vi = -vi
 
-
-
-
-
+print vi
 
 
 
