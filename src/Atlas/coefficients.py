@@ -1,6 +1,29 @@
 from openmdao.main.api import Component
 from openmdao.lib.datatypes.api import Float
+import math
 
+# Computes Cf of a flat plate at Re, with xtc fraction of laminar flow
+def frictionCoefficient(Re,xtc):
+    # Fully turbulent
+    if xtc == 0:
+        Cfflat = 0.072/(Re)**0.2
+    
+    # Fully laminar
+    elif xtc == 1:
+        Cfflat = (1.328/math.sqrt(Re))
+    
+    # Partially laminar
+    else:
+        Cflam = (1.328/math.sqrt(Re))*xtc**(-0.5) #Cf of laminar part
+        deltalamc = (5/math.sqrt(Re))*math.sqrt(xtc)  #boundary layer thickness, delta/c, of laminar part
+        deltaturbc = (0.13/0.097)*deltalamc #boundary layer thickness, delta/c, of turbulent part
+        x0c = xtc - (Re**0.2*deltaturbc/0.375)**(1/0.8) #imaginary start point of turbulent BL
+        CfturbFull = 0.072/((1-x0c)*Re)**0.2 #Cf of flat plate of length c-x0
+        CfturbStart = 0.072/((xtc-x0c)*Re)**0.2 #Cf of imaginary part of turb BL
+        Cfturb = (CfturbFull*(1-x0c) - CfturbStart*(xtc-x0c))/(1-xtc) #Cf of turbulent part
+        Cfflat = Cflam*xtc + Cfturb*(1-xtc)
+
+    return Cfflat
 
 class dragCoefficient(Component):
     """
@@ -14,12 +37,20 @@ class dragCoefficient(Component):
     Cd = Float(0.0, iotype='out', desc='description')
 
     def execute(self):
-        pass
+        CfU = frictionCoefficient(self.Re,self.xtcU) 
+        CfL = frictionCoefficient(self.Re,self.xtcL)
+        Cfflat = (CfU + CfL)/2
+        self.Cd = 2*Cfflat*(1 + 2*self.tc + 60*(self.tc)**4)
         
 class dragCoefficientFit(Component):
     """
     Computes drag coefficient
+     dragCoefficient.m returns the drag coefficient of an airfoil at Reynolds 
+     number Re, with thickness to chord ratio tc, and with xtcU and xtcL
+     fraction of laminar flow on the upper and lower surfaces respectively.
+     The result if a fit on existing HPH airfoils.
     """
+    
     Re = Float(0.0, iotype='in', desc='description')
     tc = Float(0.0, iotype='in', desc='description')
     xtcU = Float(0.0, iotype='in', desc='description')
@@ -28,16 +59,9 @@ class dragCoefficientFit(Component):
     Cd = Float(0.0, iotype='out', desc='description')
 
     def execute(self):
-        pass
+        Cf15_15 = 0.6798*self.Re**(-0.283);
+        Cf60_100 = 22.09*self.Re**(-0.604);
+        
+        xtc = self.xtcU+self.xtcL;
+        self.Cd = Cf15_15 + (Cf60_100-Cf15_15)*(xtc-0.3)/(1.6-0.3);
 
-class frictionCoefficient(Component):
-    """
-    Computes friction coefficient
-    """
-    Re = Float(0.0, iotype='in', desc='description')
-    xtc = Float(0.0, iotype='in', desc='description')
-
-    Cfflat = Float(0.0, iotype='out', desc='description')
-
-    def execute(self):
-        pass
