@@ -111,7 +111,7 @@ prepregProperties =  {
 }
 
 
-class sparProperties(Component):
+class SparProperties(Component):
     """ Computes the structural properties of a CFRP spar given the diameter, d,
         wrap angle, theta, number of tube layers, nTube, and number of cap
         strips, nCap. Properties are computed for each element along the span,
@@ -313,7 +313,7 @@ class sparProperties(Component):
             self.mSpar[(s-1)] = (A_tube * RHO_TUBE + A_cap * RHO_CAP) * dy[(s-1)] + mass_biscuit
 
 
-class discretizeProperties(Component):
+class DiscretizedProperties(Component):
     """
     Discretize properties along rotor blade. Y defines the locations at which
     the properties are defined. Properties are linearly interpolated between
@@ -519,7 +519,7 @@ class discretizeProperties(Component):
             self.lBiscuit[(s-1)] = self.lBiscuit_[(j - 1-1)] + x * (self.lBiscuit_[(j-1)] - self.lBiscuit_[(j - 1-1)])
 
 
-class wireProperties(Component):
+class WireProperties(Component):
     """
     Computes the material properties of wire options used in the HPH Project.
     """
@@ -549,7 +549,7 @@ class wireProperties(Component):
             self.D = np.array([1.5, 2]).reshape(1, -1)
 
 
-class chordProperties(Component):
+class ChordProperties(Component):
     """
     Computes the mass of the ribs, trailing edge, LE-sheeting and covering
     given the chord. The mass is computed for each spanwise element. If
