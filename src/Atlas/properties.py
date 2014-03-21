@@ -313,49 +313,48 @@ class SparProperties(Component):
             self.mSpar[(s-1)] = (A_tube * RHO_TUBE + A_cap * RHO_CAP) * dy[(s-1)] + mass_biscuit
 
 
-class DiscretizedProperties(Component):
+class DiscretizeProperties(Component):
     """
     Discretize properties along rotor blade. Y defines the locations at which
     the properties are defined. Properties are linearly interpolated between
     Y locations.
     """
 
-    #def DiscretizeProperties(Ns,ycmax,R,c_,Cl_,Cm_,t_,xtU_,xtL_,xEA_,yWire,d_,theta_,nTube_,nCap_,lBiscuit_):
+    # inputs
+    Ns        = Int(0, iotype='in', desc='number of elements')
+    ycmax     = Array(iotype='in', desc='')
+    R         = Float(0, iotype='in', desc='')
+    c_        = Array(iotype='in', desc='')
+    Cl_       = Array(iotype='in', desc='')
+    Cm_       = Array(iotype='in', desc='')
+    t_        = Array(iotype='in', desc='')
+    xtU_      = Array(iotype='in', desc='')
+    xtL_      = Array(iotype='in', desc='')
+    xEA_      = Array(iotype='in', desc='')
+    yWire     = Array(iotype='in', desc='')
+    d_        = Array(iotype='in', desc='')
+    theta_    = Array(iotype='in', desc='')
+    nTube_    = Array(iotype='in', desc='')
+    nCap_     = Array(iotype='in', desc='')
+    lBiscuit_ = Array(iotype='in', desc='')
 
-    Ns = Int(0, iotype='in', desc='description')
-    ycmax = Array(iotype='in', desc='description')
-    R = Float(0, iotype='in', desc='description')
-    c_ = Array(iotype='in', desc='description')
-    Cl_ = Array(iotype='in', desc='description')
-    Cm_ = Array(iotype='in', desc='description')
-    t_ = Array(iotype='in', desc='description')
-    xtU_ = Array(iotype='in', desc='description')
-    xtL_ = Array(iotype='in', desc='description')
-    xEA_ = Array(iotype='in', desc='description')
-    yWire = Array(iotype='in', desc='description')
-    d_ = Array(iotype='in', desc='description')
-    theta_ = Array(iotype='in', desc='description')
-    nTube_ = Array(iotype='in', desc='description')
-    nCap_ = Array(iotype='in', desc='description')
-    lBiscuit_ = Array(iotype='in', desc='description')
-
-    #return cE,cN,c100,Cl,Cm,t,xtU,xtL,xEA,d,theta,nTube,nCap,lBiscuit,yN,yE
-    cE = Array(iotype='out', desc='description')
-    cN = Array(iotype='out', desc='description')
-    c100 = Array(np.zeros(100), iotype='out', desc='description')
-    Cl = Array(iotype='out', desc='description')
-    Cm = Array(iotype='out', desc='description')
-    t = Array(iotype='out', desc='description')
-    xtU = Array(iotype='out', desc='description')
-    xtL = Array(iotype='out', desc='description')
-    xEA = Array(iotype='out', desc='description')
-    d = Array(iotype='out', desc='description')
-    theta = Array(iotype='out', desc='description')
-    nTube = Array(iotype='out', desc='description')
-    nCap = Array(iotype='out', desc='description')
-    lBiscuit = Array(iotype='out', desc='description')
-    yN = Array(iotype='out', desc='description')
-    yE = Array(iotype='out', desc='description')
+    # outputs
+    cE       = Array(iotype='out', desc='chord of each element')
+    cN       = Array(iotype='out', desc='chord at each node')
+    c100     = Array(np.zeros(100), iotype='out', desc='')
+    Cl       = Array(iotype='out', desc='lift coefficient')
+    Cm       = Array(iotype='out', desc='')
+    t        = Array(iotype='out', desc='airfoil thickness')
+    xtU      = Array(iotype='out', desc='')
+    xtL      = Array(iotype='out', desc='')
+    xEA      = Array(iotype='out', desc='')
+    d        = Array(iotype='out', desc='spar diameter')
+    theta    = Array(iotype='out', desc='CFRP wrap angle')
+    nTube    = Array(iotype='out', desc='')
+    nCap     = Array(iotype='out', desc='')
+    lBiscuit = Array(iotype='out', desc='')
+    yN       = Array(iotype='out', desc='node locations')
+    yE       = Array(iotype='out', desc='')
 
     def execute(self):
 
@@ -557,14 +556,16 @@ class ChordProperties(Component):
     is added as well.
     """
 
-    yN = Array(iotype='in', desc='description')
-    c = Array(iotype='in', desc='description')
-    d = Array(iotype='in', desc='description')
-    flagGWing = Int(iotype='in', desc='description')
-    xtU = Array(iotype='in', desc='description')
+    # inputs
+    yN = Array(iotype='in', desc='node locations')
+    c  = Array(iotype='in', desc='chord')
+    d  = Array(iotype='in', desc='spar diameter')
+    GWing = Int(iotype='in', desc='0 - Daedalus style wing, 1 - Gossamer style wing (changes amount of laminar flow)')
+    xtU = Array(iotype='in', desc='')
 
-    mChord = Array(iotype='out', desc='description')
-    xCGChord = Array(iotype='out', desc='description')
+    # outputs
+    mChord   = Array(iotype='out', desc='mass of chords')
+    xCGChord = Array(iotype='out', desc='')
 
     def execute(self):
 
@@ -637,7 +638,7 @@ class ChordProperties(Component):
             mass_rib_foam = RHO_EPS * (thickness_rib * ((self.c[(s-1)] ** 2) * AREA_AIRFOIL))
             mass_rib_caps = RHO_BASSWOOD * (thickness_rib * thickness_rib_caps * (percent_rib_caps * PERIMETER_AIRFOIL * self.c[(s-1)]))
             mass_rib_plate_spar = RHO_BALSA * (thickness_spar_plate * (pi * (((self.c[(s-1)] * percent_radius_spar_plate) ** 2) - ((self.d[(s-1)] / 2) ** 2))))
-            if self.flagGWing == 0:
+            if self.GWing == 0:
                 mass_rib_plate_TE = RHO_BALSA * (thickness_TE_plate * ((1.0 / 2) * (self.c[(s-1)] ** 2) * percent_height_TE_plate * percent_length_TE_plate))
                 mass_rib = AF_ribs * ((dy[(s-1)] / rib_spacing) * (mass_rib_foam + mass_rib_caps + 2 * mass_rib_plate_spar + 2 * mass_rib_plate_TE))
                 Xcg_rib = XCG_AIRFOIL
@@ -646,7 +647,7 @@ class ChordProperties(Component):
                 Xcg_rib = ((XCG_AIRFOIL + (2.0 / 3) * (spar_location)) / 2)
 
             # Trailing Edge Mass & Xcg
-            if self.flagGWing == 0:
+            if self.GWing == 0:
                 mass_TE = AF_TE * (RHO_STRUCTURAL_FOAM * dy[(s-1)] * ((1.0 / 2) * (length_TE_foam * height_TE_foam)) + RHO_KEVLAR * dy[(s-1)] * T_PLY_KEVLAR * (length_TE_foam + height_TE_foam + sqrt(length_TE_foam ** 2 + height_TE_foam ** 2)))
                 Xcg_TE = (self.c[(s-1)] - (2.0 / 3) * length_TE_foam) / self.c[(s-1)]
             else:
@@ -654,7 +655,7 @@ class ChordProperties(Component):
                 Xcg_TE = 1
 
             # Leading Edge Sheeting Mass
-            if self.flagGWing == 0:
+            if self.GWing == 0:
                 mass_LE_sheeting = AF_leading_edge_sheeting * (RHO_XPS * dy[(s-1)] * self.c[(s-1)] * (percent_LE_sheeting_top + percent_LE_sheeting_bottom) * PERIMETER_AIRFOIL * thickness_LE_sheeting)
                 Xcg_LE_sheeting = (1.0 / 2) * ((1.0 / 2) * (percent_LE_sheeting_top) + (1.0 / 2) * (percent_LE_sheeting_bottom))
             else:
@@ -666,7 +667,7 @@ class ChordProperties(Component):
             Xcg_covering = 0.5
 
             # Trailing Edge Spar and In-Plane Truss Mass & Xcg (TE Spar, Kevlar cross-bracing, compression members)
-            if self.flagGWing == 0:
+            if self.GWing == 0:
                 mass_TE_spar = AF_TE_spar * (RHO_CARBON * dy[(s-1)] * (pi * (((d_TE_spar / 2) + nTube_TE_spar * T_PLY_CARBON) ** 2 - (d_TE_spar / 2) ** 2)))
                 Xcg_TE_spar = 0.9
                 mass_comp_member = AF_comp_member * (dy[(s-1)] / spacing_comp_member) * RHO_CARBON * (self.c[(s-1)] * percent_length_comp_member) * (pi * (((d_comp_member / 2) + nTube_comp_member * T_PLY_CARBON) ** 2 - (d_comp_member / 2) ** 2))
