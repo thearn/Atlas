@@ -322,7 +322,7 @@ class TestStructures(unittest.TestCase):
 
         comp.mSpar  = self.mSpar
         comp.mChord = self.mChord
-        comp.xCG = [
+        comp.xCG = [  # from MassProperties
             2.64898984, 1.82831229,  2.10907782, 2.40247368,  2.74080088,
             3.14858977, 3.58422481,  4.05863598, 4.62594532,  5.30921216
         ]
