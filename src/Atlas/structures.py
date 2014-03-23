@@ -3,7 +3,7 @@ import numpy as np
 from math import pi, sqrt, sin, cos, atan2
 
 from openmdao.main.api import Assembly, Component, VariableTree
-from openmdao.lib.datatypes.api import Int, Float, Array, VarTree, Enum
+from openmdao.lib.datatypes.api import Int, Float, Array, VarTree, Str, Enum
 
 from properties import SparProperties, ChordProperties, WireProperties
 
@@ -27,14 +27,7 @@ class Flags(VariableTree):
     Movie        = Int(0, desc='0 - dont save animation, 1 - save animation')
     wingWarp     = Int(0, desc='0 - no twist constraint, >0 - twist constraint at wingWarp')
 
-    CFRPType     = Enum('NCT301-1X HS40 G150 33 +/-2%RW',
-                        ('NCT301-1X HS40 G150 33 +/-2%RW',
-                         'HexPly 6376 HTS-12K 268gsm 35%RW'
-                         'MTM28-1/IM7-GP-145gsm 32 +/-2%RW'
-                         'HexPly 8552 IM7 160gsm 35%RW'
-                         'NCT304-1 HR40 G80 40 +/-2%RW'
-                         'MTM28-1B/M46J-140-37%RW'),
-                        desc='type of carbon fibre reinforced polymer')
+    CFRPType     = Str('NCT301-1X HS40 G150 33 +/-2%RW', desc='type of carbon fibre reinforced polymer')
 
     WireType     = Enum('Pianowire',
                         ('Pianowire', 'Vectran'),
@@ -43,7 +36,7 @@ class Flags(VariableTree):
 
 class JointProperties(VariableTree):
     """ Properties at joint location for buckling analysis """
-    theta    = Int(desc='wrap angle')
+    theta    = Float(desc='wrap angle')
     nTube    = Int(desc='number of tube layers')
     nCap     = Int(desc='number of cap strips')
     lBiscuit = Float(desc='unsupported biscuit length')
@@ -131,19 +124,19 @@ class Structural(Assembly):
     hQuad        = Array(iotype='in', desc='height of quad-rotor truss')
 
     # inputs for cover
-    ycmax        = Array(iotype='in', desc='')
+    ycmax        = Float(iotype='in', desc='')
 
     # inputs for wire
     yWire        = Array(iotype='in', desc='location of wire attachment along span')
-    zWire        = Array(iotype='in', desc='depth of wire attachement')
-    tWire        = Array(iotype='in', desc='thickness of wire')
+    zWire        = Float(iotype='in', desc='depth of wire attachement')
+    tWire        = Float(iotype='in', desc='thickness of wire')
 
     # inputs for 'other stuff'
-    mElseRotor   = Array(iotype='in', desc='')
-    mElseCentre  = Array(iotype='in', desc='')
-    mElseR       = Array(iotype='in', desc='')
-    R            = Array(iotype='in', desc='rotor radius')
-    mPilot       = Array(iotype='in', desc='mass of pilot')
+    mElseRotor   = Float(iotype='in', desc='')
+    mElseCentre  = Float(iotype='in', desc='')
+    mElseR       = Float(iotype='in', desc='')
+    R            = Float(iotype='in', desc='rotor radius')
+    mPilot       = Float(iotype='in', desc='mass of pilot')
 
     # inputs for FEM
     presLoad     = VarTree(PrescribedLoad(), iotype='in')
@@ -173,7 +166,7 @@ class Structural(Assembly):
         self.add('chord', ChordProperties())
         self.connect('yN', 'chord.yN')
         self.connect('cE', 'chord.cE')
-        self.connect('d', 'chord.d')
+        self.connect('d',  'chord.d')
         self.connect('flag.GWing', 'chord.GWing')
         self.connect('xtU', 'chord.xtU')
 
@@ -186,19 +179,18 @@ class Structural(Assembly):
         self.connect('RQuad', 'quad.RQuad')
         self.connect('hQuad', 'quad.hQuad')
 
-        self.add('wire',  WireProperties())
+        self.add('wire', WireProperties())
         self.connect('flags.WireType', 'wire.material')
 
-        self.add('mass', MassCalc())
+        self.add('mass', MassProperties())
         self.connect('flags', 'mass.flags')
-        self.connect('spar.mSpar', 'mass.mSpar')
-        self.connect('quad.mSpar', 'mass.mQuad')
         self.connect('spar.mSpar', 'mass.mSpar')
         self.connect('chord.mChord', 'mass.mChord')
         self.connect('chord.xCGChord', 'mass.xCGChord')
+        self.connect('quad.mSpar', 'mass.mQuad')
         self.connect('wire.WHO', 'mass.RHOWire')
 
-        self.connect('XEA', 'mass.XEA')
+        self.connect('xEA', 'mass.xEA')
         self.connect('ycmax', 'mass.ycmax')
         self.connect('zWire', 'mass.zWire')
         self.connect('yWire', 'mass.yWire')
@@ -226,28 +218,35 @@ class Structural(Assembly):
         self.connect('presLoad', 'fem.presLoad')
 
 
-class MassCalc(Component):
+class MassProperties(Component):
     """
-    Computes the structural properties of the spars (EI, GJ, m) based on
-    the spar properties, and returns the total mass of the helicopter
-   """
+    Computes the total mass and CG of the helicopter
+    """
 
     # inputs
     flags    = VarTree(Flags(), iotype='in')
-    b        = Array(iotype='in', desc='number of blades')
+    b        = Float(iotype='in', desc='number of blades')
     mSpar    = Array(iotype='in', desc='mass of spars')
     mChord   = Array(iotype='in', desc='mass of chords')
     xCGChord = Array(iotype='in', desc='xCG of chords')
-    XEA      = Array(iotype='in', desc='')
+    xEA      = Array(iotype='in', desc='')
+    mQuad    = Float(iotype='in', desc='')
 
     # inputs for cover
-    ycmax    = Array(iotype='in', desc='')
+    ycmax    = Float(iotype='in', desc='')
 
     # inputs for wire
     yWire   = Array(iotype='in', desc='location of wire attachment along span')
-    zWire   = Array(iotype='in', desc='depth of wire attachement')
-    tWire   = Array(iotype='in', desc='thickness of wire')
-    RHOWire = Float(iotype='in', desc='WHO of wire')
+    zWire   = Float(iotype='in', desc='depth of wire attachement')
+    tWire   = Float(iotype='in', desc='thickness of wire')
+    RHOWire = Float(iotype='in', desc='RHO of wire')
+
+    # inputs for other
+    mElseRotor  = Float(iotype='in', desc='')
+    mElseCentre = Float(iotype='in', desc='')
+    mElseR      = Float(iotype='in', desc='')
+    R           = Float(iotype='in', desc='')
+    mPilot      = Float(iotype='in', desc='mass of pilot (kg)')
 
     # outputs
     xCG  = Array(iotype='out', desc='')
@@ -272,28 +271,27 @@ class MassCalc(Component):
                       + self.mElseRotor + self.mElseCentre + self.mElseR * self.R + self.mPilot
 
 
-class Fblade(object):
-    def __init__(self, Ns):
-        self.Fx = np.zeros(Ns, 1)
-        self.Fz = np.zeros(Ns, 1)
-        self.My = np.zeros(Ns, 1)
-        self.Q  = np.zeros(Ns, 1)
-        self.P  = np.zeros(Ns, 1)
-        self.Pi = np.zeros(Ns, 1)
-        self.Pp = np.zeros(Ns, 1)
+class FBlade(VariableTree):
+    Fx = Array(desc='')
+    Fz = Array(desc='')
+    My = Array(desc='')
+    Q  = Array(desc='')
+    P  = Array(desc='')
+    Pi = Array(desc='')
+    Pp = Array(desc='')
 
 
 class Strain(object):
     def __init__(self, Ns):
-        self.top    = np.zeros(3, Ns + 1)
-        self.bottom = np.zeros(3, Ns + 1)
-        self.back   = np.zeros(3, Ns + 1)
-        self.front  = np.zeros(3, Ns + 1)
+        self.top    = np.zeros((3, Ns + 1))
+        self.bottom = np.zeros((3, Ns + 1))
+        self.back   = np.zeros((3, Ns + 1))
+        self.front  = np.zeros((3, Ns + 1))
 
-        self.bending_x = np.zeros(1, Ns + 1)
-        self.bending_z = np.zeros(1, Ns + 1)
-        self.axial_y   = np.zeros(1, Ns + 1)
-        self.torsion_y = np.zeros(1, Ns + 1)
+        self.bending_x = np.zeros((1, Ns + 1))
+        self.bending_z = np.zeros((1, Ns + 1))
+        self.axial_y   = np.zeros((1, Ns + 1))
+        self.torsion_y = np.zeros((1, Ns + 1))
 
 
 class FEM(Component):
@@ -315,20 +313,24 @@ class FEM(Component):
     cE  = Array(iotype='in', desc='chord of each element')
     xEA = Array(iotype='in', desc='')
 
+    Fblade = VarTree(FBlade(), iotype='in')
+
+    mSpar  = Array(iotype='in', desc='mass of spars')
+    mChord = Array(iotype='in', desc='mass of chords')
+
     xCG = Array(iotype='in', desc='')
 
     # inputs for wire
-    yWire        = Array(iotype='in', desc='location of wire attachment along span')
-    zWire        = Array(iotype='in', desc='depth of wire attachement')
-    TWire        = Array(iotype='in', desc='')
+    yWire = Array(iotype='in', desc='location of wire attachment along span')
+    zWire = Float(iotype='in', desc='depth of wire attachement')
+    TWire = Float(iotype='in', desc='')
 
-    presLoad     = VarTree(PrescribedLoad(), iotype='in')
+    presLoad = VarTree(PrescribedLoad(), iotype='in')
 
     # outputs
-
     q      = Array(iotype='out', desc='deformation')
-    EIQuad = Array(iotype='out', desc='')
-    GJQuad = Array(iotype='out', desc='')
+    EIQuad = Float(iotype='out', desc='')
+    GJQuad = Float(iotype='out', desc='')
 
     # internal forces and strains
     Finternal = Array(iotype='out', desc='')
@@ -349,106 +351,107 @@ class FEM(Component):
         yWire = self.yWire
         zWire = self.zWire
         TWire = self.TWire
+        Fblade = self.Fblade
         presLoad = self.presLoad
         d = self.d
 
         Ns = max(yN.shape) - 1  # number of elements
-        dy = np.zeros(Ns, 1)
+        dy = np.zeros((Ns, 1))
         for s in range(1, (Ns+1)):
-            dy[(s-1)] = yN[(s + 1-1)] - yN[(s-1)]  # length of each element
+            dy[(s-1)] = yN[(s)] - yN[(s-1)]  # length of each element
 
         # FEM computation for structural deformations
         # -------------------------------------------
 
         # Initialize global stiffness matrix
-        K = np.zeros((Ns + 1) * 6, (Ns + 1) * 6)
-        F = np.zeros((Ns + 1) * 6, 1)
+        K = np.zeros(((Ns+1) * 6, (Ns+1) * 6))  # global stiffnes
+        F = np.zeros(((Ns+1) * 6, 1))           # global force vector
 
         # Create global stiffness maxtrix and force vector
-        k = np.zeros(12, 12, Ns)
+        k = np.zeros((12, 12, Ns))
 
-        for s in range(1, (Ns + 1)):
+        for s in range(0, Ns-1):
 
             # Local elastic stiffness matrix
-            k[0,   0, (s-1)] = 12 * EIx[(s-1)] / (dy[(s-1)] * dy[(s-1)] * dy[(s-1)])
-            k[0,   5, (s-1)] = -6 * EIx[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[5,   0, (s-1)] = k[0, 5, (s-1)]
-            k[0,   6, (s-1)] = -12 * EIx[(s-1)] / (dy[(s-1)] * dy[(s-1)] * dy[(s-1)])
-            k[6,   0, (s-1)] = k[0, 6, (s-1)]
-            k[0,  11, (s-1)] = -6 * EIx[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[11,  0, (s-1)] = k[0, 11, (s-1)]
-            k[1,   1, (s-1)] = EA[(s-1)] / dy[(s-1)]
-            k[1,   7, (s-1)] = -EA[(s-1)] / dy[(s-1)]
-            k[7,   1, (s-1)] = k[1, 7, (s-1)]
-            k[2,   2, (s-1)] = 12 * EIz[(s-1)] / (dy[(s-1)] * dy[(s-1)] * dy[(s-1)])
-            k[2,   3, (s-1)] = 6 * EIz[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[3,   2, (s-1)] = k[2, 3, (s-1)]
-            k[2,   8, (s-1)] = -12 * EIz[(s-1)] / (dy[(s-1)] * dy[(s-1)] * dy[(s-1)])
-            k[8,   2, (s-1)] = k[2, 8, (s-1)]
-            k[2,   9, (s-1)] = 6 * EIz[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[9,   2, (s-1)] = k[2, 9, (s-1)]
-            k[3,   3, (s-1)] = 4 * EIz[(s-1)] / dy[(s-1)]
-            k[3,   8, (s-1)] = -6 * EIz[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[8,   3, (s-1)] = k[3, 8, (s-1)]
-            k[3,   9, (s-1)] = 2 * EIz[(s-1)] / dy[(s-1)]
-            k[9,   3, (s-1)] = k[3, 9, (s-1)]
-            k[4,   4, (s-1)] = GJ[(s-1)] / dy[(s-1)]
-            k[4,  10, (s-1)] = -GJ[(s-1)] / dy[(s-1)]
-            k[10,  4, (s-1)] = k[4, 10, (s-1)]
-            k[5,   5, (s-1)] = 4 * EIx[(s-1)] / dy[(s-1)]
-            k[5,   6, (s-1)] = 6 * EIx[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[6,   5, (s-1)] = k[5, 6, (s-1)]
-            k[5,  11, (s-1)] = 2 * EIx[(s-1)] / dy[(s-1)]
-            k[11,  5, (s-1)] = k[5, 11, (s-1)]
-            k[6,   6, (s-1)] = 12 * EIx[(s-1)] / (dy[(s-1)] * dy[(s-1)] * dy[(s-1)])
-            k[6,  11, (s-1)] = 6 * EIx[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[11,  6, (s-1)] = k[6, 11, (s-1)]
-            k[7,   7, (s-1)] = EA[(s-1)] / dy[(s-1)]
-            k[8,   8, (s-1)] = 12 * EIz[(s-1)] / (dy[(s-1)] * dy[(s-1)] * dy[(s-1)])
-            k[8,   9, (s-1)] = -6 * EIz[(s-1)] / (dy[(s-1)] * dy[(s-1)])
-            k[9,   8, (s-1)] = k[8, 9, (s-1)]
-            k[9,   9, (s-1)] = 4 * EIz[(s-1)] / dy[(s-1)]
-            k[10, 10, (s-1)] = GJ[(s-1)] / dy[(s-1)]
-            k[11, 11, (s-1)] = 4 * EIx[(s-1)] / dy[(s-1)]
+            k[0,   0, s] = 12 * EIx[s] / (dy[s] * dy[s] * dy[s])
+            k[0,   5, s] = -6 * EIx[s] / (dy[s] * dy[s])
+            k[5,   0, s] = k[0, 5, s]
+            k[0,   6, s] = -12 * EIx[s] / (dy[s] * dy[s] * dy[s])
+            k[6,   0, s] = k[0, 6, s]
+            k[0,  11, s] = -6 * EIx[s] / (dy[s] * dy[s])
+            k[11,  0, s] = k[0, 11, s]
+            k[1,   1, s] = EA[s] / dy[s]
+            k[1,   7, s] = -EA[s] / dy[s]
+            k[7,   1, s] = k[1, 7, s]
+            k[2,   2, s] = 12 * EIz[s] / (dy[s] * dy[s] * dy[s])
+            k[2,   3, s] = 6 * EIz[s] / (dy[s] * dy[s])
+            k[3,   2, s] = k[2, 3, s]
+            k[2,   8, s] = -12 * EIz[s] / (dy[s] * dy[s] * dy[s])
+            k[8,   2, s] = k[2, 8, s]
+            k[2,   9, s] = 6 * EIz[s] / (dy[s] * dy[s])
+            k[9,   2, s] = k[2, 9, s]
+            k[3,   3, s] = 4 * EIz[s] / dy[s]
+            k[3,   8, s] = -6 * EIz[s] / (dy[s] * dy[s])
+            k[8,   3, s] = k[3, 8, s]
+            k[3,   9, s] = 2 * EIz[s] / dy[s]
+            k[9,   3, s] = k[3, 9, s]
+            k[4,   4, s] = GJ[s] / dy[s]
+            k[4,  10, s] = -GJ[s] / dy[s]
+            k[10,  4, s] = k[4, 10, s]
+            k[5,   5, s] = 4 * EIx[s] / dy[s]
+            k[5,   6, s] = 6 * EIx[s] / (dy[s] * dy[s])
+            k[6,   5, s] = k[5, 6, s]
+            k[5,  11, s] = 2 * EIx[s] / dy[s]
+            k[11,  5, s] = k[5, 11, s]
+            k[6,   6, s] = 12 * EIx[s] / (dy[s] * dy[s] * dy[s])
+            k[6,  11, s] = 6 * EIx[s] / (dy[s] * dy[s])
+            k[11,  6, s] = k[6, 11, s]
+            k[7,   7, s] = EA[s] / dy[s]
+            k[8,   8, s] = 12 * EIz[s] / (dy[s] * dy[s] * dy[s])
+            k[8,   9, s] = -6 * EIz[s] / (dy[s] * dy[s])
+            k[9,   8, s] = k[8, 9, s]
+            k[9,   9, s] = 4 * EIz[s] / dy[s]
+            k[10, 10, s] = GJ[s] / dy[s]
+            k[11, 11, s] = 4 * EIx[s] / dy[s]
 
             # Perform dihedral and sweep rotations here if needed
 
             # Assemble global stiffness matrix
-            K[(6*s - 4):(6*s + 6), (6*s - 4):(6*s + 6)] = \
-                K[(6*s - 4):(6*s + 6), (6*s - 4):(6*s + 6)] + k[:, :, (s-1)]
+            K[(6*s):(6*s + 12), (6*s):(6*s + 12)] = \
+                K[(6*s):(6*s + 12), (6*s):(6*s + 12)] + k[:, :, s]
 
-            Faero = np.zeros(6, 1)
+            Faero = np.zeros((6, 1))
             if self.flags.Load == 0:  # include aero forces
                 # aerodynamic forces
                 xAC = 0.25
-                Faero[0] = Fblade.Fx(s) / 2
+                Faero[0] = Fblade.Fx[s] / 2
                 Faero[1] = 0
-                Faero[2] = Fblade.Fz(s) / 2
-                Faero[3] = Fblade.Fz(s) * dy[(s-1)] / 12
-                Faero[4] = Fblade.My(s) / 2 + (xEA[(s-1)] - xAC) * cE[(s-1)] * Fblade.Fz(s) / 2
-                Faero[5] = -Fblade.Fx(s) * dy[(s-1)] / 12
+                Faero[2] = Fblade.Fz[s] / 2
+                Faero[3] = Fblade.Fz[s] * dy[s] / 12
+                Faero[4] = Fblade.My[s] / 2 + (xEA[s] - xAC) * cE[s] * Fblade.Fz[s] / 2
+                Faero[5] = -Fblade.Fx[s] * dy[s] / 12
 
-            Fg = np.zeros(6, 1)
-            Fwire = np.zeros(12, 1)
+            Fg = np.zeros((6, 1))
+            Fwire = np.zeros((12, 1))
 
             if (self.flags.Load == 0) or (self.flags.Load == 1):
                 # gravitational forces
                 g = 9.81
                 Fg[0] = 0
                 Fg[1] = 0
-                Fg[2] = -(mSpar[(s-1)] + mChord[(s-1)]) * g / 2
-                Fg[3] = -(mSpar[(s-1)] + mChord[(s-1)]) * g * dy[(s-1)] / 12
-                Fg[4] = (xCG[(s-1)] - xEA[(s-1)]) * cE[(s-1)] * (mSpar[(s-1)] + mChord[(s-1)]) * g / 2
+                Fg[2] = -(mSpar[s] + mChord[s]) * g / 2
+                Fg[3] = -(mSpar[s] + mChord[s]) * g * dy[s] / 12
+                Fg[4] = (xCG[s] - xEA[s]) * cE[s] * (mSpar[s] + mChord[s]) * g / 2
                 Fg[5] = 0
 
                 # Wire forces (using consistent force vector)
-                for w in range(1, (max(yWire.shape) + 1)):
-                    if (yWire[(w-1)] >= yN[(s-1)]) and (yWire[(w-1)] < yN[(s + 1-1)]):
-                        thetaWire = atan2(zWire, yWire[(w-1)])
-                        a = yWire[(w-1)] - yN[(s-1)]
-                        L = dy[(s-1)]
-                        FxWire = -cos(thetaWire) * TWire[(w-1)]
-                        FzWire = -sin(thetaWire) * TWire[(w-1)]
+                for w in range(0, len(yWire)-1):
+                    if (yWire[(w)] >= yN[s]) and (yWire[(w)] < yN[s+1]):
+                        thetaWire = atan2(zWire, yWire[(w)])
+                        a = yWire[(w)] - yN[s]
+                        L = dy[s]
+                        FxWire = -cos(thetaWire) * TWire[(w)]
+                        FzWire = -sin(thetaWire) * TWire[(w)]
                         Fwire[0] = 0
                         Fwire[1] = FxWire * (1 - a / L)
                         Fwire[2] = FzWire * (2 * (a / L)**3 - 3 * (a / L)**2 + 1)
@@ -462,62 +465,63 @@ class FEM(Component):
                         Fwire[10] = 0
                         Fwire[11] = 0
                     else:
-                        Fwire = np.zeros(12, 1)
+                        Fwire = np.zeros((12, 1))
 
-            Fpres = np.zeros(12, 1)
+            Fpres = np.zeros((12, 1))
 
             if self.flags.Load == 2:
                 # Prescribed point load (using consistent force vector)
-                if (presLoad.y >= yN[(s-1)]) and (presLoad.y < yN[(s + 1-1)]):
-                    a = presLoad.y - yN[(s-1)]
-                    L = dy[(s-1)]
-                    Fpres[0] = 0
-                    Fpres[1] = 0
-                    Fpres[2] = presLoad.pointZ * (2 * (a / L)**3 - 3 * (a / L)**2 + 1)
-                    Fpres[3] = presLoad.pointZ * a * ((a / L)**2 - 2 * (a / L) + 1)
-                    Fpres[4] = presLoad.pointM * (1 - a / L)
-                    Fpres[5] = 0
-                    Fpres[6] = 0
-                    Fpres[7] = 0
-                    Fpres[8] = presLoad.pointZ * (- 2 * (a / L)**3 + 3 * (a / L)**2)
-                    Fpres[9] = presLoad.pointZ * a * ((a / L)**2 - (a / L))
+                if (presLoad.y >= yN[s]) and (presLoad.y < yN[s+1]):
+                    a = presLoad.y - yN[s]
+                    L = dy[s]
+                    Fpres[0]  = 0
+                    Fpres[1]  = 0
+                    Fpres[2]  = presLoad.pointZ * (2 * (a / L)**3 - 3 * (a / L)**2 + 1)
+                    Fpres[3]  = presLoad.pointZ * a * ((a / L)**2 - 2 * (a / L) + 1)
+                    Fpres[4]  = presLoad.pointM * (1 - a / L)
+                    Fpres[5]  = 0
+                    Fpres[6]  = 0
+                    Fpres[7]  = 0
+                    Fpres[8]  = presLoad.pointZ * (- 2 * (a / L)**3 + 3 * (a / L)**2)
+                    Fpres[9]  = presLoad.pointZ * a * ((a / L)**2 - (a / L))
                     Fpres[10] = presLoad.pointM * (a / L)
                     Fpres[11] = 0
 
                 # Prescribed distributed load
-                Fpres[0] = Fpres[0] + presLoad.distributedX * dy[(s-1)] / 2
-                Fpres[1] = Fpres[1] + 0
-                Fpres[2] = Fpres[2] + presLoad.distributedZ * dy[(s-1)] / 2
-                Fpres[3] = Fpres[3] + presLoad.distributedZ * dy[(s-1)] * dy[(s-1)] / 12
-                Fpres[4] = Fpres[4] + presLoad.distributedM * dy[(s-1)] / 2
-                Fpres[5] = Fpres[5] - presLoad.distributedX * dy[(s-1)] * dy[(s-1)] / 12
-                Fpres[6] = Fpres[6] + presLoad.distributedX * dy[(s-1)] / 2
-                Fpres[7] = Fpres[7] + 0
-                Fpres[8] = Fpres[8] + presLoad.distributedZ * dy[(s-1)] / 2
-                Fpres[9] = Fpres[9] - presLoad.distributedZ * dy[(s-1)] * dy[(s-1)] / 12
-                Fpres[10] = Fpres[10] + presLoad.distributedM * dy[(s-1)] / 2
-                Fpres[11] = Fpres[11] + presLoad.distributedX * dy[(s-1)] * dy[(s-1)] / 12
+                Fpres[0]  = Fpres[0]  + presLoad.distributedX * dy[s] / 2
+                Fpres[1]  = Fpres[1]  + 0
+                Fpres[2]  = Fpres[2]  + presLoad.distributedZ * dy[s] / 2
+                Fpres[3]  = Fpres[3]  + presLoad.distributedZ * dy[s] * dy[s] / 12
+                Fpres[4]  = Fpres[4]  + presLoad.distributedM * dy[s] / 2
+                Fpres[5]  = Fpres[5]  - presLoad.distributedX * dy[s] * dy[s] / 12
+                Fpres[6]  = Fpres[6]  + presLoad.distributedX * dy[s] / 2
+                Fpres[7]  = Fpres[7]  + 0
+                Fpres[8]  = Fpres[8]  + presLoad.distributedZ * dy[s] / 2
+                Fpres[9]  = Fpres[9]  - presLoad.distributedZ * dy[s] * dy[s] / 12
+                Fpres[10] = Fpres[10] + presLoad.distributedM * dy[s] / 2
+                Fpres[11] = Fpres[11] + presLoad.distributedX * dy[s] * dy[s] / 12
 
             # Assemble global force vector
-            F[((s-1)*6 + 0)] = F[((s-1)*6 + 0)] + Fpres[0] + Fwire[0] + Fg[0] + Faero[0]  # x force
-            F[((s-1)*6 + 1)] = F[((s-1)*6 + 1)] + Fpres[1] + Fwire[1] + Fg[1] + Faero[1]  # y force
-            F[((s-1)*6 + 2)] = F[((s-1)*6 + 2)] + Fpres[2] + Fwire[2] + Fg[2] + Faero[2]  # z force
-            F[((s-1)*6 + 3)] = F[((s-1)*6 + 3)] + Fpres[3] + Fwire[3] + Fg[3] + Faero[3]  # x moment
-            F[((s-1)*6 + 4)] = F[((s-1)*6 + 4)] + Fpres[4] + Fwire[4] + Fg[4] + Faero[4]  # y moment
-            F[((s-1)*6 + 5)] = F[((s-1)*6 + 5)] + Fpres[5] + Fwire[5] + Fg[5] + Faero[5]  # z moment
-            F[((s-1)*6 + 6)] = F[((s-1)*6 + 6)] + Fpres[6] + Fwire[6] + Fg[0] + Faero[0]  # x force
-            F[((s-1)*6 + 7)] = F[((s-1)*6 + 7)] + Fpres[7] + Fwire[7] + Fg[1] + Faero[1]  # y force
-            F[((s-1)*6 + 8)] = F[((s-1)*6 + 8)] + Fpres[8] + Fwire[8] + Fg[2] + Faero[2]  # z force
-            F[((s-1)*6 + 9)] = F[((s-1)*6 + 9)] + Fpres[9] + Fwire[9] - Fg[3] - Faero[3]  # x moment
-            F[((s-1)*6 + 10)] = F[((s-1)*6 + 10)] + Fpres[10] + Fwire[10] + Fg[4] + Faero[4]  # y moment
-            F[((s-1)*6 + 11)] = F[((s-1)*6 + 11)] + Fpres[11] + Fwire[11] - Fg[5] - Faero[5]  # z moment
+            F[(s*6 + 0)]  = F[(s*6 + 0)]  + Fpres[0]  + Fwire[0]  + Fg[0] + Faero[0]  # x force
+            F[(s*6 + 1)]  = F[(s*6 + 1)]  + Fpres[1]  + Fwire[1]  + Fg[1] + Faero[1]  # y force
+            F[(s*6 + 2)]  = F[(s*6 + 2)]  + Fpres[2]  + Fwire[2]  + Fg[2] + Faero[2]  # z force
+            F[(s*6 + 3)]  = F[(s*6 + 3)]  + Fpres[3]  + Fwire[3]  + Fg[3] + Faero[3]  # x moment
+            F[(s*6 + 4)]  = F[(s*6 + 4)]  + Fpres[4]  + Fwire[4]  + Fg[4] + Faero[4]  # y moment
+            F[(s*6 + 5)]  = F[(s*6 + 5)]  + Fpres[5]  + Fwire[5]  + Fg[5] + Faero[5]  # z moment
+            F[(s*6 + 6)]  = F[(s*6 + 6)]  + Fpres[6]  + Fwire[6]  + Fg[0] + Faero[0]  # x force
+            F[(s*6 + 7)]  = F[(s*6 + 7)]  + Fpres[7]  + Fwire[7]  + Fg[1] + Faero[1]  # y force
+            F[(s*6 + 8)]  = F[(s*6 + 8)]  + Fpres[8]  + Fwire[8]  + Fg[2] + Faero[2]  # z force
+            F[(s*6 + 9)]  = F[(s*6 + 9)]  + Fpres[9]  + Fwire[9]  - Fg[3] - Faero[3]  # x moment
+            F[(s*6 + 10)] = F[(s*6 + 10)] + Fpres[10] + Fwire[10] + Fg[4] + Faero[4]  # y moment
+            F[(s*6 + 11)] = F[(s*6 + 11)] + Fpres[11] + Fwire[11] - Fg[5] - Faero[5]  # z moment
 
         # Add constraints to all 6 dof at root
 
         if self.flags.wingWarp > 0:  # Also add wingWarping constraint
+            raise Exception('FEM is untested and surely broken for wingWarp > 0')
             ii = np.array([])
-            for ss in range(1, ((Ns + 1) * 7)):
-                if (ss > 6) and (ss != self.flags.wingWarp*6 + 5):
+            for ss in range(0, ((Ns + 1) * 6 - 1)):
+                if (ss > 5) and (ss != self.flags.wingWarp*6 + 5):
                     ii = np.array([ii, ss]).reshape(1, -1)
             Fc = F[(ii-1)]
             Kc = K[(ii-1), (ii-1)]
@@ -525,6 +529,12 @@ class FEM(Component):
             Fc = F[6:]
             Kc = K[6:, 6:]
 
+        print 'Fpres = ', Fpres
+        print 'Fwire = ', Fwire
+        print 'Fg', Fg
+        print 'Faero = ', Faero
+        print 'Kc =', Kc
+        print 'Fc =', Fc
         # Solve constrained system
         qc = np.linalg.solve(Kc, Fc)
 
@@ -533,8 +543,8 @@ class FEM(Component):
         else:
             self.q = np.array([0, 0, 0, 0, 0, 0, qc]).reshape(1, -1)
 
-        Ftemp = np.zeros(12, Ns)
-        Finternal = np.zeros(6, Ns + 1)
+        Ftemp = np.zeros((12, Ns))
+        Finternal = np.zeros((6, Ns + 1))
 
         strain = Strain(Ns)
 

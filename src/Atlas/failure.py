@@ -2,6 +2,7 @@ from openmdao.main.api import Component
 from openmdao.lib.datatypes.api import Float, Array, Int
 import numpy as np
 
+
 class torsionalBucklingFailure(Component):
     Ns = Int(0, iotype='in', desc='description')
     Finternal = Array(np.zeros(2), iotype='in', desc='description')
@@ -17,13 +18,14 @@ class torsionalBucklingFailure(Component):
     def execute(self):
         pass
 
+
 class failureCalc(Component):
     """
-    Computes failure 
+    Computes failure
     """
     yN = Array(np.zeros(2), iotype='in', desc='description')
     Finternal = Array(np.zeros(2), iotype='in', desc='description')
-    
+
     strain_top = Array(np.zeros(2), iotype='in', desc='description')
     strain_bottom = Array(np.zeros(2), iotype='in', desc='description')
     strain_back = Array(np.zeros(2), iotype='in', desc='description')
@@ -55,7 +57,6 @@ class failureCalc(Component):
     tWire = Float(0, iotype='in', desc='description')
     TWire = Float(0, iotype='in', desc='description')
     TEtension = Float(0, iotype='in', desc='description')
-
 
     def execute(self):
         pass

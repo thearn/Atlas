@@ -7,6 +7,7 @@ class AtlasTestCase(unittest.TestCase):
 
     def setUp(self):
         self.tol = 0.0001
+
     def test_dragCoefficient(self):
         comp = dragCoefficient()
         comp.Re = 4.7632e5
@@ -47,17 +48,16 @@ class AtlasTestCase(unittest.TestCase):
     def test_frictionCoefficient(self):
         Re = 500000
         xtc = 0.5
-        Cfflat = frictionCoefficient(Re,xtc)
+        Cfflat = frictionCoefficient(Re, xtc)
 
         assert_rel_error(self, Cfflat, 0.003846, self.tol)
 
         Re = 4.7632e5
         xtc = 1.
-        Cfflat = frictionCoefficient(Re,xtc)
+        Cfflat = frictionCoefficient(Re, xtc)
 
         assert_rel_error(self, Cfflat, 0.0019241, self.tol)
 
-        
+
 if __name__ == "__main__":
     unittest.main()
-    
