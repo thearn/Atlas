@@ -213,11 +213,7 @@ class FEM(Component):
     presLoad = VarTree(PrescribedLoad(), iotype='in')
 
     # outputs
-    q      = Array(iotype='out', desc='deformation')
-    EIQuad = Float(iotype='out', desc='')
-    GJQuad = Float(iotype='out', desc='')
-
-    # internal forces and strains
+    q         = Array(iotype='out', desc='deformation')
     Finternal = Array(iotype='out', desc='')
     strain    = Array(iotype='out', desc='')
 
@@ -533,6 +529,8 @@ class Structural(Assembly):
     # joint properties
     Jprop    = VarTree(JointProperties(), iotype='in')
 
+    Fblade   = VarTree(FBlade(), iotype='in')
+
     # inputs for chord
     b   = Float(iotype='in', desc='number of blades')
     cE  = Array(iotype='in', desc='chord of each element')
@@ -567,12 +565,10 @@ class Structural(Assembly):
     presLoad     = VarTree(PrescribedLoad(), iotype='in')
 
     # outputs
-    Mtot   = Float(iotype='out', desc='total helicopter mass')
-    mSpar  = Array(iotype='out', desc='mass of spars')
-    mChord = Array(iotype='out', desc='mass ribs, skin, trailing edge, LES for each spanwise element')
-    mQuad  = Float(iotype='out', desc='mass of quad rotor struts')
-    mCover = Array(iotype='out', desc='mass of covering')
-    mWire  = Array(iotype='out', desc='mass of wire')
+    # Mtot      = Float(iotype='out', desc='total helicopter mass')
+    # q         = Array(iotype='out', desc='')
+    # Finternal = Array(iotype='out', desc='')
+    # strain    = Array(iotype='out', desc='')
 
     def configure(self):
         self.add('spar', SparProperties())
@@ -585,8 +581,9 @@ class Structural(Assembly):
         self.connect('flags.CFRPType', 'spar.CFRPType')
 
         self.add('joint', JointSparProperties())
-        self.connect('Jprop', 'joint.Jprop')
         self.connect('flags.CFRPType', 'joint.CFRPType')
+        # self.connect('joint.EIx', 'fail.EIxJ')
+        # self.connect('joint.EIz', 'fail.EIzJ')
 
         self.add('chord', ChordProperties())
         self.connect('yN', 'chord.yN')
@@ -599,6 +596,7 @@ class Structural(Assembly):
         self.connect('dQuad', 'quad.dQuad')
         self.connect('thetaQuad', 'quad.thetaQuad')
         self.connect('nTubeQuad', 'quad.nTubeQuad')
+        self.connect('nCap', 'quad.nCap')
         self.connect('lBiscuitQuad', 'quad.lBiscuitQuad')
         self.connect('flags.CFRPType', 'quad.CFRPType')
         self.connect('RQuad', 'quad.RQuad')
@@ -609,16 +607,17 @@ class Structural(Assembly):
 
         self.add('mass', MassProperties())
         self.connect('flags', 'mass.flags')
+        self.connect('b', 'mass.b')
         self.connect('spar.mSpar', 'mass.mSpar')
         self.connect('chord.mChord', 'mass.mChord')
         self.connect('chord.xCGChord', 'mass.xCGChord')
         self.connect('quad.mQuad', 'mass.mQuad')
         self.connect('wire.RHO', 'mass.RHOWire')
-
         self.connect('xEA', 'mass.xEA')
         self.connect('ycmax', 'mass.ycmax')
         self.connect('zWire', 'mass.zWire')
         self.connect('yWire', 'mass.yWire')
+        self.connect('tWire', 'mass.tWire')
         self.connect('mElseRotor', 'mass.mElseRotor')
         self.connect('mElseCentre', 'mass.mElseCentre')
         self.connect('mElseR', 'mass.mElseR')
@@ -626,6 +625,7 @@ class Structural(Assembly):
         self.connect('mPilot', 'mass.mPilot')
 
         self.add('fem', FEM())
+        self.connect('flags', 'fem.flags')
         self.connect('yN', 'fem.yN')
         self.connect('d', 'fem.d')
         self.connect('spar.EIx', 'fem.EIx')
@@ -640,9 +640,14 @@ class Structural(Assembly):
         self.connect('zWire', 'fem.zWire')
         self.connect('yWire', 'fem.yWire')
         self.connect('TWire', 'fem.TWire')
+        self.connect('Fblade', 'fem.Fblade')
         self.connect('presLoad', 'fem.presLoad')
 
-
+        # link up the outputs
+        self.create_passthrough('mass.Mtot')
+        self.create_passthrough('fem.q')
+        self.create_passthrough('fem.Finternal')
+        self.create_passthrough('fem.strain')
 
     # Compute factor of safety for each failure mode
     # ----------------------------------------------
