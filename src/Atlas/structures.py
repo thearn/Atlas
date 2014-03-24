@@ -111,17 +111,16 @@ class FBlade(VariableTree):
     Pp = Array(desc='')
 
 
-class Strain(object):
-    def __init__(self, Ns):
-        self.top    = np.zeros((3, Ns + 1))
-        self.bottom = np.zeros((3, Ns + 1))
-        self.back   = np.zeros((3, Ns + 1))
-        self.front  = np.zeros((3, Ns + 1))
+class Strain(VariableTree):
+    top    = Array(desc='')
+    bottom = Array(desc='')
+    back   = Array(desc='')
+    front  = Array(desc='')
 
-        self.bending_x = np.zeros((1, Ns + 1))
-        self.bending_z = np.zeros((1, Ns + 1))
-        self.axial_y   = np.zeros((1, Ns + 1))
-        self.torsion_y = np.zeros((1, Ns + 1))
+    bending_x = Array(desc='')
+    bending_z = Array(desc='')
+    axial_y   = Array(desc='')
+    torsion_y = Array(desc='')
 
 
 # components that perform structural calculations
@@ -188,7 +187,6 @@ class FEM(Component):
     flags    = VarTree(Flags(), iotype='in')
 
     yN  = Array(iotype='in', desc='')
-    d   = Array(iotype='in', desc='spar diameter')
 
     EIx = Array(iotype='in', desc='')
     EIz = Array(iotype='in', desc='')
@@ -202,20 +200,20 @@ class FEM(Component):
 
     mSpar  = Array(iotype='in', desc='mass of spars')
     mChord = Array(iotype='in', desc='mass of chords')
-
-    xCG = Array(iotype='in', desc='')
+    xCG    = Array(iotype='in', desc='')
 
     # inputs for wire
     yWire = Array(iotype='in', desc='location of wire attachment along span')
     zWire = Float(iotype='in', desc='depth of wire attachement')
-    TWire = Float(iotype='in', desc='')
+    TWire = Array(iotype='in', desc='')
 
     presLoad = VarTree(PrescribedLoad(), iotype='in')
 
     # outputs
-    q         = Array(iotype='out', desc='deformation')
-    Finternal = Array(iotype='out', desc='')
-    strain    = Array(iotype='out', desc='')
+    k = Array(iotype='out', desc='local elastic stiffness matrix')
+    K = Array(iotype='out', desc='global stiffness matrix')
+    F = Array(iotype='out', desc='global force vector')
+    q = Array(iotype='out', desc='deformation')
 
     def execute(self):
         # short aliases
@@ -234,7 +232,6 @@ class FEM(Component):
         TWire = self.TWire
         Fblade = self.Fblade
         presLoad = self.presLoad
-        d = self.d
 
         Ns = max(yN.shape) - 1  # number of elements
         dy = np.zeros((Ns, 1))
@@ -245,13 +242,13 @@ class FEM(Component):
         # -------------------------------------------
 
         # Initialize global stiffness matrix
-        K = np.zeros(((Ns+1) * 6, (Ns+1) * 6))  # global stiffnes
+        K = np.zeros(((Ns+1) * 6, (Ns+1) * 6))  # global stiffness
         F = np.zeros(((Ns+1) * 6, 1))           # global force vector
 
         # Create global stiffness maxtrix and force vector
         k = np.zeros((12, 12, Ns))
 
-        for s in range(0, Ns-1):
+        for s in range(0, Ns):
 
             # Local elastic stiffness matrix
             k[0,   0, s] = 12 * EIx[s] / (dy[s] * dy[s] * dy[s])
@@ -326,13 +323,13 @@ class FEM(Component):
                 Fg[5] = 0
 
                 # Wire forces (using consistent force vector)
-                for w in range(0, len(yWire)-1):
-                    if (yWire[(w)] >= yN[s]) and (yWire[(w)] < yN[s+1]):
-                        thetaWire = atan2(zWire, yWire[(w)])
-                        a = yWire[(w)] - yN[s]
+                for w in range(0, len(yWire)):
+                    if (yWire[w] >= yN[s]) and (yWire[w] < yN[s+1]):
+                        thetaWire = atan2(zWire, yWire[w])
+                        a = yWire[w] - yN[s]
                         L = dy[s]
-                        FxWire = -cos(thetaWire) * TWire[(w)]
-                        FzWire = -sin(thetaWire) * TWire[(w)]
+                        FxWire = -cos(thetaWire) * TWire[w]
+                        FzWire = -sin(thetaWire) * TWire[w]
                         Fwire[0] = 0
                         Fwire[1] = FxWire * (1 - a / L)
                         Fwire[2] = FzWire * (2 * (a / L)**3 - 3 * (a / L)**2 + 1)
@@ -420,17 +417,54 @@ class FEM(Component):
             # self.q = np.array([0, 0, 0, 0, 0, 0, qc]).reshape(1, -1)
             self.q = np.append(np.array([0, 0, 0, 0, 0, 0]).reshape(-1, 1), qc).reshape(-1, 1)
 
-        # Compute internal forces and strains
-        # -----------------------------------
+        # output the stiffness and force arrays as well (for use in failure analysis)
+        self.k = k
+        self.K = K
+        self.F = F
+
+
+class Strains(Component):
+    """
+    Computes internal forces and strains
+    """
+
+    # inputs
+    yN = Array(iotype='in', desc='')
+    d  = Array(iotype='in', desc='')
+    k  = Array(iotype='in', desc='Local elastic stiffness matrix')
+    F  = Array(iotype='in', desc='global force vector')
+    q  = Array(iotype='in', desc='deformation')
+
+    # outputs
+    Finternal = Array(iotype='out', desc='internal forces')
+    strain    = VarTree(Strain(), iotype='out', desc='strains')
+
+    def execute(self):
+        # short alias
+        d = self.d
+
+        Ns = max(self.yN.shape) - 1  # number of elements
+        dy = np.zeros((Ns, 1))
+        for s in range(1, (Ns+1)):
+            dy[(s-1)] = self.yN[(s)] - self.yN[(s-1)]  # length of each element
 
         Ftemp = np.zeros((12, Ns))
         Finternal = np.zeros((6, Ns + 1))
 
-        strain = Strain(Ns)
+        strain = Strain()
+        strain.top    = np.zeros((3, Ns + 1))
+        strain.bottom = np.zeros((3, Ns + 1))
+        strain.back   = np.zeros((3, Ns + 1))
+        strain.front  = np.zeros((3, Ns + 1))
 
-        for s in range(0, Ns-1):
+        strain.bending_x = np.zeros((1, Ns + 1))
+        strain.bending_z = np.zeros((1, Ns + 1))
+        strain.axial_y   = np.zeros((1, Ns + 1))
+        strain.torsion_y = np.zeros((1, Ns + 1))
+
+        for s in range(0, Ns):
             # Determine internal forces acting at the nodes of each element
-            Ftemp[:, s] = -(np.dot(k[:, :, s], self.q[s*6:s*6 + 12]) - F[s*6:s*6 + 12]).squeeze()
+            Ftemp[:, s] = -(np.dot(self.k[:, :, s], self.q[s*6:s*6 + 12]) - self.F[s*6:s*6 + 12]).squeeze()
             # Finternal[:, s] = Ftemp[0:5, s]
             Finternal[0, s] = Ftemp[0, s]  # x-shear load
             Finternal[1, s] = Ftemp[1, s]  # y-axial load
@@ -503,16 +537,66 @@ class FEM(Component):
         strain.axial_y  [0, Ns] = 0
         strain.torsion_y[0, Ns] = 0
 
+        # set outputs
+        self.Finternal = Finternal
+        self.strain = strain
 
-class Structural(Assembly):
+
+class Failure(Component):
+    """
+    Computes the factor of safety for each of the failure modes of the spar.
+    """
+    yN          = Array(np.zeros(2), iotype='in', desc='')
+
+    Finternal   = Array(np.zeros(2), iotype='in', desc='')
+    strain      = VarTree(Strain(), iotype='in')
+
+    d            = Array(np.zeros(2), iotype='in', desc='')
+    theta        = Array(np.zeros(2), iotype='in', desc='')
+    nTube        = Array(np.zeros(2), iotype='in', desc='')
+    nCap         = Array(np.zeros(2), iotype='in', desc='')
+
+    yWire        = Float(0, iotype='in', desc='')
+    zWire        = Float(0, iotype='in', desc='')
+    EIxJ         = Float(0, iotype='in', desc='')
+    EIzJ         = Float(0, iotype='in', desc='')
+
+    lBiscuit     = Array(np.zeros(2), iotype='in', desc='')
+    dQuad        = Float(0, iotype='in', desc='')
+    thetaQuad    = Float(0, iotype='in', desc='')
+    nTubeQuad    = Float(0, iotype='in', desc='')
+    lBiscuitQuad = Float(0, iotype='in', desc='')
+    RQuad        = Float(0, iotype='in', desc='')
+    hQuad        = Float(0, iotype='in', desc='')
+    TQuad        = Float(0, iotype='in', desc='')
+    EIQuad       = Float(0, iotype='in', desc='')
+    GJQuad       = Float(0, iotype='in', desc='')
+    tWire        = Float(0, iotype='in', desc='')
+    TWire        = Array(iotype='in', desc='')
+    TEtension    = Float(0, iotype='in', desc='')
+
+    def execute(self):
+        # Compute factor of safety for each failure mode
+        # ----------------------------------------------
+
+        # factor of safety for each failure mode
+        # fail = Array(iotype='out', desc='')
+
+        # TQuad = np.sum(Fblade.Fz) * b - (np.sum(mSpar + mChord) * b + mElseRotor / 4) * 9.81
+
+        # fail = FailureCalc(yN, Finternal, strain, d, theta, nTube, nCap, yWire, zWire, EIxJ, EIzJ, lBiscuit,
+        #                    dQuad, thetaQuad, nTubeQuad, lBiscuitQuad, RQuad, hQuad, TQuad, EIQuad, GJQuad,
+        #                    tWire, TWire, TEtension, flags)
+        # return Mtot,mSpar,mChord,mQuad,mCover,mWire,EIx,EIz,EA,GJ,q,EIQuad,GJQuad,Finternal,strain,fail
+        pass
+
+
+class Structures(Assembly):
     """
     structural computation, first computes the mass of the helicopter based on
     the structural description of the spars and chord lengths. It then
     computes the deformation of the spars, the strains, and the resulting
     factor of safety for each of the failure modes.
-
-    3. Computes the factor of safety for each of the failure modes of the
-       spar.
     """
 
     # flags
@@ -528,8 +612,6 @@ class Structural(Assembly):
 
     # joint properties
     Jprop    = VarTree(JointProperties(), iotype='in')
-
-    Fblade   = VarTree(FBlade(), iotype='in')
 
     # inputs for chord
     b   = Float(iotype='in', desc='number of blades')
@@ -552,7 +634,7 @@ class Structural(Assembly):
     yWire        = Array(iotype='in', desc='location of wire attachment along span')
     zWire        = Float(iotype='in', desc='depth of wire attachement')
     tWire        = Float(iotype='in', desc='thickness of wire')
-    TWire        = Float(iotype='in', desc='thickness of wire')
+    TWire        = Array(iotype='in', desc='')
 
     # inputs for 'other stuff'
     mElseRotor   = Float(iotype='in', desc='')
@@ -562,13 +644,8 @@ class Structural(Assembly):
     mPilot       = Float(iotype='in', desc='mass of pilot')
 
     # inputs for FEM
-    presLoad     = VarTree(PrescribedLoad(), iotype='in')
-
-    # outputs
-    # Mtot      = Float(iotype='out', desc='total helicopter mass')
-    # q         = Array(iotype='out', desc='')
-    # Finternal = Array(iotype='out', desc='')
-    # strain    = Array(iotype='out', desc='')
+    Fblade       = VarTree(FBlade(), iotype='in')
+    presLoad = VarTree(PrescribedLoad(), iotype='in')
 
     def configure(self):
         self.add('spar', SparProperties())
@@ -627,7 +704,6 @@ class Structural(Assembly):
         self.add('fem', FEM())
         self.connect('flags', 'fem.flags')
         self.connect('yN', 'fem.yN')
-        self.connect('d', 'fem.d')
         self.connect('spar.EIx', 'fem.EIx')
         self.connect('spar.EIz', 'fem.EIz')
         self.connect('spar.EA', 'fem.EA')
@@ -643,21 +719,15 @@ class Structural(Assembly):
         self.connect('Fblade', 'fem.Fblade')
         self.connect('presLoad', 'fem.presLoad')
 
+        self.add('strains', Strains())
+        self.connect('yN', 'strains.yN')
+        self.connect('d', 'strains.d')
+        self.connect('fem.k', 'strains.k')
+        self.connect('fem.F', 'strains.F')
+        self.connect('fem.q', 'strains.q')
+
         # link up the outputs
         self.create_passthrough('mass.Mtot')
         self.create_passthrough('fem.q')
-        self.create_passthrough('fem.Finternal')
-        self.create_passthrough('fem.strain')
-
-    # Compute factor of safety for each failure mode
-    # ----------------------------------------------
-
-    # factor of safety for each failure mode
-    # fail = Array(iotype='out', desc='')
-
-    # TQuad = np.sum(Fblade.Fz) * b - (np.sum(mSpar + mChord) * b + mElseRotor / 4) * 9.81
-
-    # fail = FailureCalc(yN, Finternal, strain, d, theta, nTube, nCap, yWire, zWire, EIxJ, EIzJ, lBiscuit,
-    #                    dQuad, thetaQuad, nTubeQuad, lBiscuitQuad, RQuad, hQuad, TQuad, EIQuad, GJQuad,
-    #                    tWire, TWire, TEtension, flags)
-    # return Mtot,mSpar,mChord,mQuad,mCover,mWire,EIx,EIz,EA,GJ,q,EIQuad,GJQuad,Finternal,strain,fail
+        self.create_passthrough('strains.Finternal')
+        self.create_passthrough('strains.strain')

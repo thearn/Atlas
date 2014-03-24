@@ -1,5 +1,8 @@
-from Atlas import Flags, Structural, MassProperties, FEM, JointProperties, FBlade, PrescribedLoad
+from Atlas import Flags, JointProperties, PrescribedLoad, FBlade, \
+                  MassProperties, FEM, Strains, Failure, Structures
+
 import numpy as np
+from scipy.io import loadmat
 
 import unittest
 
@@ -29,7 +32,7 @@ class TestStructures(unittest.TestCase):
         self.yWire = [5.8852]
         self.zWire = 1
         self.tWire = 0.0016
-        self.TWire = 1100
+        self.TWire = [1100]
 
         self.TEtension = 50
         self.ycmax = 1.4656
@@ -306,66 +309,139 @@ class TestStructures(unittest.TestCase):
     def test_FEM(self):
         comp = FEM()
 
+        data = loadmat('FEM.mat', struct_as_record=True, mat_dtype=True)
+
         # populate inputs
-        comp.yN  = self.yN
-        comp.d   = self.d
+        comp.flags = Flags()
+        comp.flags.Load = int(data['flags']['Load'][0][0][0][0])
+        comp.flags.wingWarp = int(data['flags']['wingWarp'][0][0][0][0])
 
-        comp.EIx = self.EIx
-        comp.EIz = self.EIz
-        comp.EA  = self.EA
-        comp.GJ  = self.GJ
+        comp.yN  = data['yN']
 
-        comp.cE  = self.cE
-        comp.xEA = self.xEA
+        comp.EIx = data['EIx']
+        comp.EIz = data['EIz']
+        comp.EA  = data['EA']
+        comp.GJ  = data['GJ']
 
-        comp.Fblade = self.Fblade
+        comp.cE  = data['cE']
+        comp.xEA = data['xEA']
 
-        comp.mSpar  = self.mSpar
-        comp.mChord = self.mChord
-        comp.xCG = [  # from MassProperties
-            2.64898984, 1.82831229,  2.10907782, 2.40247368,  2.74080088,
-            3.14858977, 3.58422481,  4.05863598, 4.62594532,  5.30921216
-        ]
+        comp.Fblade = FBlade()
+        comp.Fblade.Fx = data['Fblade']['Fx'][0][0].flatten()
+        comp.Fblade.Fz = data['Fblade']['Fz'][0][0].flatten()
+        comp.Fblade.My = data['Fblade']['My'][0][0].flatten()
+        comp.Fblade.Q  = data['Fblade']['Q'][0][0].flatten()
+        comp.Fblade.P  = data['Fblade']['P'][0][0].flatten()
+        comp.Fblade.Pi = data['Fblade']['Pi'][0][0].flatten()
+        comp.Fblade.Pp = data['Fblade']['Pp'][0][0].flatten()
 
-        comp.yWire = self.yWire
-        comp.zWire = self.zWire
-        comp.TWire = self.TWire
+        comp.mSpar  = data['mSpar']
+        comp.mChord = data['mChord']
+        comp.xCG    = data['xCG']
 
-        comp.presLoad = self.presLoad
+        comp.yWire = data['yWire'].flatten()
+        comp.zWire = data['zWire'][0][0]
+        comp.TWire = data['TWire'].flatten()
+
+        comp.presLoad = PrescribedLoad()
+        comp.presLoad.y = data['presLoad']['y'][0][0][0][0]
+        comp.presLoad.pointZ = data['presLoad']['pointZ'][0][0][0][0]
+        comp.presLoad.pointM = data['presLoad']['pointM'][0][0][0][0]
+        comp.presLoad.distributedX = data['presLoad']['distributedX'][0][0][0][0]
+        comp.presLoad.distributedZ = data['presLoad']['distributedZ'][0][0][0][0]
+        comp.presLoad.distributedM = data['presLoad']['distributedM'][0][0][0][0]
 
         # run
         comp.run()
 
         # check outputs
-        for i, val in enumerate(self.q):
-            self.assertAlmostEquals(comp.q[i], self.q[i], 4)
+        for h, plane in enumerate(data['k']):
+            for i, row in enumerate(plane):
+                for j, val in enumerate(row):
+                    self.assertAlmostEquals(comp.k[h, i, j], val, 4,
+                        msg='k[%d, %d, %d] mismatch (%f vs %f)' % (h, i, j, comp.k[h, i, j], val))
 
-        self.assertAlmostEquals(comp.EIQuad, self.EIQuad, 4)
-        self.assertAlmostEquals(comp.GJQuad, self.GJQuad, 4)
+        for i, row in enumerate(data['K']):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.K[i, j], val, 4,
+                    msg='K[%d, %d] mismatch (%f vs %f)' % (i, j, comp.K[i, j], val))
 
-        for i, val in enumerate(self.Finternal):
-            self.assertAlmostEquals(comp.Finternal[i], self.Finternal[i], 4)
+        for i, val in enumerate(data['F']):
+            self.assertAlmostEquals(comp.F[i], val, 4,
+                msg='F[%d] mismatch (%f vs %f)' % (i, comp.F[i], val))
 
-        for i, val in enumerate(self.strain.top):
-            self.assertAlmostEquals(comp.strain.top[i], self.strain.top[i], 4)
-        for i, val in enumerate(self.strain.bottom):
-            self.assertAlmostEquals(comp.strain.bottom[i], self.strain.bottom[i], 4)
-        for i, val in enumerate(self.strain.back):
-            self.assertAlmostEquals(comp.strain.back[i], self.strain.back[i], 4)
-        for i, val in enumerate(self.strain.front):
-            self.assertAlmostEquals(comp.strain.front[i], self.strain.front[i], 4)
+        for i, val in enumerate(data['q']):
+            self.assertAlmostEquals(comp.q[i], val, 4,
+                msg='q[%d] mismatch (%f vs %f)' % (i, comp.q[i], val))
 
-        for i, val in enumerate(self.strain.bending_x):
-            self.assertAlmostEquals(comp.strain.bending_x[i], self.strain.bending_x[i], 4)
-        for i, val in enumerate(self.strain.bending_z):
-            self.assertAlmostEquals(comp.strain.bending_z[i], self.strain.bending_z[i], 4)
-        for i, val in enumerate(self.strain.axial_y):
-            self.assertAlmostEquals(comp.strain.axial_y[i], self.strain.axial_y[i], 4)
-        for i, val in enumerate(self.strain.torsion_y):
-            self.assertAlmostEquals(comp.strain.torsion_y[i], self.strain.torsion_y[i], 4)
+    def test_Strains(self):
+        comp = Strains()
 
-    def test_Structural(self):
-        comp = Structural()
+        # populate inputs from MATLAB test data
+        data = loadmat('strains.mat', struct_as_record=True)
+        comp.yN = data['yN']
+        comp.d  = data['d']
+        comp.k  = data['k']
+        comp.F  = data['F']
+        comp.q  = data['q']
+
+        # run
+        comp.run()
+
+        # check outputs
+        for i, row in enumerate(data['Finternal']):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.Finternal[i, j], val, 4,
+                    msg='Finternal[%d, %d] mismatch (%f vs %f)' % (i, j, comp.Finternal[i, j], val))
+
+        for i, row in enumerate(data['strain']['top'][0]):
+            for j, val in enumerate(row[0]):
+                self.assertAlmostEquals(comp.strain.top[i, j], val, 4,
+                    msg='strain.top[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.top[i, j], val))
+
+        for i, row in enumerate(data['strain']['bottom'][0]):
+            for j, val in enumerate(row[0]):
+                self.assertAlmostEquals(comp.strain.bottom[i, j], val, 4,
+                    msg='strain.bottom[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.bottom[i, j], val))
+
+        for i, row in enumerate(data['strain']['back'][0]):
+            for j, val in enumerate(row[0]):
+                self.assertAlmostEquals(comp.strain.back[i, j], val, 4,
+                    msg='strain.back[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.back[i, j], val))
+
+        for i, row in enumerate(data['strain']['front'][0]):
+            for j, val in enumerate(row[0]):
+                self.assertAlmostEquals(comp.strain.front[i, j], val, 4,
+                    msg='strain.bottom[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.front[i, j], val))
+
+        for i, row in enumerate(data['strain']['bending_x']):
+            for j, val in enumerate(row[0][0]):
+                self.assertAlmostEquals(comp.strain.bending_x[i][j], val, 4,
+                    msg='strain.bending_x[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.bending_x[i, j], val))
+
+        for i, row in enumerate(data['strain']['bending_z']):
+            for j, val in enumerate(row[0][0]):
+                self.assertAlmostEquals(comp.strain.bending_z[i][j], val, 4,
+                    msg='strain.bending_z[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.bending_z[i, j], val))
+
+        for i, row in enumerate(data['strain']['axial_y']):
+            for j, val in enumerate(row[0][0]):
+                self.assertAlmostEquals(comp.strain.axial_y[i][j], val, 4,
+                    msg='strain.axial_y[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.axial_y[i, j], val))
+
+        for i, row in enumerate(data['strain']['torsion_y']):
+            for j, val in enumerate(row[0][0]):
+                self.assertAlmostEquals(comp.strain.torsion_y[i][j], val, 4,
+                    msg='strain.torsion_y[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.torsion_y[i, j], val))
+
+    def test_Failure(self):
+        comp = Failure()
+        # populate inputs
+        comp.yN  = self.yN
+        comp.d   = self.d
+
+    def test_Structures(self):
+        comp = Structures()
 
         # populate inputs
         comp.yN    = self.yN
