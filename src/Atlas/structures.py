@@ -414,75 +414,98 @@ class FEM(Component):
             Fc = F[6:]
             Kc = K[6:, 6:]
 
-        print 'Fpres = ', Fpres
-        print 'Fwire = ', Fwire
-        print 'Fg', Fg
-        print 'Faero = ', Faero
-        print 'Kc =', Kc
-        print 'Fc =', Fc
         # Solve constrained system
-        qc = np.linalg.solve(Kc, Fc)
+        # qc = np.linalg.solve(Kc, Fc)
+        qc, _, _, _ = np.linalg.lstsq(Kc, Fc)
 
         if self.flags.wingWarp > 0:
             self.q[ii, 1] = qc
         else:
-            self.q = np.array([0, 0, 0, 0, 0, 0, qc]).reshape(1, -1)
+            # self.q = np.array([0, 0, 0, 0, 0, 0, qc]).reshape(1, -1)
+            self.q = np.append(np.array([0, 0, 0, 0, 0, 0]).reshape(-1, 1), qc).reshape(-1, 1)
+
+        # Compute internal forces and strains
+        # -----------------------------------
 
         Ftemp = np.zeros((12, Ns))
         Finternal = np.zeros((6, Ns + 1))
 
         strain = Strain(Ns)
 
-        for s in range(1, (Ns+1)):
+        for s in range(0, Ns-1):
             # Determine internal forces acting at the nodes of each element
-            Ftemp[:, (s-1)] = -(k[:, :, (s-1)] * self.q[((s-1) * 6):(s-1) * 6 + 12] - F[((s-1) * 6 + 1-1):(s-1) * 6 + 12])
-            Finternal[:, (s-1)] = Ftemp[0:6, (s-1)]
+            Ftemp[:, s] = -(np.dot(k[:, :, s], self.q[s*6:s*6 + 12]) - F[s*6:s*6 + 12]).squeeze()
+            # Finternal[:, s] = Ftemp[0:5, s]
+            Finternal[0, s] = Ftemp[0, s]  # x-shear load
+            Finternal[1, s] = Ftemp[1, s]  # y-axial load
+            Finternal[2, s] = Ftemp[2, s]  # z-shear load
+            Finternal[3, s] = Ftemp[3, s]  # x-bending moment
+            Finternal[4, s] = Ftemp[4, s]  # y-torsional load
+            Finternal[5, s] = Ftemp[5, s]  # z-bending moment
 
             # Determine strains at each node
-            x_hat = d[(s-1)] / 2
-            z_hat = d[(s-1)] / 2
-            r_hat = d[(s-1)] / 2
+            x_hat = d[s] / 2
+            z_hat = d[s] / 2
+            r_hat = d[s] / 2
 
             # Break out displacement vector for element
-            qq = self.q[((s-1) * 6):(s-1) * 6 + 12]
+            qq = self.q[s*6:s*6 + 12]
 
-            strain.bending_x[1, s] = -np.array([(-(6 * x_hat) / (dy[(s-1)]**2)),
-                                                ((4 * x_hat) / dy[(s-1)]),
-                                                ((6 * x_hat) / (dy[(s-1)]**2)),
-                                                ((2 * x_hat) / dy[(s-1)])]).reshape(1, -1) \
-                                     * np.array([qq[0], qq[5], qq[6], qq[11]]).reshape(1, -1).T
+            strain.bending_x[0, s] = np.dot(-np.array([(-(6*x_hat) / (dy[s]**2)), ((4*x_hat) / dy[s]), ((6*x_hat) / (dy[s]**2)),  ((2*x_hat) / dy[s])]).reshape(1, -1),
+                                            np.array([qq[0], qq[5], qq[6], qq[11]]).reshape(1, -1).T)
 
-            strain.bending_z[1, s] = -np.array([(-(6 * z_hat) / (dy[(s-1)]**2)),
-                                                ((-4 * z_hat) / dy[(s-1)]),
-                                                ((+6 * z_hat) / (dy[(s-1)]**2)),
-                                                ((-2 * z_hat) / dy[(s-1)])]).reshape(1, -1) \
-                                     * np.array([qq[2], qq[3], qq[8], qq[9]]).reshape(1, -1).T
+            strain.bending_z[0, s] = np.dot(-np.array([(-(6*z_hat) / (dy[s]**2)), ((-4*z_hat) / dy[s]), ((+6*z_hat) / (dy[s]**2)), ((-2*z_hat) / dy[s])]).reshape(1, -1),
+                                            np.array([qq[2], qq[3], qq[8], qq[9]]).reshape(1, -1).T)
 
-            strain.axial_y[1, s] = np.array([(-1 / dy[(s-1)]), (1 / dy[(s-1)])]).reshape(1, -1) \
-                                   * np.array([qq[1], qq[7]]).reshape(1, -1).T
+            strain.axial_y[0, s]   = np.dot(np.array([(-1 / dy[s]), (1 / dy[s])]).reshape(1, -1),
+                                            np.array([qq[1], qq[7]]).reshape(1, -1).T)
 
-            strain.torsion_y[1, s] = r_hat * np.array([(-1 / dy[(s-1)]), (1 / dy[(s-1)])]).reshape(1, -1) \
-                                     * np.array([qq[4], qq[10]]).reshape(1, -1).T
+            strain.torsion_y[0, s] = np.dot(r_hat * np.array([(-1 / dy[s]), (1 / dy[s])]).reshape(1, -1),
+                                            np.array([qq[4], qq[10]]).reshape(1, -1).T)
 
-            strain.top   [:, s] = np.array([+strain.bending_z(1, s) + strain.axial_y(1, s), 0, strain.torsion_y(1, s)]).reshape(1, -1).T
-            strain.bottom[:, s] = np.array([-strain.bending_z(1, s) + strain.axial_y(1, s), 0, strain.torsion_y(1, s)]).reshape(1, -1).T
-            strain.back  [:, s] = np.array([+strain.bending_x(1, s) + strain.axial_y(1, s), 0, strain.torsion_y(1, s)]).reshape(1, -1).T
-            strain.front [:, s] = np.array([-strain.bending_x(1, s) + strain.axial_y(1, s), 0, strain.torsion_y(1, s)]).reshape(1, -1).T
+            strain.top   [0, s] = strain.bending_z[0, s] + strain.axial_y[0, s]
+            strain.top   [1, s] = 0
+            strain.top   [2, s] = strain.torsion_y[0, s]
+            strain.bottom[0, s] = -strain.bending_z[0, s] + strain.axial_y[0, s]
+            strain.bottom[1, s] = 0
+            strain.bottom[2, s] = strain.torsion_y[0, s]
+            strain.back  [0, s] = strain.bending_x[0, s] + strain.axial_y[0, s]
+            strain.back  [1, s] = 0
+            strain.back  [2, s] = strain.torsion_y[0, s]
+            strain.front [0, s] = -strain.bending_x[0, s] + strain.axial_y[0, s]
+            strain.front [1, s] = 0
+            strain.front [2, s] = strain.torsion_y[0, s]
 
         # Loads at the tip are zero
-        Finternal[:, Ns] = np.array([0, 0, 0, 0, 0, 0]).reshape(1, -1).T
+        Finternal[0, Ns] = 0  # x-shear load
+        Finternal[1, Ns] = 0  # y-axial load
+        Finternal[2, Ns] = 0  # z-shear load
+        Finternal[3, Ns] = 0  # x-bending moment
+        Finternal[4, Ns] = 0  # y-torsional load
+        Finternal[5, Ns] = 0  # z-bending moment
 
         # Strains at tip are zero
-        strain.top   [:, Ns + 1] = np.array([0, 0, 0]).reshape(1, -1).T
-        strain.bottom[:, Ns + 1] = np.array([0, 0, 0]).reshape(1, -1).T
-        strain.back  [:, Ns + 1] = np.array([0, 0, 0]).reshape(1, -1).T
-        strain.front [:, Ns + 1] = np.array([0, 0, 0]).reshape(1, -1).T
+        strain.top   [0, Ns] = 0
+        strain.top   [1, Ns] = 0
+        strain.top   [2, Ns] = 0
+
+        strain.bottom[0, Ns] = 0
+        strain.bottom[1, Ns] = 0
+        strain.bottom[2, Ns] = 0
+
+        strain.back  [0, Ns] = 0
+        strain.back  [1, Ns] = 0
+        strain.back  [2, Ns] = 0
+
+        strain.front [0, Ns] = 0
+        strain.front [1, Ns] = 0
+        strain.front [2, Ns] = 0
 
         # Strains at tip are zero
-        strain.bending_x[1, Ns + 1] = 0
-        strain.bending_z[1, Ns + 1] = 0
-        strain.axial_y  [1, Ns + 1] = 0
-        strain.torsion_y[1, Ns + 1] = 0
+        strain.bending_x[0, Ns] = 0
+        strain.bending_z[0, Ns] = 0
+        strain.axial_y  [0, Ns] = 0
+        strain.torsion_y[0, Ns] = 0
 
 
 class Structural(Assembly):

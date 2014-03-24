@@ -77,7 +77,7 @@ class TestStructures(unittest.TestCase):
         self.flags.PlotWake = 0
         self.flags.DynamicClimb = 0
         self.flags.Cover = 0
-        self.flags.Load = 0
+        self.flags.Load =  0
         self.flags.Cdfit = 1
         self.flags.GWing = 1
         self.flags.AeroStr = 1
