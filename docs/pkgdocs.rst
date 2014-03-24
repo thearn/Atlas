@@ -19,35 +19,40 @@ Package Metadata
     [openmdao.component]
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
+    Atlas.structures.Failure=Atlas.structures:Failure
+    Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
     Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
-    Atlas.failure.failureCalc=Atlas.failure:failureCalc
+    Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.properties.WireProperties=Atlas.properties:WireProperties
-    Atlas.structures.Structural=Atlas.structures:Structural
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
     Atlas.coefficients.dragCoefficientFit=Atlas.coefficients:dragCoefficientFit
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient
-    Atlas.failure.torsionalBucklingFailure=Atlas.failure:torsionalBucklingFailure
-    Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
+    Atlas.failure.failureCalc=Atlas.failure:failureCalc
     Atlas.structures.FEM=Atlas.structures:FEM
+    Atlas.structures.Structures=Atlas.structures:Structures
+    Atlas.failure.torsionalBucklingFailure=Atlas.failure:torsionalBucklingFailure
     [openmdao.container]
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
-    Atlas.properties.SparProperties=Atlas.properties:SparProperties
-    Atlas.structures.Flags=Atlas.structures:Flags
-    Atlas.structures.PrescribedLoad=Atlas.structures:PrescribedLoad
-    Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
+    Atlas.structures.Failure=Atlas.structures:Failure
     Atlas.failure.failureCalc=Atlas.failure:failureCalc
+    Atlas.structures.Strain=Atlas.structures:Strain
+    Atlas.coefficients.dragCoefficientFit=Atlas.coefficients:dragCoefficientFit
+    Atlas.structures.JointProperties=Atlas.structures:JointProperties
+    Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.properties.WireProperties=Atlas.properties:WireProperties
     Atlas.structures.FBlade=Atlas.structures:FBlade
-    Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient
-    Atlas.structures.Structural=Atlas.structures:Structural
-    Atlas.structures.FEM=Atlas.structures:FEM
-    Atlas.structures.MassProperties=Atlas.structures:MassProperties
-    Atlas.coefficients.dragCoefficientFit=Atlas.coefficients:dragCoefficientFit
-    Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
-    Atlas.structures.JointProperties=Atlas.structures:JointProperties
     Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
+    Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
+    Atlas.structures.FEM=Atlas.structures:FEM
+    Atlas.structures.Strains=Atlas.structures:Strains
+    Atlas.structures.Structures=Atlas.structures:Structures
     Atlas.failure.torsionalBucklingFailure=Atlas.failure:torsionalBucklingFailure
+    Atlas.structures.Flags=Atlas.structures:Flags
+    Atlas.structures.PrescribedLoad=Atlas.structures:PrescribedLoad
+    Atlas.structures.MassProperties=Atlas.structures:MassProperties
+    Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
+    Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient
 
 - **keywords:** openmdao
 

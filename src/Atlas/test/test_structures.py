@@ -440,6 +440,8 @@ class TestStructures(unittest.TestCase):
         comp.yN  = self.yN
         comp.d   = self.d
 
+        raise Exception('Test not implemented yet!')
+
     def test_Structures(self):
         comp = Structures()
 
@@ -484,6 +486,7 @@ class TestStructures(unittest.TestCase):
         comp.flags = self.flags
 
         # run
+        comp.invalidate()
         comp.run()
 
         # check outputs

@@ -731,3 +731,12 @@ class Structures(Assembly):
         self.create_passthrough('fem.q')
         self.create_passthrough('strains.Finternal')
         self.create_passthrough('strains.strain')
+
+        self.driver.workflow.add('chord')
+        self.driver.workflow.add('fem')
+        # self.driver.workflow.add('joint')
+        self.driver.workflow.add('mass')
+        self.driver.workflow.add('quad')
+        self.driver.workflow.add('spar')
+        self.driver.workflow.add('strains')
+        self.driver.workflow.add('wire')
