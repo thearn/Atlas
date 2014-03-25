@@ -1,5 +1,5 @@
 from Atlas import Flags, JointProperties, PrescribedLoad, FBlade, \
-                  MassProperties, FEM, Strains, Failure, Structures
+                  MassProperties, FEM, Strains, Failures, Structures
 
 from scipy.io import loadmat
 
@@ -195,10 +195,10 @@ class TestStructures(unittest.TestCase):
         # check outputs
         self.check_strains(comp, data)
 
-    def test_Failure(self):
+    def test_Failures(self):
         """ test of failure calculations  """
 
-        comp = Failure()
+        comp = Failures()
 
         raise Exception('Test not implemented yet!')
 

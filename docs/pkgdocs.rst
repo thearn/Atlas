@@ -19,7 +19,6 @@ Package Metadata
     [openmdao.component]
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
-    Atlas.structures.Failure=Atlas.structures:Failure
     Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
     Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
     Atlas.structures.Strains=Atlas.structures:Strains
@@ -28,6 +27,7 @@ Package Metadata
     Atlas.coefficients.dragCoefficientFit=Atlas.coefficients:dragCoefficientFit
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient
+    Atlas.structures.Failures=Atlas.structures:Failures
     Atlas.failure.failureCalc=Atlas.failure:failureCalc
     Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.structures.Structures=Atlas.structures:Structures
@@ -48,11 +48,14 @@ Package Metadata
     Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.structures.Structures=Atlas.structures:Structures
     Atlas.failure.torsionalBucklingFailure=Atlas.failure:torsionalBucklingFailure
+    Atlas.structures.BucklingFailure=Atlas.structures:BucklingFailure
     Atlas.structures.Flags=Atlas.structures:Flags
+    Atlas.structures.MaterialFailure=Atlas.structures:MaterialFailure
     Atlas.structures.PrescribedLoad=Atlas.structures:PrescribedLoad
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient
+    Atlas.structures.Failures=Atlas.structures:Failures
 
 - **keywords:** openmdao
 

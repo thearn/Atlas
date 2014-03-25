@@ -124,6 +124,33 @@ class Strain(VariableTree):
     torsion_y = Array(desc='')
 
 
+class MaterialFailure(VariableTree):
+    cap    = Array(desc='')
+    plus   = Array(desc='')
+    minus  = Array(desc='')
+
+
+class BucklingFailure(VariableTree):
+    x = Array(desc='')
+    z = Array(desc='')
+    torsion = Array(desc='')
+
+
+class Failure(VariableTree):
+    top    = MaterialFailure(desc='')
+    bottom = MaterialFailure(desc='')
+    back   = MaterialFailure(desc='')
+    front  = MaterialFailure(desc='')
+
+    buckling = BucklingFailure(desc='')
+
+    quad_buckling = Float(desc='')
+    quad_bend     = Float(desc='')
+    quad_torsion  = Float(desc='')
+
+    wire = Float(desc='')
+
+
 # components that perform structural calculations
 
 class MassProperties(Component):
@@ -543,57 +570,266 @@ class Strains(Component):
         self.strain = strain
 
 
-class Failure(Component):
+class Failures(Component):
     """
     Computes the factor of safety for each of the failure modes of the spar.
     """
     # inputs
-    yN          = Array(np.zeros(2), iotype='in', desc='')
+    flags        = VarTree(Flags(), iotype='in')
 
-    Finternal   = Array(np.zeros(2), iotype='in', desc='')
-    strain      = VarTree(Strain(), iotype='in')
+    yN           = Array(iotype='in', desc='')
 
-    d            = Array(np.zeros(2), iotype='in', desc='')
-    theta        = Array(np.zeros(2), iotype='in', desc='')
-    nTube        = Array(np.zeros(2), iotype='in', desc='')
-    nCap         = Array(np.zeros(2), iotype='in', desc='')
+    Finternal    = Array(iotype='in', desc='')
+    strain       = VarTree(Strain(), iotype='in')
 
-    yWire        = Float(0, iotype='in', desc='')
-    zWire        = Float(0, iotype='in', desc='')
-    EIxJ         = Float(0, iotype='in', desc='')
-    EIzJ         = Float(0, iotype='in', desc='')
+    d            = Array(iotype='in', desc='')
+    theta        = Array(iotype='in', desc='')
+    nTube        = Array(iotype='in', desc='')
+    nCap         = Array(iotype='in', desc='')
+
+    yWire        = Array(iotype='in', desc='')
+    zWire        = Float(iotype='in', desc='')
+    EIxJ         = Array(iotype='in', desc='')
+    EIzJ         = Array(iotype='in', desc='')
 
     lBiscuit     = Array(iotype='in', desc='')
-    dQuad        = Float(0, iotype='in', desc='')
-    thetaQuad    = Float(0, iotype='in', desc='')
-    nTubeQuad    = Float(0, iotype='in', desc='')
-    lBiscuitQuad = Float(0, iotype='in', desc='')
-    RQuad        = Float(0, iotype='in', desc='')
-    hQuad        = Float(0, iotype='in', desc='')
-    TQuad        = Float(0, iotype='in', desc='')
-    EIQuad       = Float(0, iotype='in', desc='')
-    GJQuad       = Float(0, iotype='in', desc='')
-    tWire        = Float(0, iotype='in', desc='')
+    dQuad        = Float(iotype='in', desc='')
+    thetaQuad    = Float(iotype='in', desc='')
+    nTubeQuad    = Float(iotype='in', desc='')
+    lBiscuitQuad = Float(iotype='in', desc='')
+    RQuad        = Float(iotype='in', desc='')
+    hQuad        = Float(iotype='in', desc='')
+    EIQuad       = Array(iotype='in', desc='')
+    GJQuad       = Array(iotype='in', desc='')
+    tWire        = Float(iotype='in', desc='')
     TWire        = Array(iotype='in', desc='')
-    TEtension    = Float(0, iotype='in', desc='')
+    TEtension    = Float(iotype='in', desc='')
+
+    # all this to get TQuad... maybe should be split out
+    b            = Int(iotype='in', desc='number of blades')
+    Fblade       = VarTree(FBlade(), iotype='in')
+    mSpar        = Array(iotype='in', desc='mass of spars')
+    mChord       = Array(iotype='in', desc='mass of chords')
+    mElseRotor   = Float(iotype='in', desc='')
 
     # outputs
-    failure      = Array(iotype='out', desc='')
+    fail         = VarTree(Failure(), iotype='out')
 
     def execute(self):
         # Compute factor of safety for each failure mode
         # ----------------------------------------------
+        # computes material failure, euler buckling failure and torsional
+        # buckling failure. All failure modes are computed at the nodes.
+        #
+        # For material failure it looks at a sample laminate on the top,
+        # bottom, back and front of the spar. For each side of the spar
+        # it computes the material failure for the cap, the plus angle
+        # plys and the minus angle plys. For each ply it computes the
+        # fracture of failure in the fibre direction, matrix direction
+        # and shear. Thus there are 4x3x3=36 (side x lamina x direction)
+        # possible failure modes in the tube.
+        # ex. fail.top.cap = 3x(Ns+1) vector
+        #     fail.top.plus = 3x(Ns+1) vector
+        #     fail.top.minus = 3x(Ns+1) vector
+        #
+        # Stresses and strain are given as a 3x(Ns+1) vector
+        # ex. sigma_11, sigma_22, sigma_12
+        # Positive sign denotes tensile stresses, negative denotes compressive
 
         # factor of safety for each failure mode
-        # fail = Array(iotype='out', desc='')
 
-        # TQuad = np.sum(Fblade.Fz) * b - (np.sum(mSpar + mChord) * b + mElseRotor / 4) * 9.81
+        TQuad = np.sum(self.Fblade.Fz) * self.b \
+                - (np.sum(self.mSpar + self.mChord) * self.b + self.mElseRotor / 4) * 9.81
 
-        # fail = FailureCalc(yN, Finternal, strain, d, theta, nTube, nCap, yWire, zWire, EIxJ, EIzJ, lBiscuit,
-        #                    dQuad, thetaQuad, nTubeQuad, lBiscuitQuad, RQuad, hQuad, TQuad, EIQuad, GJQuad,
-        #                    tWire, TWire, TEtension, flags)
-        # return Mtot,mSpar,mChord,mQuad,mCover,mWire,EIx,EIz,EA,GJ,q,EIQuad,GJQuad,Finternal,strain,fail
-        pass
+        Ns = max(self.yN.shape) - 1
+        dy = np.zeros(Ns, 1)
+        for s in range(1, (Ns+1)):
+            dy[(s-1)] = self.yN[(s + 1-1)] - self.yN[(s-1)]
+
+        fail = Failure()
+
+        fail.top    = self.material_failure(Ns, self.strain.top,    self.theta, self.nCap, self.flags)
+        fail.bottom = self.material_failure(Ns, self.strain.bottom, self.theta, self.nCap, self.flags)
+        fail.back   = self.material_failure(Ns, self.strain.back,   self.theta, 0, self.flags)
+        fail.front  = self.material_failure(Ns, self.strain.front,  self.theta, 0, self.flags)
+
+        k  = 0.7
+        kk = 1
+        thetaWire = atan2(self.zWire, self.yWire)
+        L = self.yWire
+        F = self.TWire * cos(thetaWire) + self.TEtension
+
+        for s in range(1, (Ns+1)):
+            if self.yN[(s-1)] <= self.yWire:
+                critical_load_x = pi ** 2 * self.EIxJ / (k * L) ** 2
+                critical_load_z = pi ** 2 * self.EIzJ / (k * L) ** 2
+                fail.buckling.x[s] = kk * F / critical_load_x
+                fail.buckling.z[s] = kk * F / critical_load_z
+            else:
+                fail.buckling.x[s] = 0
+                fail.buckling.z[s] = 0
+        fail.buckling.x[Ns + 1] = 0
+        fail.buckling.z[Ns + 1] = 0
+
+        fail.buckling.torsion = self.torsional_buckling_failure(Ns, Finternal, d, theta, nTube, nCap, lBiscuit, flags)
+        if EIQuad != 0:
+            k = 1
+            L = sqrt(RQuad ** 2 + hQuad ** 2)
+            alpha = atan2(hQuad, RQuad)
+            P = TQuad / sin(alpha)
+            critical_load = pi ** 2 * EIQuad / (k * L) ** 2
+            fail.quad.buckling = P / critical_load
+        else:
+            fail.quad.buckling = 0
+
+        RotorMoment = 1400
+        if EIQuad != 0:
+            TbottomWire = TQuad / tan(alpha)
+            BM = TbottomWire * zWire + RotorMoment
+            strainQuad = -np.array([BM * (dQuad / 2) / EIQuad, 0, 0]).reshape(1, -1).T
+            fail.quad.bend = material_failure(1,  strainQuad, thetaQuad, 0, flags)
+            fail.quad.bend = abs(fail.quad.bend.plus(1,  1))
+        else:
+            fail.quad.bend = 0
+
+        if GJQuad != 0:
+            strainQuad = np.array([0,  0,  dQuad / 2 * RotorMoment / GJQuad]).reshape(1,  -1).T
+            fail.quad.torsion = material_failure(1,  strainQuad,  thetaQuad,  0,  flags)
+            fail.quad.torsion = abs(fail.quad.torsion.plus(1,  1))
+        else:
+            fail.quad.torsion = 0
+
+        FRotorMoment[5, 1] = RotorMoment
+        fail.quad.torbuck = torsional_buckling_failure(1, FRotorMoment, dQuad, thetaQuad, nTubeQuad, 0, lBiscuitQuad, flags)
+        fail.quad.torbuck = fail.quad.torbuck(1)
+
+        for i in range(1, (max(yWire.shape)+1)):
+            stress_wire = TWire[(i-1)] / (pi * (tWire[(i-1)] / 2) ** 2)
+            RHOWire, EWire, ULTIMATEWire = WireProperties(flags.WireType)
+            fail.wire[i] = stress_wire / ULTIMATEWire
+
+        return fail
+
+    def material_failure(self,  Ns, strain, theta, nCap, flags):
+        failure.cap = np.zeros(3, Ns + 1)
+        failure.plus = np.zeros(3, Ns + 1)
+        failure.minus = np.zeros(3, Ns + 1)
+
+        RHO_TUBE, T_PLY_TUBE, E_11_TUBE, E_22_TUBE, G_12_TUBE, V_12_TUBE, ULTIMATE_11_TENS_TUBE, ULTIMATE_11_COMP_TUBE, ULTIMATE_22_TENS_TUBE, ULTIMATE_22_COMP_TUBE, ULTIMATE_12_TUBE = PrepregProperties(flags.CFRPType)
+        RHO_CAP, T_PLY_CAP, E_11_CAP, E_22_CAP, G_12_CAP, V_12_CAP, ULTIMATE_11_TENS_CAP, ULTIMATE_11_COMP_CAP, ULTIMATE_22_TENS_CAP, ULTIMATE_22_COMP_CAP, ULTIMATE_12_CAP = PrepregProperties(flags.CFRPType)
+
+        Q_TUBE = np.zeros(3)
+        Q_TUBE[0, 0] = E_11_TUBE
+        Q_TUBE[1, 1] = E_22_TUBE
+        Q_TUBE[0, 1] = E_22_TUBE * V_12_TUBE
+        Q_TUBE[1, 0] = Q_TUBE[0, 1]
+        Q_TUBE[2, 2] = G_12_TUBE
+
+        Q_CAP = np.zeros(3)
+        Q_CAP[0, 0] = E_11_CAP
+        Q_CAP[1, 1] = E_22_CAP
+        Q_CAP[0, 1] = E_22_CAP * V_12_CAP
+        Q_CAP[1, 0] = Q_CAP[0, 1]
+        Q_CAP[2, 2] = G_12_CAP
+
+        for s in range(1, (Ns+1)):
+            x = theta[(s-1)]
+            T_PLUS = np.array([cos(x) ** 2, sin(x) ** 2, 2 * sin(x) * cos(x), sin(x) ** 2, cos(x) ** 2, - 2 * sin(x) * cos(x), - sin(x) * cos(x), sin(x) * cos(x), (cos(x) ** 2) - (sin(x) ** 2)]).reshape(1, -1)
+            Qbar_TUBE_PLUS = (numpy.linalg.solve(T_PLUS, Q_TUBE)) / T_PLUS.T
+
+            x = -theta[(s-1)]
+            T_MINUS = np.array([cos(x) ** 2, sin(x) ** 2, 2 * sin(x) * cos(x), sin(x) ** 2, cos(x) ** 2, - 2 * sin(x) * cos(x), - sin(x) * cos(x), sin(x) * cos(x), (cos(x) ** 2) - (sin(x) ** 2)]).reshape(1, -1)
+            Qbar_TUBE_MINUS = (numpy.linalg.solve(T_MINUS, Q_TUBE)) / T_MINUS.T
+
+            # FIXME
+            # stress.cap(:, s)   = Q_CAP * strain[:, (s-1)]
+            # stress.plus(:, s)  = Qbar_TUBE_PLUS * strain[:, (s-1)]
+            # stress.minus(:, s) = Qbar_TUBE_MINUS * strain[:, (s-1)]
+            # stress.plus(:, s)  = T_PLUS * stress.plus(:, s)
+            # stress.minus(:, s) = T_MINUS * stress.minus(:, s)
+
+            if nCap == 0:
+                failure.cap[1, s] = 0
+                failure.cap[2, s] = 0
+                failure.cap[3, s] = 0
+            else:
+                if stress.cap[1, s] > 0:
+                    failure.cap[1, s] = stress.cap[1, s] / ULTIMATE_11_TENS_CAP
+                else:
+                    failure.cap[1, s] = stress.cap[1, s] / ULTIMATE_11_COMP_CAP
+                if stress.cap[2, s] > 0:
+                    failure.cap[2, s] = stress.cap[2, s] / ULTIMATE_22_TENS_CAP
+                else:
+                    failure.cap[2, s] = stress.cap[2, s] / ULTIMATE_22_COMP_CAP
+                failure.cap[3, s] = stress.cap[3, s] / ULTIMATE_12_CAP
+
+            if stress.plus[1, s] > 0:
+                failure.plus[1, s] = stress.plus[1, s] / ULTIMATE_11_TENS_TUBE
+            else:
+                failure.plus[1, s] = stress.plus[1, s] / ULTIMATE_11_COMP_TUBE
+
+            if stress.plus[2, s] > 0:
+                failure.plus[2, s] = stress.plus[2, s] / ULTIMATE_22_TENS_TUBE
+            else:
+                failure.plus[2, s] = stress.plus[2, s] / ULTIMATE_22_COMP_TUBE
+
+            failure.plus[3, s] = stress.plus[3, s] / ULTIMATE_12_TUBE
+
+            if stress.minus[1, s] > 0:
+                failure.minus[1, s] = stress.minus[1, s] / ULTIMATE_11_TENS_TUBE
+            else:
+                failure.minus[1, s] = stress.minus[1, s] / ULTIMATE_11_COMP_TUBE
+
+            if stress.minus[2, s] > 0:
+                failure.minus[2, s] = stress.minus[2, s] / ULTIMATE_22_TENS_TUBE
+            else:
+                failure.minus[2, s] = stress.minus[2, s] / ULTIMATE_22_COMP_TUBE
+
+            failure.minus[3, s] = stress.minus[3, s] / ULTIMATE_12_TUBE
+
+        return failure
+
+    def torsional_buckling_failure(self, Ns, Finternal, d, theta, nTube, nCap, lBiscuit, flags):
+        RHO_TUBE, T_PLY_TUBE, E_11_TUBE, E_22_TUBE, G_12_TUBE, V_12_TUBE, ULTIMATE_11_TENS_TUBE, ULTIMATE_11_COMP_TUBE, ULTIMATE_22_TENS_TUBE, ULTIMATE_22_COMP_TUBE, ULTIMATE_12_TUBE = PrepregProperties(flags.CFRPType)
+        V_21_TUBE = V_12_TUBE * (E_22_TUBE / E_11_TUBE)
+        mu_prime_x = V_12_TUBE
+        mu_prime_theta = V_21_TUBE
+        Q = np.zeros(3)
+        Q[0, 0] = E_11_TUBE / (1 - V_12_TUBE * V_21_TUBE)
+        Q[1, 1] = E_22_TUBE / (1 - V_12_TUBE * V_21_TUBE)
+        Q[0, 1] = E_22_TUBE * V_12_TUBE / (1 - V_12_TUBE * V_21_TUBE)
+        Q[1, 0] = Q[0, 1]
+        Q[2, 2] = G_12_TUBE
+        failure = np.zeros(1, Ns + 1)
+        for s in range(1, (Ns+1)):
+            if nCap[(s-1)] != 0:
+                AF_torsional_buckling = 1.25
+            else:
+                AF_torsional_buckling = 1
+            x = theta[(s-1)]
+            T = np.array([cos(x) ** 2, sin(x) ** 2, 2 * sin(x) * cos(x), sin(x) ** 2, cos(x) ** 2, - 2 * sin(x) * cos(x), - sin(x) * cos(x), sin(x) * cos(x), (cos(x) ** 2) - (sin(x) ** 2)]).reshape(1, -1)
+            Qbar = (numpy.linalg.solve(T, Q)) / T.T
+            E_x = Qbar[0, 0]
+            E_theta = Qbar[1, 1]
+            t_tube = nTube[(s-1)] * T_PLY_TUBE
+            R = (d[(s-1)] + t_tube) / 2
+            L = lBiscuit[(s-1)]
+            D_x = E_x * (1 / 12) * (t_tube ** 3)
+            D_theta = E_theta * (1 / 12) * (t_tube ** 3)
+            B_x = E_x * t_tube
+            B_theta = E_theta * t_tube
+            rho = ((D_x * D_theta) / (B_x * B_theta)) ** (1 / 4)
+            Gamma = (3.6125e-07) * ((R / (rho * 1000)) ** 6) + (- 1.9724e-05) * ((R / (rho * 1000)) ** 5) + (0.0004283) * ((R / (rho * 1000)) ** 4) + (- 0.0048315) * ((R / (rho * 1000)) ** 3) + (0.031801) * ((R / (rho * 1000)) ** 2) + (- 0.12975) * (R / (rho * 1000)) + 0.88309
+            Z = ((B_theta * (1 - mu_prime_x * mu_prime_theta) * (L ** 4)) / (12 * D_x * (R ** 2))) ** (1 / 2)
+            Z_s = ((D_theta / D_x) ** (5 / 6)) * ((B_x / B_theta) ** (1 / 2)) * Z
+            K_s = 0.89 * (Z_s ** (3 / 4))
+            N_x_theta = (Gamma * K_s * (pi ** 2) * D_x) / (L ** 2)
+            critical_torque = AF_torsional_buckling * N_x_theta * 2 * pi * (R ** 2)
+            failure[(s-1)] = abs(Finternal[4, (s-1)] / critical_torque)
+
+        failure[(Ns + 1-1)] = 0
+
+        return failure
 
 
 class Structures(Assembly):
@@ -650,7 +886,7 @@ class Structures(Assembly):
 
     # inputs for FEM
     Fblade       = VarTree(FBlade(), iotype='in')
-    presLoad = VarTree(PrescribedLoad(), iotype='in')
+    presLoad     = VarTree(PrescribedLoad(), iotype='in')
 
     def configure(self):
         self.add('spar', SparProperties())
@@ -665,8 +901,6 @@ class Structures(Assembly):
         self.add('joint', JointSparProperties())
         self.connect('flags.CFRPType', 'joint.CFRPType')
         self.connect('Jprop',          'joint.Jprop')
-        # self.connect('joint.EIx', 'fail.EIxJ')
-        # self.connect('joint.EIz', 'fail.EIzJ')
 
         self.add('chord', ChordProperties())
         self.connect('yN',             'chord.yN')
@@ -731,6 +965,37 @@ class Structures(Assembly):
         self.connect('fem.F', 'strains.F')
         self.connect('fem.q', 'strains.q')
 
+        self.add('failure', Failures())
+        self.connect('flags',             'failure.flags')
+        self.connect('yN',                'failure.yN')
+        self.connect('strains.Finternal', 'failure.Finternal')
+        self.connect('strains.strain',    'failure.strain')
+        self.connect('d',                 'failure.d')
+        self.connect('theta',             'failure.theta')
+        self.connect('nTube',             'failure.nTube')
+        self.connect('nCap',              'failure.nCap')
+        self.connect('yWire',             'failure.yWire')
+        self.connect('zWire',             'failure.zWire')
+        self.connect('tWire',             'failure.tWire')
+        self.connect('TWire',             'failure.TWire')
+        self.connect('joint.EIx',         'failure.EIxJ')
+        self.connect('joint.EIz',         'failure.EIzJ')
+        self.connect('lBiscuit',          'failure.lBiscuit')
+        self.connect('dQuad',             'failure.dQuad')
+        self.connect('thetaQuad',         'failure.thetaQuad')
+        self.connect('nTubeQuad',         'failure.nTubeQuad')
+        self.connect('RQuad',             'failure.RQuad')
+        self.connect('hQuad',             'failure.hQuad')
+        self.connect('quad.EIx',          'failure.EIQuad')  # confirm
+        self.connect('quad.GJ',           'failure.GJQuad')  # confirm
+        self.connect('Fblade',            'failure.Fblade')
+        self.connect('b',                 'failure.b')
+        self.connect('spar.mSpar',        'failure.mSpar')
+        self.connect('chord.mChord',      'failure.mChord')
+        self.connect('mElseRotor',        'failure.mElseRotor')
+
+        # etc.
+
         # link up the outputs
         self.create_passthrough('mass.Mtot')
         self.create_passthrough('fem.q')
@@ -745,3 +1010,4 @@ class Structures(Assembly):
         self.driver.workflow.add('spar')
         self.driver.workflow.add('strains')
         self.driver.workflow.add('wire')
+        self.driver.workflow.add('failure')
