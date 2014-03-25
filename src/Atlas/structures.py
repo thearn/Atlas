@@ -38,6 +38,7 @@ class Flags(VariableTree):
 
 class JointProperties(VariableTree):
     """ Properties at joint location for buckling analysis """
+    d        = Float(desc='diameter')
     theta    = Float(desc='wrap angle')
     nTube    = Int(desc='number of tube layers')
     nCap     = Int(desc='number of cap strips')
@@ -89,8 +90,8 @@ class QuadSparProperties(SparProperties):
 
     def execute(self):
         lQuad = sqrt(self.RQuad**2 + self.hQuad**2)
-        self.yN = np.array([0, lQuad]).reshape(1, -1)
-        self.nCap = np.array([0, 0]).reshape(1, -1)
+        self.yN = np.array([0, lQuad])
+        self.nCap = np.array([0, 0])
         self.d = [self.dQuad]
         self.theta = [self.thetaQuad]
         self.nTube = [self.nTubeQuad]
@@ -132,7 +133,7 @@ class MassProperties(Component):
 
     # inputs
     flags    = VarTree(Flags(), iotype='in')
-    b        = Float(iotype='in', desc='number of blades')
+    b        = Int(iotype='in', desc='number of blades')
     mSpar    = Array(iotype='in', desc='mass of spars')
     mChord   = Array(iotype='in', desc='mass of chords')
     xCGChord = Array(iotype='in', desc='xCG of chords')
@@ -546,6 +547,7 @@ class Failure(Component):
     """
     Computes the factor of safety for each of the failure modes of the spar.
     """
+    # inputs
     yN          = Array(np.zeros(2), iotype='in', desc='')
 
     Finternal   = Array(np.zeros(2), iotype='in', desc='')
@@ -561,7 +563,7 @@ class Failure(Component):
     EIxJ         = Float(0, iotype='in', desc='')
     EIzJ         = Float(0, iotype='in', desc='')
 
-    lBiscuit     = Array(np.zeros(2), iotype='in', desc='')
+    lBiscuit     = Array(iotype='in', desc='')
     dQuad        = Float(0, iotype='in', desc='')
     thetaQuad    = Float(0, iotype='in', desc='')
     nTubeQuad    = Float(0, iotype='in', desc='')
@@ -574,6 +576,9 @@ class Failure(Component):
     tWire        = Float(0, iotype='in', desc='')
     TWire        = Array(iotype='in', desc='')
     TEtension    = Float(0, iotype='in', desc='')
+
+    # outputs
+    failure      = Array(iotype='out', desc='')
 
     def execute(self):
         # Compute factor of safety for each failure mode
@@ -614,7 +619,7 @@ class Structures(Assembly):
     Jprop    = VarTree(JointProperties(), iotype='in')
 
     # inputs for chord
-    b   = Float(iotype='in', desc='number of blades')
+    b   = Int(iotype='in', desc='number of blades')
     cE  = Array(iotype='in', desc='chord of each element')
     xEA = Array(iotype='in', desc='')
     xtU = Array(iotype='in', desc='')
@@ -659,6 +664,7 @@ class Structures(Assembly):
 
         self.add('joint', JointSparProperties())
         self.connect('flags.CFRPType', 'joint.CFRPType')
+        self.connect('Jprop', 'joint.Jprop')
         # self.connect('joint.EIx', 'fail.EIxJ')
         # self.connect('joint.EIz', 'fail.EIzJ')
 
@@ -673,7 +679,6 @@ class Structures(Assembly):
         self.connect('dQuad', 'quad.dQuad')
         self.connect('thetaQuad', 'quad.thetaQuad')
         self.connect('nTubeQuad', 'quad.nTubeQuad')
-        self.connect('nCap', 'quad.nCap')
         self.connect('lBiscuitQuad', 'quad.lBiscuitQuad')
         self.connect('flags.CFRPType', 'quad.CFRPType')
         self.connect('RQuad', 'quad.RQuad')
