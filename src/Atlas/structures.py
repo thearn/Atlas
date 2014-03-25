@@ -63,12 +63,12 @@ class JointSparProperties(SparProperties):
     Jprop = VarTree(JointProperties(), iotype='in')
 
     def execute(self):
-        self.yN = np.array([0, 1]).reshape(1, -1)
-        self.d = self.Jprop.d
-        self.theta = self.Jprop.theta
-        self.nTube = self.Jprop.nTube
-        self.nCap = self.Jprop.nCap
-        self.lBiscuit = self.Jprop.lBiscuit
+        self.yN = np.array([0, 1])
+        self.d = [self.Jprop.d]
+        self.theta = [self.Jprop.theta]
+        self.nTube = [self.Jprop.nTube]
+        self.nCap = [self.Jprop.nCap]
+        self.lBiscuit = [self.Jprop.lBiscuit]
         super(JointSparProperties, self).execute()
 
 
@@ -161,7 +161,7 @@ class MassProperties(Component):
     Mtot = Float(0.0, iotype='out', desc='total mass')
 
     def execute(self):
-        self.xCG = (self.xCGChord.dot(self.mChord) + self.xEA.dot(self.mSpar)) / (self.mChord + self.mSpar)
+        self.xCG = ((self.xCGChord * self.mChord) + (self.xEA * self.mSpar)) / (self.mChord + self.mSpar)
 
         if self.flags.Cover:
             mCover = (self.ycmax**2 * 0.0528 + self.ycmax * 0.605 / 4) * 1.15
@@ -654,79 +654,79 @@ class Structures(Assembly):
 
     def configure(self):
         self.add('spar', SparProperties())
-        self.connect('yN', 'spar.yN')
-        self.connect('d', 'spar.d')
-        self.connect('theta', 'spar.theta')
-        self.connect('nTube', 'spar.nTube')
-        self.connect('nCap', 'spar.nCap')
-        self.connect('lBiscuit', 'spar.lBiscuit')
+        self.connect('yN',             'spar.yN')
+        self.connect('d',              'spar.d')
+        self.connect('theta',          'spar.theta')
+        self.connect('nTube',          'spar.nTube')
+        self.connect('nCap',           'spar.nCap')
+        self.connect('lBiscuit',       'spar.lBiscuit')
         self.connect('flags.CFRPType', 'spar.CFRPType')
 
         self.add('joint', JointSparProperties())
         self.connect('flags.CFRPType', 'joint.CFRPType')
-        self.connect('Jprop', 'joint.Jprop')
+        self.connect('Jprop',          'joint.Jprop')
         # self.connect('joint.EIx', 'fail.EIxJ')
         # self.connect('joint.EIz', 'fail.EIzJ')
 
         self.add('chord', ChordProperties())
-        self.connect('yN', 'chord.yN')
-        self.connect('cE', 'chord.c')
-        self.connect('d',  'chord.d')
-        self.connect('flags.GWing', 'chord.GWing')
-        self.connect('xtU', 'chord.xtU')
+        self.connect('yN',             'chord.yN')
+        self.connect('cE',             'chord.c')
+        self.connect('d',              'chord.d')
+        self.connect('flags.GWing',    'chord.GWing')
+        self.connect('xtU',            'chord.xtU')
 
         self.add('quad', QuadSparProperties())
-        self.connect('dQuad', 'quad.dQuad')
-        self.connect('thetaQuad', 'quad.thetaQuad')
-        self.connect('nTubeQuad', 'quad.nTubeQuad')
-        self.connect('lBiscuitQuad', 'quad.lBiscuitQuad')
+        self.connect('dQuad',          'quad.dQuad')
+        self.connect('thetaQuad',      'quad.thetaQuad')
+        self.connect('nTubeQuad',      'quad.nTubeQuad')
+        self.connect('lBiscuitQuad',   'quad.lBiscuitQuad')
         self.connect('flags.CFRPType', 'quad.CFRPType')
-        self.connect('RQuad', 'quad.RQuad')
-        self.connect('hQuad', 'quad.hQuad')
+        self.connect('RQuad',          'quad.RQuad')
+        self.connect('hQuad',          'quad.hQuad')
 
         self.add('wire', WireProperties())
         self.connect('flags.WireType', 'wire.material')
 
         self.add('mass', MassProperties())
-        self.connect('flags', 'mass.flags')
-        self.connect('b', 'mass.b')
-        self.connect('spar.mSpar', 'mass.mSpar')
-        self.connect('chord.mChord', 'mass.mChord')
+        self.connect('flags',          'mass.flags')
+        self.connect('b',              'mass.b')
+        self.connect('spar.mSpar',     'mass.mSpar')
+        self.connect('chord.mChord',   'mass.mChord')
         self.connect('chord.xCGChord', 'mass.xCGChord')
-        self.connect('quad.mQuad', 'mass.mQuad')
-        self.connect('wire.RHO', 'mass.RHOWire')
-        self.connect('xEA', 'mass.xEA')
-        self.connect('ycmax', 'mass.ycmax')
-        self.connect('zWire', 'mass.zWire')
-        self.connect('yWire', 'mass.yWire')
-        self.connect('tWire', 'mass.tWire')
-        self.connect('mElseRotor', 'mass.mElseRotor')
-        self.connect('mElseCentre', 'mass.mElseCentre')
-        self.connect('mElseR', 'mass.mElseR')
-        self.connect('R', 'mass.R')
-        self.connect('mPilot', 'mass.mPilot')
+        self.connect('quad.mQuad',     'mass.mQuad')
+        self.connect('wire.RHO',       'mass.RHOWire')
+        self.connect('xEA',            'mass.xEA')
+        self.connect('ycmax',          'mass.ycmax')
+        self.connect('zWire',          'mass.zWire')
+        self.connect('yWire',          'mass.yWire')
+        self.connect('tWire',          'mass.tWire')
+        self.connect('mElseRotor',     'mass.mElseRotor')
+        self.connect('mElseCentre',    'mass.mElseCentre')
+        self.connect('mElseR',         'mass.mElseR')
+        self.connect('R',              'mass.R')
+        self.connect('mPilot',         'mass.mPilot')
 
         self.add('fem', FEM())
-        self.connect('flags', 'fem.flags')
-        self.connect('yN', 'fem.yN')
-        self.connect('spar.EIx', 'fem.EIx')
-        self.connect('spar.EIz', 'fem.EIz')
-        self.connect('spar.EA', 'fem.EA')
-        self.connect('spar.GJ', 'fem.GJ')
-        self.connect('cE', 'fem.cE')
-        self.connect('xEA', 'fem.xEA')
-        self.connect('spar.mSpar', 'fem.mSpar')
+        self.connect('flags',        'fem.flags')
+        self.connect('yN',           'fem.yN')
+        self.connect('spar.EIx',     'fem.EIx')
+        self.connect('spar.EIz',     'fem.EIz')
+        self.connect('spar.EA',      'fem.EA')
+        self.connect('spar.GJ',      'fem.GJ')
+        self.connect('cE',           'fem.cE')
+        self.connect('xEA',          'fem.xEA')
+        self.connect('spar.mSpar',   'fem.mSpar')
         self.connect('chord.mChord', 'fem.mChord')
-        self.connect('mass.xCG', 'fem.xCG')
-        self.connect('zWire', 'fem.zWire')
-        self.connect('yWire', 'fem.yWire')
-        self.connect('TWire', 'fem.TWire')
-        self.connect('Fblade', 'fem.Fblade')
-        self.connect('presLoad', 'fem.presLoad')
+        self.connect('mass.xCG',     'fem.xCG')
+        self.connect('zWire',        'fem.zWire')
+        self.connect('yWire',        'fem.yWire')
+        self.connect('TWire',        'fem.TWire')
+        self.connect('Fblade',       'fem.Fblade')
+        self.connect('presLoad',     'fem.presLoad')
 
         self.add('strains', Strains())
-        self.connect('yN', 'strains.yN')
-        self.connect('d', 'strains.d')
+        self.connect('yN',    'strains.yN')
+        self.connect('d',     'strains.d')
         self.connect('fem.k', 'strains.k')
         self.connect('fem.F', 'strains.F')
         self.connect('fem.q', 'strains.q')
@@ -739,7 +739,7 @@ class Structures(Assembly):
 
         self.driver.workflow.add('chord')
         self.driver.workflow.add('fem')
-        # self.driver.workflow.add('joint')
+        self.driver.workflow.add('joint')
         self.driver.workflow.add('mass')
         self.driver.workflow.add('quad')
         self.driver.workflow.add('spar')

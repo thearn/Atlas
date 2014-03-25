@@ -52,6 +52,31 @@ class TestStructures(unittest.TestCase):
         # check outputs
         self.assertAlmostEquals(comp.Mtot, data['Mtot'][0][0], 10)
 
+        for i, val in enumerate(data['xCG']):
+            self.assertAlmostEquals(comp.xCG[i], val, 4,
+                msg='xCG[%d] mismatch (%f vs %f)' % (i, comp.xCG[i], val))
+
+    def check_FEM(self, comp, data):
+        """ check component FEM results against MATLAB data  """
+        for h, plane in enumerate(data['k']):
+            for i, row in enumerate(plane):
+                for j, val in enumerate(row):
+                    self.assertAlmostEquals(comp.k[h, i, j], val, 4,
+                        msg='k[%d, %d, %d] mismatch (%f vs %f)' % (h, i, j, comp.k[h, i, j], val))
+
+        for i, row in enumerate(data['K']):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.K[i, j], val, 4,
+                    msg='K[%d, %d] mismatch (%f vs %f)' % (i, j, comp.K[i, j], val))
+
+        for i, val in enumerate(data['F']):
+            self.assertAlmostEquals(comp.F[i], val, 4,
+                msg='F[%d] mismatch (%f vs %f)' % (i, comp.F[i], val))
+
+        for i, val in enumerate(data['q']):
+            self.assertAlmostEquals(comp.q[i], val, 4,
+                msg='q[%d] mismatch (%f vs %f)' % (i, comp.q[i], val))
+
     def test_FEM(self):
         """ test of FEM calculations """
         comp = FEM()
@@ -102,24 +127,7 @@ class TestStructures(unittest.TestCase):
         comp.run()
 
         # check outputs
-        for h, plane in enumerate(data['k']):
-            for i, row in enumerate(plane):
-                for j, val in enumerate(row):
-                    self.assertAlmostEquals(comp.k[h, i, j], val, 4,
-                        msg='k[%d, %d, %d] mismatch (%f vs %f)' % (h, i, j, comp.k[h, i, j], val))
-
-        for i, row in enumerate(data['K']):
-            for j, val in enumerate(row):
-                self.assertAlmostEquals(comp.K[i, j], val, 4,
-                    msg='K[%d, %d] mismatch (%f vs %f)' % (i, j, comp.K[i, j], val))
-
-        for i, val in enumerate(data['F']):
-            self.assertAlmostEquals(comp.F[i], val, 4,
-                msg='F[%d] mismatch (%f vs %f)' % (i, comp.F[i], val))
-
-        for i, val in enumerate(data['q']):
-            self.assertAlmostEquals(comp.q[i], val, 4,
-                msg='q[%d] mismatch (%f vs %f)' % (i, comp.q[i], val))
+        self.check_FEM(comp, data)
 
     def check_strains(self, comp, data):
         """ check component internal force and strain results against MATLAB data  """
@@ -294,10 +302,6 @@ class TestStructures(unittest.TestCase):
 
         self.assertAlmostEquals(comp.Mtot, data['Mtot'], 10)
 
-        print
-        print 'comp.q', comp.q.T
-        print 'data[q]', data['q'].T
-        print
         for i, val in enumerate(data['q']):
             self.assertAlmostEquals(comp.q[i], val, 4,
                 msg='q[%d] mismatch (%f vs %f)' % (i, comp.q[i], val))
