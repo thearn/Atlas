@@ -1,11 +1,11 @@
 import numpy as np
 
-from math import pi, sqrt, sin, cos, atan2
+from math import pi, sqrt, sin, cos, tan, atan2
 
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, VarTree, Str, Enum
 
-from properties import SparProperties, ChordProperties, WireProperties
+from properties import SparProperties, ChordProperties, WireProperties, prepregProperties
 
 
 # data structures used in structural calculations
@@ -137,12 +137,12 @@ class BucklingFailure(VariableTree):
 
 
 class Failure(VariableTree):
-    top    = MaterialFailure(desc='')
-    bottom = MaterialFailure(desc='')
-    back   = MaterialFailure(desc='')
-    front  = MaterialFailure(desc='')
+    top    = VarTree(MaterialFailure())
+    bottom = VarTree(MaterialFailure())
+    back   = VarTree(MaterialFailure())
+    front  = VarTree(MaterialFailure())
 
-    buckling = BucklingFailure(desc='')
+    buckling = VarTree(BucklingFailure())
 
     quad_buckling = Float(desc='')
     quad_bend     = Float(desc='')
@@ -638,196 +638,316 @@ class Failures(Component):
 
         # factor of safety for each failure mode
 
-        TQuad = np.sum(self.Fblade.Fz) * self.b \
-                - (np.sum(self.mSpar + self.mChord) * self.b + self.mElseRotor / 4) * 9.81
+        # short aliases
+        flags        = self.flags
+        yN           = self.yN
+        Finternal    = self.Finternal
+        strain       = self.strain
+        d            = self.d
+        theta        = self.theta
+        nTube        = self.nTube
+        nCap         = self.nCap
+        yWire        = self.yWire
+        zWire        = self.zWire
+        EIxJ         = self.EIxJ
+        EIzJ         = self.EIzJ
+        lBiscuit     = self.lBiscuit
+        dQuad        = self.dQuad
+        thetaQuad    = self.thetaQuad
+        nTubeQuad    = self.nTubeQuad
+        lBiscuitQuad = self.lBiscuitQuad
+        RQuad        = self.RQuad
+        hQuad        = self.hQuad
+        EIQuad       = self.EIQuad
+        GJQuad       = self.GJQuad
+        tWire        = self.tWire
+        TWire        = self.TWire
+        TEtension    = self.TEtension
+        b            = self.b
+        Fblade       = self.Fblade
+        mSpar        = self.mSpar
+        mChord       = self.mChord
+        mElseRotor   = self.mElseRotor
 
-        Ns = max(self.yN.shape) - 1
-        dy = np.zeros(Ns, 1)
-        for s in range(1, (Ns+1)):
-            dy[(s-1)] = self.yN[(s + 1-1)] - self.yN[(s-1)]
+        TQuad = np.sum(Fblade.Fz) * b  - (np.sum(mSpar + mChord) * b + mElseRotor / 4) * 9.81
+
+        Ns = max(yN.shape) - 1  # number of elements
+        dy = np.zeros((Ns, 1))
+        for s in range(0, Ns):
+            dy[s] = yN[s] - yN[s]
 
         fail = Failure()
 
-        fail.top    = self.material_failure(Ns, self.strain.top,    self.theta, self.nCap, self.flags)
-        fail.bottom = self.material_failure(Ns, self.strain.bottom, self.theta, self.nCap, self.flags)
-        fail.back   = self.material_failure(Ns, self.strain.back,   self.theta, 0, self.flags)
-        fail.front  = self.material_failure(Ns, self.strain.front,  self.theta, 0, self.flags)
+        # Material failure
+        fail.top    = self.material_failure(Ns, strain.top,    theta, nCap, flags)
+        fail.bottom = self.material_failure(Ns, strain.bottom, theta, nCap, flags)
+        fail.back   = self.material_failure(Ns, strain.back,   theta, 0,    flags)
+        fail.front  = self.material_failure(Ns, strain.front,  theta, 0,    flags)
 
-        k  = 0.7
-        kk = 1
-        thetaWire = atan2(self.zWire, self.yWire)
-        L = self.yWire
-        F = self.TWire * cos(thetaWire) + self.TEtension
+        # Euler Buckling failure in main spar from wire force
+        k  = 0.7    # pinned-pinned = 1, fixed-pinned = 0.7 with correction factor
+        #kk = 1.42  # correction factor
+        kk = 1      # correction factor was in error, never saw buckling failure
+        thetaWire = atan2(zWire, yWire)
+        L = yWire   # wire attachment provides pinned end
+        F = TWire * cos(thetaWire) + TEtension
 
         for s in range(1, (Ns+1)):
-            if self.yN[(s-1)] <= self.yWire:
-                critical_load_x = pi ** 2 * self.EIxJ / (k * L) ** 2
-                critical_load_z = pi ** 2 * self.EIzJ / (k * L) ** 2
+            if yN[(s-1)] <= yWire:
+                critical_load_x = pi ** 2 * EIxJ / (k * L) ** 2
+                critical_load_z = pi ** 2 * EIzJ / (k * L) ** 2
                 fail.buckling.x[s] = kk * F / critical_load_x
                 fail.buckling.z[s] = kk * F / critical_load_z
             else:
                 fail.buckling.x[s] = 0
                 fail.buckling.z[s] = 0
+
+        # no buckling at tip
         fail.buckling.x[Ns + 1] = 0
         fail.buckling.z[Ns + 1] = 0
 
-        fail.buckling.torsion = self.torsional_buckling_failure(Ns, Finternal, d, theta, nTube, nCap, lBiscuit, flags)
+        # Torsional Buckling failure
+        fail.buckling.torsion = self.torsional_buckling_failure(Ns, Finternal,
+                d, theta, nTube, nCap, lBiscuit, flags)
+
+        # Quad Buckling failure
         if EIQuad != 0:
             k = 1
             L = sqrt(RQuad ** 2 + hQuad ** 2)
             alpha = atan2(hQuad, RQuad)
             P = TQuad / sin(alpha)
             critical_load = pi ** 2 * EIQuad / (k * L) ** 2
-            fail.quad.buckling = P / critical_load
+            fail.quad_buckling = P / critical_load
         else:
-            fail.quad.buckling = 0
+            fail.quad_buckling = 0
 
+        # Quad bending moment failure (does not include torsion since they don't occur at the same time)
         RotorMoment = 1400
         if EIQuad != 0:
             TbottomWire = TQuad / tan(alpha)
             BM = TbottomWire * zWire + RotorMoment
             strainQuad = -np.array([BM * (dQuad / 2) / EIQuad, 0, 0]).reshape(1, -1).T
-            fail.quad.bend = material_failure(1,  strainQuad, thetaQuad, 0, flags)
-            fail.quad.bend = abs(fail.quad.bend.plus(1,  1))
+            fail.quad_bend = self.material_failure(1, strainQuad, thetaQuad, 0, flags)
+            fail.quad_bend = abs(fail.quad.bend.plus[0, 0])
         else:
-            fail.quad.bend = 0
+            fail.quad_bend = 0
 
+        # Quad torsional material failure
         if GJQuad != 0:
             strainQuad = np.array([0,  0,  dQuad / 2 * RotorMoment / GJQuad]).reshape(1,  -1).T
-            fail.quad.torsion = material_failure(1,  strainQuad,  thetaQuad,  0,  flags)
-            fail.quad.torsion = abs(fail.quad.torsion.plus(1,  1))
+            fail.quad_torsion = self.material_failure(1,  strainQuad,  thetaQuad,  0,  flags)
+            fail.quad_torsion = abs(fail.quad.torsion.plus[0, 0])
         else:
-            fail.quad.torsion = 0
+            fail.quad_torsion = 0
 
-        FRotorMoment[5, 1] = RotorMoment
-        fail.quad.torbuck = torsional_buckling_failure(1, FRotorMoment, dQuad, thetaQuad, nTubeQuad, 0, lBiscuitQuad, flags)
-        fail.quad.torbuck = fail.quad.torbuck(1)
+        # Quad torsional buckling failure
+        FRotorMoment = np.array([RotorMoment, RotorMoment, RotorMoment, RotorMoment, RotorMoment]).reshape(1,  -1).T
+        fail.quad.torbuck = self.torsional_buckling_failure(1, FRotorMoment, dQuad, thetaQuad, nTubeQuad, 0, lBiscuitQuad, flags)
+        fail.quad.torbuck = fail.quad.torbuck[0]
 
-        for i in range(1, (max(yWire.shape)+1)):
-            stress_wire = TWire[(i-1)] / (pi * (tWire[(i-1)] / 2) ** 2)
-            RHOWire, EWire, ULTIMATEWire = WireProperties(flags.WireType)
-            fail.wire[i] = stress_wire / ULTIMATEWire
+        # Wire tensile failure
+        for i in range(0, len(yWire)):
+            stress_wire = TWire[i] / (pi*(tWire[i]/2)**2)
+            wire_props = WireProperties(flags.WireType)
+            fail.wire[i] = stress_wire / wire_props.ULTIMATE
 
         return fail
 
     def material_failure(self,  Ns, strain, theta, nCap, flags):
-        failure.cap = np.zeros(3, Ns + 1)
-        failure.plus = np.zeros(3, Ns + 1)
-        failure.minus = np.zeros(3, Ns + 1)
+        failure = MaterialFailure()
+        failure.cap = np.zeros((3, Ns+1))
+        failure.plus = np.zeros((3, Ns+1))
+        failure.minus = np.zeros((3, Ns+1))
 
-        RHO_TUBE, T_PLY_TUBE, E_11_TUBE, E_22_TUBE, G_12_TUBE, V_12_TUBE, ULTIMATE_11_TENS_TUBE, ULTIMATE_11_COMP_TUBE, ULTIMATE_22_TENS_TUBE, ULTIMATE_22_COMP_TUBE, ULTIMATE_12_TUBE = PrepregProperties(flags.CFRPType)
-        RHO_CAP, T_PLY_CAP, E_11_CAP, E_22_CAP, G_12_CAP, V_12_CAP, ULTIMATE_11_TENS_CAP, ULTIMATE_11_COMP_CAP, ULTIMATE_22_TENS_CAP, ULTIMATE_22_COMP_CAP, ULTIMATE_12_CAP = PrepregProperties(flags.CFRPType)
+        # MATERIAL PROPERTIES
+        tube_props = prepregProperties[flags.CFRPType]
 
-        Q_TUBE = np.zeros(3)
-        Q_TUBE[0, 0] = E_11_TUBE
-        Q_TUBE[1, 1] = E_22_TUBE
-        Q_TUBE[0, 1] = E_22_TUBE * V_12_TUBE
+        # Cap Prepreg Properties (MTM28-M46J 140 37 %RW 12")
+        cap_props = prepregProperties[flags.CFRPType]
+
+        # Populate Q matrix for tube
+        Q_TUBE = np.zeros((3, 3))
+        Q_TUBE[0, 0] = tube_props['E_11']
+        Q_TUBE[1, 1] = tube_props['E_22']
+        Q_TUBE[0, 1] = tube_props['E_22'] * tube_props['V_12']
         Q_TUBE[1, 0] = Q_TUBE[0, 1]
-        Q_TUBE[2, 2] = G_12_TUBE
+        Q_TUBE[2, 2] = tube_props['G_12']
 
-        Q_CAP = np.zeros(3)
-        Q_CAP[0, 0] = E_11_CAP
-        Q_CAP[1, 1] = E_22_CAP
-        Q_CAP[0, 1] = E_22_CAP * V_12_CAP
+        # Populate Q matrix for caps
+        Q_CAP = np.zeros((3, 3))
+        Q_CAP[0, 0] = cap_props['E_11']
+        Q_CAP[1, 1] = cap_props['E_22']
+        Q_CAP[0, 1] = cap_props['E_22'] * cap_props['V_12']
         Q_CAP[1, 0] = Q_CAP[0, 1]
-        Q_CAP[2, 2] = G_12_CAP
+        Q_CAP[2, 2] = cap_props['G_12']
 
-        for s in range(1, (Ns+1)):
-            x = theta[(s-1)]
-            T_PLUS = np.array([cos(x) ** 2, sin(x) ** 2, 2 * sin(x) * cos(x), sin(x) ** 2, cos(x) ** 2, - 2 * sin(x) * cos(x), - sin(x) * cos(x), sin(x) * cos(x), (cos(x) ** 2) - (sin(x) ** 2)]).reshape(1, -1)
-            Qbar_TUBE_PLUS = (numpy.linalg.solve(T_PLUS, Q_TUBE)) / T_PLUS.T
+        for s in range(0, Ns):
+            # Compute stresses in structural axes for each lamina angle
+            # Q is the matrix of elastic constants in the material axis
+            # Q_bar is the matrix of elastic constants in the structural axes for a
+            # lamina at a ply angle theta.
 
-            x = -theta[(s-1)]
-            T_MINUS = np.array([cos(x) ** 2, sin(x) ** 2, 2 * sin(x) * cos(x), sin(x) ** 2, cos(x) ** 2, - 2 * sin(x) * cos(x), - sin(x) * cos(x), sin(x) * cos(x), (cos(x) ** 2) - (sin(x) ** 2)]).reshape(1, -1)
-            Qbar_TUBE_MINUS = (numpy.linalg.solve(T_MINUS, Q_TUBE)) / T_MINUS.T
+            # Failure is computed at each node, but using the ply angle of the
+            # element (this shouldn't cause a large discrepency). Failure at tip is
+            # zero, since stresses/strains at tip are zero.
 
-            # FIXME
-            # stress.cap(:, s)   = Q_CAP * strain[:, (s-1)]
-            # stress.plus(:, s)  = Qbar_TUBE_PLUS * strain[:, (s-1)]
-            # stress.minus(:, s) = Qbar_TUBE_MINUS * strain[:, (s-1)]
-            # stress.plus(:, s)  = T_PLUS * stress.plus(:, s)
-            # stress.minus(:, s) = T_MINUS * stress.minus(:, s)
+            # Transform the elastic constants for the plus angle ply
+            x = theta[s]  # Composite angle (in radians)
+            T_PLUS = [cos(x)**2,     sin(x)**2,      2*sin(x)*cos(x),
+                      sin(x)**2,     cos(x)**2,     -2*sin(x)*cos(x),
+                     -sin(x)*cos(x), sin(x)*cos(x), (cos(x)**2)-(sin(x)**2)]
+            Qbar_TUBE_PLUS = (np.linalg.solve(T_PLUS, Q_TUBE)) / T_PLUS.T  # transform elastic constants
 
+            # Transform the elastic constants for the minus angle ply
+            x = -theta[s]  # Composite angle (in radians)
+            T_MINUS = [cos(x)**2,     sin(x)**2,      2*sin(x)*cos(x),
+                       sin(x)**2,     cos(x)**2,     -2*sin(x)*cos(x),
+                      -sin(x)*cos(x), sin(x)*cos(x), (cos(x)**2)-(sin(x)**2)]
+            Qbar_TUBE_MINUS = (np.linalg.solve(T_MINUS, Q_TUBE)) / T_MINUS.T  # transform elastic constants
+
+            stress = MaterialFailure()
+            stress.cap = np.zeros(3, Ns+1)
+            stress.plus = np.zeros(3, Ns+1)
+            stress.minus = np.zeros(3, Ns+1)
+
+            # Compute stresses in structural coordinates
+            for i in range(0, Ns):
+                stress.cap[i, s]   = Q_CAP * strain[i, s]            # using Q for the cap
+                stress.plus[i, s]  = Qbar_TUBE_PLUS * strain[i, s]   # using Q_bar for the + angle plys
+                stress.minus[i, s] = Qbar_TUBE_MINUS * strain[i, s]  # using Q_bar for the - angle plys
+
+            # Transform stresses to material axes for each lamina angle
+            for ix in range(0, Ns):
+                stress.plus[i, s]  = T_PLUS * stress.plus[i, s]
+                stress.minus[i, s] = T_MINUS * stress.minus[i, s]
+
+            # Determine fraction of failure for each lamina angle
+
+            # ULTIMATE_11_TENS and ULTIMATE_!!_COMP are both positive values
+            # indicating the maximum tensile and compressive stress before failure.
+            # failure.cap[0,s] will be positive for tensile failures and negative for
+            # compressive failures.
+
+            # Cap failure
             if nCap == 0:
                 failure.cap[1, s] = 0
                 failure.cap[2, s] = 0
                 failure.cap[3, s] = 0
             else:
-                if stress.cap[1, s] > 0:
-                    failure.cap[1, s] = stress.cap[1, s] / ULTIMATE_11_TENS_CAP
+                if stress.cap[1, s] > 0:  # tensile stress in fibre
+                    failure.cap[1, s] = stress.cap[1, s] / cap_props['ULTIMATE_11_TENS']
                 else:
-                    failure.cap[1, s] = stress.cap[1, s] / ULTIMATE_11_COMP_CAP
-                if stress.cap[2, s] > 0:
-                    failure.cap[2, s] = stress.cap[2, s] / ULTIMATE_22_TENS_CAP
+                    failure.cap[1, s] = stress.cap[1, s] / cap_props['ULTIMATE_11_COMP']
+
+                if stress.cap[2, s] > 0:  # tensile stress in matrix
+                    failure.cap[2, s] = stress.cap[2, s] / cap_props['ULTIMATE_22_TENS']
                 else:
-                    failure.cap[2, s] = stress.cap[2, s] / ULTIMATE_22_COMP_CAP
-                failure.cap[3, s] = stress.cap[3, s] / ULTIMATE_12_CAP
+                    failure.cap[2, s] = stress.cap[2, s] / cap_props['ULTIMATE_22_COMP']
+                failure.cap[3, s] = stress.cap[3, s] / cap_props['ULTIMATE_12']
 
-            if stress.plus[1, s] > 0:
-                failure.plus[1, s] = stress.plus[1, s] / ULTIMATE_11_TENS_TUBE
+            # Plus angle ply failure
+            if stress.plus[1, s] > 0:  # tensile stress in fibre
+                failure.plus[1, s] = stress.plus[1, s] / tube_props['ULTIMATE_11_TENS']
             else:
-                failure.plus[1, s] = stress.plus[1, s] / ULTIMATE_11_COMP_TUBE
+                failure.plus[1, s] = stress.plus[1, s] / tube_props['ULTIMATE_11_COMP']
 
-            if stress.plus[2, s] > 0:
-                failure.plus[2, s] = stress.plus[2, s] / ULTIMATE_22_TENS_TUBE
+            if stress.plus[2, s] > 0:  # tensile stress in matrix
+                failure.plus[2, s] = stress.plus[2, s] / tube_props['ULTIMATE_22_TENS']
             else:
-                failure.plus[2, s] = stress.plus[2, s] / ULTIMATE_22_COMP_TUBE
+                failure.plus[2, s] = stress.plus[2, s] / tube_props['ULTIMATE_22_COMP']
 
-            failure.plus[3, s] = stress.plus[3, s] / ULTIMATE_12_TUBE
+            failure.plus[3, s] = stress.plus[3, s] / tube_props['ULTIMATE_12']
 
-            if stress.minus[1, s] > 0:
-                failure.minus[1, s] = stress.minus[1, s] / ULTIMATE_11_TENS_TUBE
+            # Minus angle ply failure
+            if stress.minus[1, s] > 0:  # tensile stress in fibre
+                failure.minus[1, s] = stress.minus[1, s] / tube_props['ULTIMATE_11_TENS']
             else:
-                failure.minus[1, s] = stress.minus[1, s] / ULTIMATE_11_COMP_TUBE
+                failure.minus[1, s] = stress.minus[1, s] / tube_props['ULTIMATE_11_COMP']
 
-            if stress.minus[2, s] > 0:
-                failure.minus[2, s] = stress.minus[2, s] / ULTIMATE_22_TENS_TUBE
+            if stress.minus[2, s] > 0:  # tensile stress in matrix
+                failure.minus[2, s] = stress.minus[2, s] / tube_props['ULTIMATE_22_TENS']
             else:
-                failure.minus[2, s] = stress.minus[2, s] / ULTIMATE_22_COMP_TUBE
+                failure.minus[2, s] = stress.minus[2, s] / tube_props['ULTIMATE_22_COMP']
 
-            failure.minus[3, s] = stress.minus[3, s] / ULTIMATE_12_TUBE
+            failure.minus[3, s] = stress.minus[3, s] / tube_props['ULTIMATE_12']
 
         return failure
 
     def torsional_buckling_failure(self, Ns, Finternal, d, theta, nTube, nCap, lBiscuit, flags):
-        RHO_TUBE, T_PLY_TUBE, E_11_TUBE, E_22_TUBE, G_12_TUBE, V_12_TUBE, ULTIMATE_11_TENS_TUBE, ULTIMATE_11_COMP_TUBE, ULTIMATE_22_TENS_TUBE, ULTIMATE_22_COMP_TUBE, ULTIMATE_12_TUBE = PrepregProperties(flags.CFRPType)
-        V_21_TUBE = V_12_TUBE * (E_22_TUBE / E_11_TUBE)
-        mu_prime_x = V_12_TUBE
+        # MATERIAL PROPERTIES
+        tube_props = prepregProperties(flags.CFRPType)
+        V_21_TUBE = tube_props['V_12'] * (tube_props['E_22'] / tube_props['E_11'])
+
+        # Coordinate system: x is axial direction, theta is circumferential direction
+        mu_prime_x = tube_props['V_12_TUBE']
         mu_prime_theta = V_21_TUBE
-        Q = np.zeros(3)
-        Q[0, 0] = E_11_TUBE / (1 - V_12_TUBE * V_21_TUBE)
-        Q[1, 1] = E_22_TUBE / (1 - V_12_TUBE * V_21_TUBE)
-        Q[0, 1] = E_22_TUBE * V_12_TUBE / (1 - V_12_TUBE * V_21_TUBE)
+
+        Q = np.zeros(3)  # Preallocate Q-matrix
+
+        # Matrix of elastic constants (AER1401, Composite Lamina, slide 8)
+        Q[0, 0] = tube_props['E_11_TUBE'] / (1 - tube_props['V_12_TUBE'] * V_21_TUBE)
+        Q[1, 1] = tube_props['E_22_TUBE'] / (1 - tube_props['V_12_TUBE'] * V_21_TUBE)
+        Q[0, 1] = tube_props['E_22_TUBE'] * tube_props['V_12_TUBE'] / (1 - tube_props['V_12_TUBE'] * V_21_TUBE)
         Q[1, 0] = Q[0, 1]
-        Q[2, 2] = G_12_TUBE
-        failure = np.zeros(1, Ns + 1)
-        for s in range(1, (Ns+1)):
-            if nCap[(s-1)] != 0:
-                AF_torsional_buckling = 1.25
+        Q[2, 2] = tube_props['G_12']
+
+        failure = np.zeros(0, Ns)
+
+        for s in range(0, Ns):
+
+            if nCap[s] != 0:
+                AF_torsional_buckling = 1.25  # See "Validation - Torsional Buckling.xlsx"
             else:
                 AF_torsional_buckling = 1
-            x = theta[(s-1)]
-            T = np.array([cos(x) ** 2, sin(x) ** 2, 2 * sin(x) * cos(x), sin(x) ** 2, cos(x) ** 2, - 2 * sin(x) * cos(x), - sin(x) * cos(x), sin(x) * cos(x), (cos(x) ** 2) - (sin(x) ** 2)]).reshape(1, -1)
-            Qbar = (numpy.linalg.solve(T, Q)) / T.T
+
+            # Determine elastic properties of rotated tube laminate
+            x = theta[s]  # Composite angle (in radians)
+
+            # Transformation matrix
+            T = [cos(x)*2,      sin(x)**2,      2*sin(x)*cos(x),
+                 sin(x)**2,     cos(x)**2,     -2*sin(x)*cos(x),
+                -sin(x)*cos(x), sin(x)*cos(x), (cos(x)**2)-(sin(x)**2)]
+
+            # Transform the elastic constants using the transformation matrix to obtain the
+            # elastic constants at the composite angle.
+            Qbar = (np.linalg.solve(T, Q)) / T.T
+
+            # Breakout tube elastic constants at the transformed angle
             E_x = Qbar[0, 0]
             E_theta = Qbar[1, 1]
-            t_tube = nTube[(s-1)] * T_PLY_TUBE
-            R = (d[(s-1)] + t_tube) / 2
-            L = lBiscuit[(s-1)]
-            D_x = E_x * (1 / 12) * (t_tube ** 3)
-            D_theta = E_theta * (1 / 12) * (t_tube ** 3)
-            B_x = E_x * t_tube
-            B_theta = E_theta * t_tube
-            rho = ((D_x * D_theta) / (B_x * B_theta)) ** (1 / 4)
-            Gamma = (3.6125e-07) * ((R / (rho * 1000)) ** 6) + (- 1.9724e-05) * ((R / (rho * 1000)) ** 5) + (0.0004283) * ((R / (rho * 1000)) ** 4) + (- 0.0048315) * ((R / (rho * 1000)) ** 3) + (0.031801) * ((R / (rho * 1000)) ** 2) + (- 0.12975) * (R / (rho * 1000)) + 0.88309
-            Z = ((B_theta * (1 - mu_prime_x * mu_prime_theta) * (L ** 4)) / (12 * D_x * (R ** 2))) ** (1 / 2)
-            Z_s = ((D_theta / D_x) ** (5 / 6)) * ((B_x / B_theta) ** (1 / 2)) * Z
-            K_s = 0.89 * (Z_s ** (3 / 4))
-            N_x_theta = (Gamma * K_s * (pi ** 2) * D_x) / (L ** 2)
-            critical_torque = AF_torsional_buckling * N_x_theta * 2 * pi * (R ** 2)
-            failure[(s-1)] = abs(Finternal[4, (s-1)] / critical_torque)
 
-        failure[(Ns + 1-1)] = 0
+            # Calculate tube geometric properties
+            t_tube = nTube[(s-1)] * tube_props['T_PLY']  # Shell thickness, CR-912 p.xxxvi
+            R = (d[(s-1)] + t_tube) / 2                  # Radius from axis of rotation to centroidal surface of cylinder wall, CR-912 p.xxxiv
+            L = lBiscuit[(s-1)]                          # Unsupported length of cylinder, CR-912 p.xxx
+
+            # Calculate tube elastic properties (CR-912 p.576)
+            D_x     = E_x*(1/12)*(t_tube**3)
+            D_theta = E_theta*(1/12)*(t_tube**3)
+            B_x     = E_x*t_tube
+            B_theta = E_theta*t_tube
+
+            # Calculate Gamma
+            rho = ((D_x*D_theta)/(B_x*B_theta))**(1/4)
+            Gamma = 3.6125e-07  * ((R / (rho * 1000)) ** 6)  + \
+                    -1.9724e-05 * ((R / (rho * 1000)) ** 5)  + \
+                     0.0004283  * ((R / (rho * 1000)) ** 4)  + \
+                    -0.0048315  * ((R / (rho * 1000)) ** 3)  + \
+                     0.031801   * ((R / (rho * 1000)) ** 2)  + \
+                    -0.12975    *  (R / (rho * 1000))        + \
+                     0.88309
+
+            # Calculate factors required in critical torque equation
+            Z   = ((B_theta*(1-mu_prime_x*mu_prime_theta)*(L**4)) / (12*D_x*(R**2)))**(1/2)
+            Z_s = ((D_theta/D_x)**(5/6))*((B_x/B_theta)**(1/2))*Z
+            K_s = 0.89*(Z_s**(3/4))
+            N_x_theta = (Gamma*K_s*(pi**2)*D_x)/(L**2)
+
+            # Calculate critical torque
+            critical_torque = AF_torsional_buckling * N_x_theta * 2 * pi * (R**2)
+            failure[s] = abs(Finternal[4, s] / critical_torque)
+
+        failure[Ns] = 0  # no torsion at tip
 
         return failure
 
