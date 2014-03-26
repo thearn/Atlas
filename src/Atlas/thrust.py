@@ -31,7 +31,7 @@ class Thrust(Component):
         self.chordFrac[sTrans]  = self.yN[sTrans + 1]
         self.chordFrac[sTrans] -= self.ycmax
         self.chordFrac[sTrans] /= (self.yN[sTrans + 1] - self.yN[sTrans])
-        
+
         self.dT += self.chordFrac
         self.dT *= 0.5 
         self.dT *= self.rho
@@ -57,9 +57,14 @@ class InducedVelocity(Component):
 
     def execute(self):
         self.vi = np.zeros(self.Ns)
+        sqrt = np.zeros(self.Ns)
+
+        sqrt = 0.25 * self.b * self.dT / (np.pi * self.rho * self.r * self.dr)
+        sqrt += 0.25 * self.vc ** 2
+        sqrt = np.sqrt(sqrt)
 
         self.vi += -0.5 * self.vc
-        self.vi += np.sqrt(0.25 * self.vc ** 2 + 0.25 * self.b * self.dT / (np.pi * self.rho * self.r * self.dr))
+        self.vi += sqrt
 
         self.vi /= (1. + (self.R / self.h / 4.) ** 2)
 
