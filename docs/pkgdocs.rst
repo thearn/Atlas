@@ -19,35 +19,29 @@ Package Metadata
     [openmdao.component]
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
-    Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
     Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
     Atlas.structures.Strains=Atlas.structures:Strains
-    Atlas.properties.WireProperties=Atlas.properties:WireProperties
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
     Atlas.coefficients.dragCoefficientFit=Atlas.coefficients:dragCoefficientFit
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient
     Atlas.structures.Failures=Atlas.structures:Failures
-    Atlas.failure.failureCalc=Atlas.failure:failureCalc
+    Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
     Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.structures.Structures=Atlas.structures:Structures
-    Atlas.failure.torsionalBucklingFailure=Atlas.failure:torsionalBucklingFailure
     [openmdao.container]
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
     Atlas.structures.Failure=Atlas.structures:Failure
-    Atlas.failure.failureCalc=Atlas.failure:failureCalc
     Atlas.structures.Strain=Atlas.structures:Strain
     Atlas.coefficients.dragCoefficientFit=Atlas.coefficients:dragCoefficientFit
     Atlas.structures.JointProperties=Atlas.structures:JointProperties
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
-    Atlas.properties.WireProperties=Atlas.properties:WireProperties
+    Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.structures.FBlade=Atlas.structures:FBlade
     Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
     Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
     Atlas.structures.FEM=Atlas.structures:FEM
-    Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.structures.Structures=Atlas.structures:Structures
-    Atlas.failure.torsionalBucklingFailure=Atlas.failure:torsionalBucklingFailure
     Atlas.structures.BucklingFailure=Atlas.structures:BucklingFailure
     Atlas.structures.Flags=Atlas.structures:Flags
     Atlas.structures.MaterialFailure=Atlas.structures:MaterialFailure

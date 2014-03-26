@@ -1,4 +1,4 @@
-from Atlas import Flags, JointProperties, PrescribedLoad, FBlade, \
+from Atlas import Flags, JointProperties, PrescribedLoad, FBlade, Strain, \
                   MassProperties, FEM, Strains, Failures, Structures
 
 from scipy.io import loadmat
@@ -195,12 +195,211 @@ class TestStructures(unittest.TestCase):
         # check outputs
         self.check_strains(comp, data)
 
+    def check_failures(self, comp, data):
+        """ check component failure results against MATLAB data  """
+
+        print
+        # print "data['fail']\n", data['fail'].keys()
+        print "data['fail']['top']",      data['fail']['top'].shape
+        print "data['fail']['top']",      data['fail']['top'][0, 0]['cap'].shape
+        print "data['fail']['top']",      data['fail']['top'][0, 0]['plus'].shape
+        print "data['fail']['top']",      data['fail']['top'][0, 0]['minus'].shape
+
+        print "data['fail']['top']",      data['fail']['bottom'][0, 0]['cap'].shape
+        print "data['fail']['top']",      data['fail']['bottom'][0, 0]['plus'].shape
+        print "data['fail']['top']",      data['fail']['bottom'][0, 0]['minus'].shape
+
+        print "data['fail']['top']",      data['fail']['back'][0, 0]['cap'].shape
+        print "data['fail']['top']",      data['fail']['back'][0, 0]['plus'].shape
+        print "data['fail']['top']",      data['fail']['back'][0, 0]['minus'].shape
+
+        print "data['fail']['top']",      data['fail']['front'][0, 0]['cap'].shape
+        print "data['fail']['top']",      data['fail']['front'][0, 0]['plus'].shape
+        print "data['fail']['top']",      data['fail']['front'][0, 0]['minus'].shape
+
+        print "data['fail']['buckling']", data['fail']['buckling'][0, 0]['x'].shape
+        print "data['fail']['buckling']", data['fail']['buckling'][0, 0]['z'].shape
+        print "data['fail']['buckling']", data['fail']['buckling'][0, 0]['torsion'].shape
+
+        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['buckling'].shape
+        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['bend'].shape
+        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['torsion'].shape
+        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['torbuck'].shape
+        print
+
+        # top
+        for i, row in enumerate(data['fail']['top'][0, 0]['cap'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.top.cap[i, j], val, 4,
+                    msg='fail.top.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.top.cap[i, j], val))
+
+        for i, row in enumerate(data['fail']['top'][0, 0]['plus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.top.plus[i, j], val, 4,
+                    msg='fail.top.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.top.plus[i, j], val))
+
+        for i, row in enumerate(data['fail']['top'][0, 0]['minus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.top.minus[i, j], val, 4,
+                    msg='fail.top.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.top.minus[i, j], val))
+
+        # bottom
+        for i, row in enumerate(data['fail']['bottom'][0, 0]['cap'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.bottom.cap[i, j], val, 4,
+                    msg='fail.bottom.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.bottom.cap[i, j], val))
+
+        for i, row in enumerate(data['fail']['bottom'][0, 0]['plus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.bottom.plus[i, j], val, 4,
+                    msg='fail.bottom.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.bottom.plus[i, j], val))
+
+        for i, row in enumerate(data['fail']['bottom'][0, 0]['minus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.bottom.minus[i, j], val, 4,
+                    msg='fail.bottom.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.bottom.minus[i, j], val))
+
+        # back
+        for i, row in enumerate(data['fail']['back'][0, 0]['cap'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.back.cap[i, j], val, 4,
+                    msg='fail.back.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.back.cap[i, j], val))
+
+        for i, row in enumerate(data['fail']['back'][0, 0]['plus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.back.plus[i, j], val, 4,
+                    msg='fail.back.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.back.plus[i, j], val))
+
+        for i, row in enumerate(data['fail']['back'][0, 0]['minus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.back.minus[i, j], val, 4,
+                    msg='fail.back.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.back.minus[i, j], val))
+
+        # front
+        for i, row in enumerate(data['fail']['front'][0, 0]['cap'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.front.cap[i, j], val, 4,
+                    msg='fail.front.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.front.cap[i, j], val))
+
+        for i, row in enumerate(data['fail']['front'][0, 0]['plus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.front.plus[i, j], val, 4,
+                    msg='fail.front.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.front.plus[i, j], val))
+
+        for i, row in enumerate(data['fail']['front'][0, 0]['minus'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.front.minus[i, j], val, 4,
+                    msg='fail.front.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.front.minus[i, j], val))
+
+        # buckling
+        for i, row in enumerate(data['buckling']['buckling'][0, 0]['x'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.buckling.x[i, j], val, 4,
+                    msg='fail.buckling.x[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.buckling.x[i, j], val))
+
+        for i, row in enumerate(data['buckling']['buckling'][0, 0]['z'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.buckling.z[i, j], val, 4,
+                    msg='fail.buckling.z[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.buckling.z[i, j], val))
+
+        for i, row in enumerate(data['buckling']['buckling'][0, 0]['torsion'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.fail.buckling.torsion[i, j], val, 4,
+                    msg='fail.buckling.torsion[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.buckling.torsion[i, j], val))
+
+        # quad  (TODO)
+
+        # wire
+        for i, val in enumerate(data['fail']['wire'][0][0][0]):
+            self.assertAlmostEquals(comp.fail.wire[i], val, 4,
+                msg='fail.wire[%d] mismatch (%f vs %f)' % (i, comp.fail.wire[i], val))
+
     def test_Failures(self):
         """ test of failure calculations  """
-
         comp = Failures()
 
-        raise Exception('Test not implemented yet!')
+        data = loadmat('failure.mat', struct_as_record=True, mat_dtype=True)
+
+        # populate inputs
+        comp.flags = Flags()
+        CFRPType = int(data['flags']['CFRPType'][0][0][0][0])
+        if CFRPType == 1:
+            comp.flags.CFRPType = 'NCT301-1X HS40 G150 33 +/-2%RW'
+        elif CFRPType == 2:
+            comp.flags.CFRPType = 'HexPly 6376 HTS-12K 268gsm 35%RW'
+        elif CFRPType == 3:
+            comp.flags.CFRPType = 'MTM28-1/IM7-GP-145gsm 32 +/-2%Rw'
+        elif CFRPType == 4:
+            comp.flags.CFRPType = 'HexPly 8552 IM7 160gsm 35%RW'
+        elif CFRPType == 5:
+            comp.flags.CFRPType = 'NCT304-1 HR40 G80 40 +/-2%RW'
+        elif CFRPType == 6:
+            comp.flags.CFRPType = 'MTM28-1B/M46J-140-37%RW'
+        else:
+            raise Exception('Unable to decode CFRPType from MATLAB data')
+        WireType = int(data['flags']['WireType'][0][0][0][0])
+        if WireType == 1:
+            comp.flags.WireType = 'Pianowire'
+        elif WireType == 2:
+            comp.flags.WireType = 'Vectran'
+        else:
+            raise Exception('Unable to decode WireType from MATLAB data')
+
+        comp.yN       = data['yN']
+
+        comp.Finternal = data['Finternal']
+
+        comp.strain = Strain()
+        comp.strain.top       = data['strain']['top'][0][0]
+        comp.strain.bottom    = data['strain']['bottom'][0][0]
+        comp.strain.back      = data['strain']['back'][0][0]
+        comp.strain.front     = data['strain']['front'][0][0]
+        comp.strain.bending_x = data['strain']['bending_x'][0][0]
+        comp.strain.bending_z = data['strain']['bending_z'][0][0]
+        comp.strain.axial_y   = data['strain']['axial_y'][0][0]
+        comp.strain.torsion_y = data['strain']['torsion_y'][0][0]
+
+        comp.d        = data['d']
+        comp.theta    = data['theta']
+        comp.nTube    = data['nTube'].flatten()
+        comp.nCap     = data['nCap']
+
+        comp.yWire    = data['yWire'][0]
+        comp.zWire    = data['zWire'][0][0]
+        comp.EIxJ     = data['EIxJ']
+        comp.EIzJ     = data['EIzJ']
+
+        comp.lBiscuit     = data['lBiscuit']
+        comp.dQuad        = data['dQuad'][0][0]
+        comp.thetaQuad    = data['thetaQuad'][0][0]
+        comp.nTubeQuad    = int(data['nTubeQuad'][0][0])
+        comp.lBiscuitQuad = data['lBiscuitQuad'][0][0]
+        comp.RQuad        = data['RQuad'][0][0]
+        comp.hQuad        = data['hQuad'][0][0]
+        comp.EIQuad       = data['EIQuad'].flatten()
+        comp.GJQuad       = data['GJQuad'].flatten()
+        comp.tWire        = data['tWire'][0][0]
+        comp.TWire        = data['TWire'].flatten()
+        comp.TEtension    = data['TEtension'][0][0]
+
+        comp.b          = int(data['b'][0][0])
+        comp.Fblade     = FBlade()
+        comp.Fblade.Fx  = data['Fblade']['Fx'][0][0].flatten()
+        comp.Fblade.Fz  = data['Fblade']['Fz'][0][0].flatten()
+        comp.Fblade.My  = data['Fblade']['My'][0][0].flatten()
+        comp.Fblade.Q   = data['Fblade']['Q'][0][0].flatten()
+        comp.Fblade.P   = data['Fblade']['P'][0][0].flatten()
+        comp.Fblade.Pi  = data['Fblade']['Pi'][0][0].flatten()
+        comp.Fblade.Pp  = data['Fblade']['Pp'][0][0].flatten()
+        comp.mSpar      = data['mSpar']
+        comp.mChord     = data['mChord']
+        comp.mElseRotor = data['mElseRotor'][0][0]
+
+        # run
+        comp.run()
+
+        # check outputs
+        self.check_failures(comp, data)
 
     def test_Structures(self):
         """ full up test of integrated structures calculations """

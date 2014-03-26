@@ -1,6 +1,5 @@
 from coefficients import dragCoefficient, dragCoefficientFit, frictionCoefficient
-from properties import DiscretizeProperties, WireProperties, SparProperties, ChordProperties
-from structures import Flags, JointProperties, PrescribedLoad, FBlade, \
+from properties import DiscretizeProperties, wireProperties, SparProperties, ChordProperties
+from structures import Flags, JointProperties, PrescribedLoad, FBlade, Strain, \
                        MassProperties, FEM, Strains, Failures, Structures
-from failure import failureCalc, torsionalBucklingFailure
 from vortex import vortexRing, inducedVelocity

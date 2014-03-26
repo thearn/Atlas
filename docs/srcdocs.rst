@@ -20,19 +20,6 @@ coefficients.py
    :show-inheritance:
 
         
-.. index:: failure.py
-
-.. _Atlas.failure.py:
-
-failure.py
-----------
-
-.. automodule:: Atlas.failure
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-        
 .. index:: properties.py
 
 .. _Atlas.properties.py:
@@ -67,19 +54,6 @@ test_coefficients.py
 --------------------
 
 .. automodule:: Atlas.test.test_coefficients
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-        
-.. index:: test_failure.py
-
-.. _Atlas.test.test_failure.py:
-
-test_failure.py
----------------
-
-.. automodule:: Atlas.test.test_failure
    :members:
    :undoc-members:
    :show-inheritance:

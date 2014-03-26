@@ -1,6 +1,6 @@
 # pylint: disable=line-too-long, invalid-name, bad-whitespace, trailing-whitespace, too-many-locals, line-too-long
 from openmdao.main.api import Component
-from openmdao.lib.datatypes.api import Float, Array, Int, Str, Enum
+from openmdao.lib.datatypes.api import Float, Array, Int, Str
 import numpy as np
 from math import pi, sin, cos, floor, sqrt
 
@@ -108,6 +108,22 @@ prepregProperties =  {
        'ULTIMATE_22_COMP': 1.4617E+08,
        'ULTIMATE_12': 1.0255E+08,
     }
+}
+
+
+wireProperties =  {
+    'Pianowire': {
+        'RHO': 7.85e3,       # From ASTM228 Standard, Accessed Online at MatWeb
+        'E': 2.10e11,        # From ASTM228 Standard, Accessed Online at MatWeb
+        'ULTIMATE': 2.62e9,  # FortePiano.com
+        'D': [0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.72]  # FortePiano.com
+    },
+    'Vectran': {
+        'RHO': 1.1065e3,
+        'E': 3.921e10,        # Effective E of braided Vectran, averaged from data supplied by Cortland Cable
+        'ULTIMATE': 9.828e8,  # Based on minimum tensile strength supplied by Cortland Cable
+        'D': [1.5, 2]
+    },
 }
 
 
@@ -516,36 +532,6 @@ class DiscretizeProperties(Component):
             self.nTube[(s-1)] = self.nTube_[(j - 1-1)] + x * (self.nTube_[(j-1)] - self.nTube_[(j - 1-1)])
             self.nCap[(s-1)] = self.nCap[(j - 1-1)] + x * (self.nCap[(j-1)] - self.nCap[(j - 1-1)])
             self.lBiscuit[(s-1)] = self.lBiscuit_[(j - 1-1)] + x * (self.lBiscuit_[(j-1)] - self.lBiscuit_[(j - 1-1)])
-
-
-class WireProperties(Component):
-    """
-    Computes the material properties of wire options used in the HPH Project.
-    """
-
-    material = Enum('Pianowire', ('Pianowire', 'Vectran'), iotype='in',
-        desc='Material to be used')
-
-    RHO = Float(0, iotype='out',
-        desc='Material density, calculated for woven material if necessary [Km/m^3]')
-
-    E = Float(0, iotype='out', desc='Elastic modulus [Pa]')
-
-    ULTIMATE = Float(0, iotype='out', desc='Failure strength [Pa]')
-
-    D = Array(iotype='out', desc='Available diameters [m]')
-
-    def execute(self):
-        if self.material == 'Pianowire':  # High-Tensile Steel
-            self.RHO = 7.85e3       # From ASTM228 Standard, Accessed Online at MatWeb
-            self.E = 2.10e11        # From ASTM228 Standard, Accessed Online at MatWeb
-            self.ULTIMATE = 2.62e9  # FortePiano.com
-            self.D = np.array([0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.72]).reshape(1, -1)  # FortePiano.com
-        elif self.material == 'Vectran':
-            self.RHO = 1.1065e3
-            self.E = 3.921e10        # Effective E of braided Vectran, averaged from data supplied by Cortland Cable
-            self.ULTIMATE = 9.828e8  # Based on minimum tensile strength supplied by Cortland Cable
-            self.D = np.array([1.5, 2]).reshape(1, -1)
 
 
 class ChordProperties(Component):

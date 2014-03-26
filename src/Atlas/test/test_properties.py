@@ -1,4 +1,4 @@
-from Atlas import DiscretizeProperties, WireProperties, SparProperties, ChordProperties
+from Atlas import DiscretizeProperties, wireProperties, SparProperties, ChordProperties
 import numpy as np
 import unittest
 
@@ -16,21 +16,17 @@ def absolute_err(x, y):
 class AtlasTestProperties(unittest.TestCase):
 
     def test_wireProperties(self):
-        comp = WireProperties()
+        props = wireProperties['Pianowire']
 
-        comp.material = 'Pianowire'
-        comp.run()
+        self.assertAlmostEquals(props['RHO'], 7.85e3, 4)
+        self.assertAlmostEquals(props['E'], 2.10e11, 3)
+        self.assertAlmostEquals(props['ULTIMATE'], 2.62e9, 3)
 
-        self.assertAlmostEquals(comp.RHO, 7.85e3, 4)
-        self.assertAlmostEquals(comp.E, 2.10e11, 3)
-        self.assertAlmostEquals(comp.ULTIMATE, 2.62e9, 3)
+        props = wireProperties['Vectran']
 
-        comp.material = 'Vectran'
-        comp.run()
-
-        self.assertAlmostEquals(comp.RHO, 1.1065e3, 4)
-        self.assertAlmostEquals(comp.E, 3.921e10, 3)
-        self.assertAlmostEquals(comp.ULTIMATE, 9.828e8, 3)
+        self.assertAlmostEquals(props['RHO'], 1.1065e3, 4)
+        self.assertAlmostEquals(props['E'], 3.921e10, 3)
+        self.assertAlmostEquals(props['ULTIMATE'], 9.828e8, 3)
 
     def test_discretizeProperties(self):
         comp = DiscretizeProperties()
