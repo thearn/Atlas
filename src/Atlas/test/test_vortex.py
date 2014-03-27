@@ -3,8 +3,10 @@ from Atlas import vortexRing, inducedVelocity
 import numpy as np
 import unittest
 
+
 def relative_err(x, y):
     return (np.abs(x-y)/np.linalg.norm(x)).max()
+
 
 class Test_vortexRing(unittest.TestCase):
     """
@@ -44,9 +46,9 @@ class Test_vortexRing(unittest.TestCase):
     def test_vz(self):
         assert relative_err(self.comp.vz, values.vz) < 1e-7
 
-
     def test_vr(self):
         assert relative_err(self.comp.vr, values.vr) < 1e-7
+
 
 class Test_inducedVelocity(unittest.TestCase):
 
@@ -66,8 +68,6 @@ class Test_inducedVelocity(unittest.TestCase):
 
         comp.run()
         assert relative_err(comp.vi, values.vi) < 1e-7
-
-
 
 
 if __name__ == "__main__":
