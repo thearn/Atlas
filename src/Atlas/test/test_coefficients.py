@@ -1,4 +1,4 @@
-from Atlas import dragCoefficient, dragCoefficientFit, frictionCoefficient
+from Atlas import dragCoefficient, frictionCoefficient
 import unittest
 from openmdao.util.testutil import assert_rel_error
 
@@ -26,23 +26,23 @@ class AtlasTestCase(unittest.TestCase):
         comp.run()
         assert_rel_error(self, comp.Cd, 0.0077468, self.tol)
 
-    def test_dragCoefficientFit(self):
-        comp = dragCoefficientFit()
-        comp.Re = 2.9078e5
-        comp.tc = 0.14
-        comp.xtcU = 0.15
-        comp.xtcL = 0.3
+    # def test_dragCoefficientFit(self):
+    #     comp = dragCoefficientFit()
+    #     comp.Re = 2.9078e5
+    #     comp.tc = 0.14
+    #     comp.xtcU = 0.15
+    #     comp.xtcL = 0.3
 
-        comp.run()
-        assert_rel_error(self, comp.Cd, 0.018375, self.tol)
+    #     comp.run()
+    #     assert_rel_error(self, comp.Cd, 0.018375, self.tol)
 
-        comp.Re = 2.8504e5
-        comp.tc = 0.14
-        comp.xtcU = 0.15
-        comp.xtcL = 0.3
+    #     comp.Re = 2.8504e5
+    #     comp.tc = 0.14
+    #     comp.xtcU = 0.15
+    #     comp.xtcL = 0.3
 
-        comp.run()
-        assert_rel_error(self, comp.Cd, 0.018487, self.tol)
+    #     comp.run()
+    #     assert_rel_error(self, comp.Cd, 0.018487, self.tol)
 
     def test_frictionCoefficient(self):
         Re = 500000

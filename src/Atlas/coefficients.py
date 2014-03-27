@@ -42,26 +42,3 @@ class dragCoefficient(Component):
         Cfflat = (CfU + CfL)/2
         self.Cd = 2*Cfflat*(1 + 2*self.tc + 60*(self.tc)**4)
         
-class dragCoefficientFit(Component):
-    """
-    Computes drag coefficient
-     dragCoefficient.m returns the drag coefficient of an airfoil at Reynolds 
-     number Re, with thickness to chord ratio tc, and with xtcU and xtcL
-     fraction of laminar flow on the upper and lower surfaces respectively.
-     The result if a fit on existing HPH airfoils.
-    """
-    
-    Re = Float(0.0, iotype='in', desc='description')
-    tc = Float(0.0, iotype='in', desc='description')
-    xtcU = Float(0.0, iotype='in', desc='description')
-    xtcL = Float(0.0, iotype='in', desc='description')
-
-    Cd = Float(0.0, iotype='out', desc='description')
-
-    def execute(self):
-        Cf15_15 = 0.6798*self.Re**(-0.283);
-        Cf60_100 = 22.09*self.Re**(-0.604);
-        
-        xtc = self.xtcU+self.xtcL;
-        self.Cd = Cf15_15 + (Cf60_100-Cf15_15)*(xtc-0.3)/(1.6-0.3);
-

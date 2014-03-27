@@ -39,6 +39,33 @@ for s = 1:Ns+1
         sTrans = s;   %determine transitional partial element
     end
 end
+disp('sTrans');
+disp(sTrans);
+disp('endsTrans');
+disp('ycmax');
+disp(ycmax);
+disp('endycmax');
+disp('r');
+disp(r);
+disp('endr');
+disp('dr');
+disp(dr);
+disp('enddr');
+disp('Omega');
+disp(Omega);
+disp('endOmega');
+disp('rho');
+disp(rho);
+disp('endrho');
+disp('Cl');
+disp(Cl);
+disp('endCl');
+disp('c');
+disp(c);
+disp('endc');
+disp('yN');
+disp(yN);
+disp('endyN');
 chordFrac(sTrans) = (yN(sTrans+1)-ycmax) / (yN(sTrans+1)-yN(sTrans)); %Fraction of element that has a chord
 
 % Compute thrust assuming small angles
@@ -46,6 +73,12 @@ for s = 1:Ns
     dT(s) = chordFrac(s)*0.5*rho*(Omega*r(s))^2*Cl(s)*c(s)*dr(s);
 end
 
+disp('chordFrac');
+disp(chordFrac);
+disp('endchordFrac');
+disp('dT');
+disp(dT);
+disp('enddT');
 if flags.FreeWake
     
     % Set fidelity
@@ -69,17 +102,44 @@ if flags.FreeWake
         qq(:,s) = q((s-1)*6+1:(s-1)*6+6);
     end
     qh = qq(3,:)-yN'*anhedral;
+    disp(size(qq(3,:)))
+    disp(size(yN'*anhedral))
     
     [vi, ring] = VortexWakeCover(yN, rho, dT, vc, Omega, b, h, Nw, Ntt, Ntheta, qh, ycmax, flags.Cover, flags.PlotWake, flags.DynamicClimb);
     
     %vi = vi+0.3; %add vertical velocity
     
 else
+    disp('vc');
+    disp(vc);
+    disp('endvc');
+    disp('b');
+    disp(b);
+    disp('endb');
+    disp('dT');
+    disp(dT);
+    disp('enddT');
+    disp('r');
+    disp(r);
+    disp('endr');
+    disp('dr');
+    disp(dr);
+    disp('enddr');
+    disp('rho');
+    disp(rho);
+    disp('endrho');
+    disp('R');
+    disp(R);
+    disp('endR');
     % Compute induced velocity using annual-ring actuator disk theory
     for s = 1:Ns
         vi(s) = -0.5*vc + sqrt(0.25*vc^2 + 0.25*b*dT(s)/(pi*rho*r(s)*dr(s))); %where vc is vertical velocity
         %vi(s) = sqrt(0.25*b*dT(s)/(pi*rho*r(s)*dr(s)));
     end
+
+    disp('vi_inter')
+    disp(vi)
+    disp('end vi_inter')
 
     % Add ground effect (Bramwell)
 %     A = pi*R^2;
@@ -91,6 +151,10 @@ else
 
     % Add ground effect Cheesemen & Benett's
     vi = vi/(1+(R/h/4)^2);
+
+    disp('vi')
+    disp(vi)
+    disp('end vi')
 
     % Add ground effect (vi fit)
 %     hR = h/R;
@@ -111,6 +175,71 @@ else
 end
 
 % Compute lift and drag using full angles
+
+disp('Ns');
+disp(Ns);
+disp('endNs');
+disp('Omega');
+disp(Omega);
+disp('endOmega');
+disp('r');
+disp(r);
+disp('endr');
+disp('t');
+disp(t);
+disp('endt');
+disp('xtU');
+disp(xtU);
+disp('endxtU');
+disp('xtL');
+disp(xtL);
+disp('endxtL');
+disp('vw');
+disp(vw);
+disp('endvw');
+disp('vc');
+disp(vc);
+disp('endvc');
+disp('vi');
+disp(vi);
+disp('endvi');
+disp('c');
+disp(c);
+disp('endc');
+disp('rho');
+disp(rho);
+disp('endrho');
+disp('Cl');
+disp(Cl);
+disp('endCl');
+disp('dr');
+disp(dr);
+disp('enddr');
+disp('visc');
+disp(visc);
+disp('endvisc');
+disp('d');
+disp(d);
+disp('endd');
+disp('yWire');
+disp(yWire);
+disp('endyWire');
+disp('zWire');
+disp(zWire);
+disp('endzWire');
+disp('yN');
+disp(yN);
+disp('endyN');
+disp('tWire');
+disp(tWire);
+disp('endtWire');
+disp('chordFrac');
+disp(chordFrac);
+disp('endchordFrac');
+disp('Cm');
+disp(Cm);
+disp('endCm');
+
 for s = 1:Ns
     U = sqrt( (Omega*r(s)+vw)^2 + (vc+vi(s))^2 ); %where vw is wind, vc is vertical velocity
     
@@ -145,8 +274,16 @@ for s = 1:Ns
             dD = dD + 0.5*rho*U^2*CdWire*tWire*L;
         end
     end
-    
+
     phi(s) = atan2(vc+vi(s),vw+Omega*r(s)); %where vw is wind, vc is vertical velocity
+    disp("********")
+    disp(vc)
+    disp(vi(s))
+    disp(vw)
+    disp(Omega)
+    disp(r(s))
+    disp(phi(s))
+    disp("********")
     Fblade.Fz(s) = chordFrac(s)*(dL*cos(phi(s)) - dD*sin(phi(s)));
     Fblade.Fx(s) = chordFrac(s)*(dD*cos(phi(s)) + dL*sin(phi(s)));
     Fblade.My(s) = chordFrac(s)*(0.5*rho*U^2*Cm(s)*c(s)*c(s)*dr(s));
@@ -155,6 +292,39 @@ for s = 1:Ns
     Fblade.Pi(s) = chordFrac(s)*(dL*sin(phi(s))*r(s)*Omega);
     Fblade.Pp(s) = chordFrac(s)*(dD*cos(phi(s))*r(s)*Omega);
 end
+
+disp('Fblade.Fx');
+disp(Fblade.Fx);
+disp('endFblade.Fx');
+disp('Fblade.Fz');
+disp(Fblade.Fz);
+disp('endFblade.Fz');
+disp('Fblade.My');
+disp(Fblade.My);
+disp('endFblade.My');
+disp('Fblade.Q');
+disp(Fblade.Q);
+disp('endFblade.Q');
+disp('Fblade.P');
+disp(Fblade.P);
+disp('endFblade.P');
+disp('Fblade.Pi');
+disp(Fblade.Pi);
+disp('endFblade.Pi');
+disp('Fblade.Pp');
+disp(Fblade.Pp);
+disp('endFblade.Pp');
+disp('phi');
+disp(phi);
+disp('endphi');
+disp('Cd');
+disp(Cd);
+disp('endCd');
+disp('Re');
+disp(Re);
+disp('endRe');
+
+
 
 end
     

@@ -254,7 +254,7 @@ class sparProperties(Component):
             b =  np.linalg.solve(T,Q)
             a = T.T
             QbarT = np.linalg.solve(a.T,b.T)
-            print QbarT.T
+            #print QbarT.T
             #print T.transpose() * np.linalg.inv( np.linalg.solve(T,Q) )
             #print T.transpose()
             Qbar = QbarT.T
@@ -318,7 +318,6 @@ class sparProperties(Component):
 
             # Biscuit mass
             mass_biscuit = (AF_biscuit) * (dy[(s-1)] / self.lBiscuit[(s-1)]) * ((math.pi * (self.d[(s-1)] / 2) ** 2) * (RHO_BALSA * thickness_biscuit_plate * biscuit_face_fraction + RHO_STRUCTURAL_FOAM * thickness_biscuit_core))
-            print AF_biscuit, dy[(s-1)], self.lBiscuit[(s-1)], self.d[(s-1)], RHO_BALSA, thickness_biscuit_plate, biscuit_face_fraction, RHO_STRUCTURAL_FOAM, thickness_biscuit_core
             # Determine Total Spar Properties
             
             self.EIx[(s-1)] = E_xx_tube * I_tube + E_11_CAP * Ix_cap
