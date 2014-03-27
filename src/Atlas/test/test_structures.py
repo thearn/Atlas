@@ -54,7 +54,7 @@ class TestStructures(unittest.TestCase):
 
         for i, val in enumerate(data['xCG']):
             self.assertAlmostEquals(comp.xCG[i], val, 4,
-                msg='xCG[%d] mismatch (%f vs %f)' % (i, comp.xCG[i], val))
+                msg='xCG[%d] is %f, should be %f' % (i, comp.xCG[i], val))
 
     def check_FEM(self, comp, data):
         """ check component FEM results against MATLAB data  """
@@ -62,20 +62,20 @@ class TestStructures(unittest.TestCase):
             for i, row in enumerate(plane):
                 for j, val in enumerate(row):
                     self.assertAlmostEquals(comp.k[h, i, j], val, 4,
-                        msg='k[%d, %d, %d] mismatch (%f vs %f)' % (h, i, j, comp.k[h, i, j], val))
+                        msg='k[%d, %d, %d] is %f, should be %f' % (h, i, j, comp.k[h, i, j], val))
 
         for i, row in enumerate(data['K']):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.K[i, j], val, 4,
-                    msg='K[%d, %d] mismatch (%f vs %f)' % (i, j, comp.K[i, j], val))
+                    msg='K[%d, %d] is %f, should be %f' % (i, j, comp.K[i, j], val))
 
         for i, val in enumerate(data['F']):
             self.assertAlmostEquals(comp.F[i], val, 4,
-                msg='F[%d] mismatch (%f vs %f)' % (i, comp.F[i], val))
+                msg='F[%d] is %f, should be %f' % (i, comp.F[i], val))
 
         for i, val in enumerate(data['q']):
             self.assertAlmostEquals(comp.q[i], val, 4,
-                msg='q[%d] mismatch (%f vs %f)' % (i, comp.q[i], val))
+                msg='q[%d] is %f, should be %f' % (i, comp.q[i], val))
 
     def test_FEM(self):
         """ test of FEM calculations """
@@ -135,47 +135,47 @@ class TestStructures(unittest.TestCase):
         for i, row in enumerate(data['Finternal']):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.Finternal[i, j], val, 4,
-                    msg='Finternal[%d, %d] mismatch (%f vs %f)' % (i, j, comp.Finternal[i, j], val))
+                    msg='Finternal[%d, %d] is %f, should be %f' % (i, j, comp.Finternal[i, j], val))
 
         for i, row in enumerate(data['strain']['top'][0]):
             for j, val in enumerate(row[0]):
                 self.assertAlmostEquals(comp.strain.top[i, j], val, 4,
-                    msg='strain.top[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.top[i, j], val))
+                    msg='strain.top[%d, %d] is %f, should be %f' % (i, j, comp.strain.top[i, j], val))
 
         for i, row in enumerate(data['strain']['bottom'][0]):
             for j, val in enumerate(row[0]):
                 self.assertAlmostEquals(comp.strain.bottom[i, j], val, 4,
-                    msg='strain.bottom[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.bottom[i, j], val))
+                    msg='strain.bottom[%d, %d] is %f, should be %f' % (i, j, comp.strain.bottom[i, j], val))
 
         for i, row in enumerate(data['strain']['back'][0]):
             for j, val in enumerate(row[0]):
                 self.assertAlmostEquals(comp.strain.back[i, j], val, 4,
-                    msg='strain.back[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.back[i, j], val))
+                    msg='strain.back[%d, %d] is %f, should be %f' % (i, j, comp.strain.back[i, j], val))
 
         for i, row in enumerate(data['strain']['front'][0]):
             for j, val in enumerate(row[0]):
                 self.assertAlmostEquals(comp.strain.front[i, j], val, 4,
-                    msg='strain.bottom[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.front[i, j], val))
+                    msg='strain.bottom[%d, %d] is %f, should be %f' % (i, j, comp.strain.front[i, j], val))
 
         for i, row in enumerate(data['strain']['bending_x']):
             for j, val in enumerate(row[0][0]):
                 self.assertAlmostEquals(comp.strain.bending_x[i][j], val, 4,
-                    msg='strain.bending_x[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.bending_x[i, j], val))
+                    msg='strain.bending_x[%d, %d] is %f, should be %f' % (i, j, comp.strain.bending_x[i, j], val))
 
         for i, row in enumerate(data['strain']['bending_z']):
             for j, val in enumerate(row[0][0]):
                 self.assertAlmostEquals(comp.strain.bending_z[i][j], val, 4,
-                    msg='strain.bending_z[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.bending_z[i, j], val))
+                    msg='strain.bending_z[%d, %d] is %f, should be %f' % (i, j, comp.strain.bending_z[i, j], val))
 
         for i, row in enumerate(data['strain']['axial_y']):
             for j, val in enumerate(row[0][0]):
                 self.assertAlmostEquals(comp.strain.axial_y[i][j], val, 4,
-                    msg='strain.axial_y[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.axial_y[i, j], val))
+                    msg='strain.axial_y[%d, %d] is %f, should be %f' % (i, j, comp.strain.axial_y[i, j], val))
 
         for i, row in enumerate(data['strain']['torsion_y']):
             for j, val in enumerate(row[0][0]):
                 self.assertAlmostEquals(comp.strain.torsion_y[i][j], val, 4,
-                    msg='strain.torsion_y[%d, %d] mismatch (%f vs %f)' % (i, j, comp.strain.torsion_y[i, j], val))
+                    msg='strain.torsion_y[%d, %d] is %f, should be %f' % (i, j, comp.strain.torsion_y[i, j], val))
 
     def test_Strains(self):
         """ test of internal force and strain calculations  """
@@ -198,121 +198,104 @@ class TestStructures(unittest.TestCase):
     def check_failures(self, comp, data):
         """ check component failure results against MATLAB data  """
 
-        print
-        # print "data['fail']\n", data['fail'].keys()
-        print "data['fail']['top']",      data['fail']['top'].shape
-        print "data['fail']['top']",      data['fail']['top'][0, 0]['cap'].shape
-        print "data['fail']['top']",      data['fail']['top'][0, 0]['plus'].shape
-        print "data['fail']['top']",      data['fail']['top'][0, 0]['minus'].shape
-
-        print "data['fail']['top']",      data['fail']['bottom'][0, 0]['cap'].shape
-        print "data['fail']['top']",      data['fail']['bottom'][0, 0]['plus'].shape
-        print "data['fail']['top']",      data['fail']['bottom'][0, 0]['minus'].shape
-
-        print "data['fail']['top']",      data['fail']['back'][0, 0]['cap'].shape
-        print "data['fail']['top']",      data['fail']['back'][0, 0]['plus'].shape
-        print "data['fail']['top']",      data['fail']['back'][0, 0]['minus'].shape
-
-        print "data['fail']['top']",      data['fail']['front'][0, 0]['cap'].shape
-        print "data['fail']['top']",      data['fail']['front'][0, 0]['plus'].shape
-        print "data['fail']['top']",      data['fail']['front'][0, 0]['minus'].shape
-
-        print "data['fail']['buckling']", data['fail']['buckling'][0, 0]['x'].shape
-        print "data['fail']['buckling']", data['fail']['buckling'][0, 0]['z'].shape
-        print "data['fail']['buckling']", data['fail']['buckling'][0, 0]['torsion'].shape
-
-        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['buckling'].shape
-        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['bend'].shape
-        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['torsion'].shape
-        print "data['fail']['quad']",     data['fail']['quad'][0, 0]['torbuck'].shape
-        print
-
         # top
         for i, row in enumerate(data['fail']['top'][0, 0]['cap'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.top.cap[i, j], val, 4,
-                    msg='fail.top.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.top.cap[i, j], val))
+                    msg='fail.top.cap[%d, %d] is %f, should be %f' % (i, j, comp.fail.top.cap[i, j], val))
 
         for i, row in enumerate(data['fail']['top'][0, 0]['plus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.top.plus[i, j], val, 4,
-                    msg='fail.top.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.top.plus[i, j], val))
+                    msg='fail.top.plus[%d, %d] is %f, should be %f' % (i, j, comp.fail.top.plus[i, j], val))
 
         for i, row in enumerate(data['fail']['top'][0, 0]['minus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.top.minus[i, j], val, 4,
-                    msg='fail.top.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.top.minus[i, j], val))
+                    msg='fail.top.minus[%d, %d] is %f, should be %f' % (i, j, comp.fail.top.minus[i, j], val))
 
         # bottom
         for i, row in enumerate(data['fail']['bottom'][0, 0]['cap'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.bottom.cap[i, j], val, 4,
-                    msg='fail.bottom.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.bottom.cap[i, j], val))
+                    msg='fail.bottom.cap[%d, %d] is %f, should be %f' % (i, j, comp.fail.bottom.cap[i, j], val))
 
         for i, row in enumerate(data['fail']['bottom'][0, 0]['plus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.bottom.plus[i, j], val, 4,
-                    msg='fail.bottom.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.bottom.plus[i, j], val))
+                    msg='fail.bottom.plus[%d, %d] is %f, should be %f' % (i, j, comp.fail.bottom.plus[i, j], val))
 
         for i, row in enumerate(data['fail']['bottom'][0, 0]['minus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.bottom.minus[i, j], val, 4,
-                    msg='fail.bottom.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.bottom.minus[i, j], val))
+                    msg='fail.bottom.minus[%d, %d] is %f, should be %f' % (i, j, comp.fail.bottom.minus[i, j], val))
 
         # back
         for i, row in enumerate(data['fail']['back'][0, 0]['cap'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.back.cap[i, j], val, 4,
-                    msg='fail.back.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.back.cap[i, j], val))
+                    msg='fail.back.cap[%d, %d] is %f, should be %f' % (i, j, comp.fail.back.cap[i, j], val))
 
         for i, row in enumerate(data['fail']['back'][0, 0]['plus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.back.plus[i, j], val, 4,
-                    msg='fail.back.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.back.plus[i, j], val))
+                    msg='fail.back.plus[%d, %d] is %f, should be %f' % (i, j, comp.fail.back.plus[i, j], val))
 
         for i, row in enumerate(data['fail']['back'][0, 0]['minus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.back.minus[i, j], val, 4,
-                    msg='fail.back.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.back.minus[i, j], val))
+                    msg='fail.back.minus[%d, %d] is %f, should be %f' % (i, j, comp.fail.back.minus[i, j], val))
 
         # front
         for i, row in enumerate(data['fail']['front'][0, 0]['cap'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.front.cap[i, j], val, 4,
-                    msg='fail.front.cap[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.front.cap[i, j], val))
+                    msg='fail.front.cap[%d, %d] is %f, should be %f' % (i, j, comp.fail.front.cap[i, j], val))
 
         for i, row in enumerate(data['fail']['front'][0, 0]['plus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.front.plus[i, j], val, 4,
-                    msg='fail.front.plus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.front.plus[i, j], val))
+                    msg='fail.front.plus[%d, %d] is %f, should be %f' % (i, j, comp.fail.front.plus[i, j], val))
 
         for i, row in enumerate(data['fail']['front'][0, 0]['minus'][0][0]):
             for j, val in enumerate(row):
                 self.assertAlmostEquals(comp.fail.front.minus[i, j], val, 4,
-                    msg='fail.front.minus[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.front.minus[i, j], val))
+                    msg='fail.front.minus[%d, %d] is %f, should be %f' % (i, j, comp.fail.front.minus[i, j], val))
 
         # buckling
-        for i, row in enumerate(data['buckling']['buckling'][0, 0]['x'][0][0]):
-            for j, val in enumerate(row):
-                self.assertAlmostEquals(comp.fail.buckling.x[i, j], val, 4,
-                    msg='fail.buckling.x[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.buckling.x[i, j], val))
+        for i, val in enumerate(data['fail']['buckling'][0, 0]['x'][0][0][0]):
+            self.assertAlmostEquals(comp.fail.buckling.x[i], val, 4,
+                msg='fail.buckling.x[%d] is %f, should be %f' % (i, comp.fail.buckling.x[i], val))
 
-        for i, row in enumerate(data['buckling']['buckling'][0, 0]['z'][0][0]):
-            for j, val in enumerate(row):
-                self.assertAlmostEquals(comp.fail.buckling.z[i, j], val, 4,
-                    msg='fail.buckling.z[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.buckling.z[i, j], val))
+        for i, val in enumerate(data['fail']['buckling'][0, 0]['z'][0][0][0]):
+            self.assertAlmostEquals(comp.fail.buckling.z[i], val, 4,
+                msg='fail.buckling.z[%d] is %f, should be %f' % (i, comp.fail.buckling.z[i], val))
 
-        for i, row in enumerate(data['buckling']['buckling'][0, 0]['torsion'][0][0]):
-            for j, val in enumerate(row):
-                self.assertAlmostEquals(comp.fail.buckling.torsion[i, j], val, 4,
-                    msg='fail.buckling.torsion[%d, %d] mismatch (%f vs %f)' % (i, j, comp.fail.buckling.torsion[i, j], val))
+        for i, val in enumerate(data['fail']['buckling'][0, 0]['torsion'][0][0][0]):
+            self.assertAlmostEquals(comp.fail.buckling.torsion[i], val, 4,
+                msg='fail.buckling.torsion[%d] is %f, should be %f' % (i, comp.fail.buckling.torsion[i], val))
 
-        # quad  (TODO)
+        # quad
+        val = data['fail']['quad'][0, 0]['buckling'][0][0]
+        self.assertAlmostEquals(comp.fail.quad_buckling, val, 4,
+            msg='fail.quad_buckling is %f, should be %f' % (comp.fail.quad_buckling, val))
+
+        val = data['fail']['quad'][0, 0]['bend'][0][0]
+        self.assertAlmostEquals(comp.fail.quad_bend, val, 4,
+            msg='fail.quad_bend is %f, should be %f' % (comp.fail.quad_bend, val))
+
+        val = data['fail']['quad'][0, 0]['torsion'][0][0]
+        self.assertAlmostEquals(comp.fail.quad_torsion, val, 4,
+            msg='fail.quad_torsion is %f, should be %f' % (comp.fail.quad_torsion, val))
+
+        val = data['fail']['quad'][0, 0]['torbuck'][0][0]
+        self.assertAlmostEquals(comp.fail.quad_torbuck, val, 4,
+            msg='fail.quad_torbuck is %f, should be %f' % (comp.fail.quad_torbuck, val))
 
         # wire
         for i, val in enumerate(data['fail']['wire'][0][0][0]):
             self.assertAlmostEquals(comp.fail.wire[i], val, 4,
-                msg='fail.wire[%d] mismatch (%f vs %f)' % (i, comp.fail.wire[i], val))
+                msg='fail.wire[%d] is %f, should be %f' % (i, comp.fail.wire[i], val))
 
     def test_Failures(self):
         """ test of failure calculations  """
@@ -409,9 +392,9 @@ class TestStructures(unittest.TestCase):
 
         # populate inputs
         comp.flags = Flags()
-        comp.flags.Load = int(data['flags']['Cover'][0][0][0][0])
-        comp.flags.wingWarp = int(data['flags']['Quad'][0][0][0][0])
-        comp.flags.Load = int(data['flags']['Load'][0][0][0][0])
+        comp.flags.Cover    = int(data['flags']['Cover'][0][0][0][0])
+        comp.flags.Quad     = int(data['flags']['Quad'][0][0][0][0])
+        comp.flags.Load     = int(data['flags']['Load'][0][0][0][0])
         comp.flags.wingWarp = int(data['flags']['wingWarp'][0][0][0][0])
 
         CFRPType = int(data['flags']['CFRPType'][0][0][0][0])
@@ -464,12 +447,13 @@ class TestStructures(unittest.TestCase):
         comp.RQuad        = data['RQuad'][0][0]
         comp.hQuad        = data['hQuad'][0][0]
 
-        comp.ycmax    = data['ycmax'][0][0]
+        comp.ycmax       = data['ycmax'][0][0]
 
-        comp.yWire    = data['yWire'][0]
-        comp.zWire    = data['zWire'][0][0]
-        comp.tWire    = data['tWire'][0][0]
-        comp.TWire    = data['TWire'].flatten()
+        comp.yWire       = data['yWire'][0]
+        comp.zWire       = data['zWire'][0][0]
+        comp.tWire       = data['tWire'][0][0]
+        comp.TWire       = data['TWire'].flatten()
+        comp.TEtension   = data['TEtension'][0][0]
 
         comp.mElseRotor  = data['mElseRotor'][0][0]
         comp.mElseCentre = data['mElseCentre'][0][0]
@@ -503,9 +487,12 @@ class TestStructures(unittest.TestCase):
 
         for i, val in enumerate(data['q']):
             self.assertAlmostEquals(comp.q[i], val, 4,
-                msg='q[%d] mismatch (%f vs %f)' % (i, comp.q[i], val))
+                msg='q[%d] is %f, should be %f' % (i, comp.q[i], val))
 
         self.check_strains(comp, data)
+
+        self.check_failures(comp, data)
+
 
 if __name__ == "__main__":
     unittest.main()

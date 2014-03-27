@@ -712,8 +712,8 @@ class Failures(Component):
         fail.buckling.z[Ns] = 0
 
         # Torsional Buckling failure
-        fail.buckling.torsion = self.torsional_buckling_failure(Ns, Finternal,
-                d, theta, nTube, nCap, lBiscuit, flags)
+        fail.buckling.torsion = self.torsional_buckling_failure(Ns,
+            Finternal, d, theta, nTube, nCap, lBiscuit, flags)
 
         # Quad Buckling failure
         if EIQuad != 0:
@@ -746,8 +746,9 @@ class Failures(Component):
             fail.quad_torsion = 0
 
         # Quad torsional buckling failure
-        FRotorMoment = np.array([RotorMoment, RotorMoment, RotorMoment, RotorMoment, RotorMoment]).reshape(1,  -1).T
-        tbf = self.torsional_buckling_failure(1, FRotorMoment, dQuad, [thetaQuad], nTubeQuad, 0, lBiscuitQuad, flags)
+        FRotorMoment = np.array([0, 0, 0, 0, RotorMoment]).reshape(1,  -1).T
+        tbf = self.torsional_buckling_failure(1,
+            FRotorMoment, [dQuad], [thetaQuad], [nTubeQuad], [0], [lBiscuitQuad], flags)
         fail.quad_torbuck = tbf[0]
 
         # Wire tensile failure
@@ -787,6 +788,11 @@ class Failures(Component):
         Q_CAP[1, 0] = Q_CAP[0, 1]
         Q_CAP[2, 2] = cap_props['G_12']
 
+        stress = MaterialFailure()
+        stress.cap = np.zeros((3, Ns))
+        stress.plus = np.zeros((3, Ns))
+        stress.minus = np.zeros((3, Ns))
+
         for s in range(0, Ns):
             # Compute stresses in structural axes for each lamina angle
             # Q is the matrix of elastic constants in the material axis
@@ -800,25 +806,24 @@ class Failures(Component):
             # Transform the elastic constants for the plus angle ply
             x = theta[s]  # Composite angle (in radians)
             T_PLUS = np.array([
-                [cos(x)**2,      sin(x)**2,      2*sin(x)*cos(x)       ],
-                [sin(x)**2,      cos(x)**2,     -2*sin(x)*cos(x)       ],
+                [ cos(x)**2,     sin(x)**2,      2*sin(x)*cos(x)       ],
+                [ sin(x)**2,     cos(x)**2,     -2*sin(x)*cos(x)       ],
                 [-sin(x)*cos(x), sin(x)*cos(x), (cos(x)**2)-(sin(x)**2)]
             ])
-            Qbar_TUBE_PLUS = (np.linalg.solve(T_PLUS, Q_TUBE)) / T_PLUS.T  # transform elastic constants
+            # MATLAB version: Qbar_TUBE_PLUS = (T_PLUS\Q_TUBE)/T_PLUS'
+            tmp = np.linalg.solve(T_PLUS, Q_TUBE)
+            Qbar_TUBE_PLUS = np.linalg.solve(T_PLUS, tmp.T)
 
             # Transform the elastic constants for the minus angle ply
             x = -theta[s]  # Composite angle (in radians)
             T_MINUS = np.array([
-                [cos(x)**2,      sin(x)**2,      2*sin(x)*cos(x)       ],
-                [sin(x)**2,      cos(x)**2,     -2*sin(x)*cos(x)       ],
+                [ cos(x)**2,     sin(x)**2,      2*sin(x)*cos(x)       ],
+                [ sin(x)**2,     cos(x)**2,     -2*sin(x)*cos(x)       ],
                 [-sin(x)*cos(x), sin(x)*cos(x), (cos(x)**2)-(sin(x)**2)]
             ])
-            Qbar_TUBE_MINUS = (np.linalg.solve(T_MINUS, Q_TUBE)) / T_MINUS.T  # transform elastic constants
-
-            stress = MaterialFailure()
-            stress.cap = np.zeros((3, Ns+1))
-            stress.plus = np.zeros((3, Ns+1))
-            stress.minus = np.zeros((3, Ns+1))
+            # MATLAB version: Qbar_TUBE_MINUS = (T_MINUS\Q_TUBE)/T_MINUS'
+            tmp = np.linalg.solve(T_MINUS, Q_TUBE)
+            Qbar_TUBE_MINUS = np.linalg.solve(T_MINUS, tmp.T)
 
             # Compute stresses in structural coordinates
             stress.cap[:, s]   = np.dot(Q_CAP, strain[:, s])            # using Q for the cap
@@ -837,7 +842,7 @@ class Failures(Component):
             # compressive failures.
 
             # Cap failure
-            if len(nCap) == 0:
+            if len(nCap) == 0 or (nCap == 0).all():
                 failure.cap[0, s] = 0
                 failure.cap[1, s] = 0
                 failure.cap[2, s] = 0
@@ -874,7 +879,7 @@ class Failures(Component):
                 failure.minus[0, s] = stress.minus[0, s] / tube_props['ULTIMATE_11_COMP']
 
             if stress.minus[1, s] > 0:  # tensile stress in matrix
-                failure.minus[2, s] = stress.minus[1, s] / tube_props['ULTIMATE_22_TENS']
+                failure.minus[1, s] = stress.minus[1, s] / tube_props['ULTIMATE_22_TENS']
             else:
                 failure.minus[1, s] = stress.minus[1, s] / tube_props['ULTIMATE_22_COMP']
 
@@ -902,7 +907,7 @@ class Failures(Component):
 
         failure = np.zeros(Ns+1)
 
-        for s in range(0, Ns-1):
+        for s in range(0, Ns):
 
             if nCap[s] != 0:
                 AF_torsional_buckling = 1.25  # See "Validation - Torsional Buckling.xlsx"
@@ -916,11 +921,12 @@ class Failures(Component):
             T = np.array([
                 [cos(x)**2,      sin(x)**2,      2*sin(x)*cos(x)],
                 [sin(x)**2,      cos(x)**2,     -2*sin(x)*cos(x)],
-                [-sin(x)*cos(x), sin(x)*cos(x), (cos(x)**2)-(sin(x)**2)]
+                [-sin(x)*cos(x), sin(x)*cos(x),  cos(x)**2-sin(x)**2]
             ])
 
             # Transform the elastic constants using the transformation matrix to obtain the
             # elastic constants at the composite angle.
+            # MATLAB version: Qbar = (T\Q)/T'
             tmp = np.linalg.solve(T, Q)
             Qbar = np.linalg.solve(T, tmp.T)
 
@@ -940,7 +946,7 @@ class Failures(Component):
             B_theta = E_theta*t_tube
 
             # Calculate Gamma
-            rho = ((D_x*D_theta)/(B_x*B_theta))**(1/4)
+            rho = ((D_x*D_theta)/(B_x*B_theta))**(1./4)
             Gamma = 3.6125e-07  * ((R / (rho * 1000)) ** 6)  + \
                     -1.9724e-05 * ((R / (rho * 1000)) ** 5)  + \
                      0.0004283  * ((R / (rho * 1000)) ** 4)  + \
@@ -950,13 +956,14 @@ class Failures(Component):
                      0.88309
 
             # Calculate factors required in critical torque equation
-            Z   = ((B_theta*(1-mu_prime_x*mu_prime_theta)*(L**4)) / (12*D_x*(R**2)))**(1/2)
-            Z_s = ((D_theta/D_x)**(5/6))*((B_x/B_theta)**(1/2))*Z
-            K_s = 0.89*(Z_s**(3/4))
+            Z   = ((B_theta*(1-mu_prime_x*mu_prime_theta)*(L**4)) / (12*D_x*(R**2)))**(1./2)
+            Z_s = ((D_theta/D_x)**(5./6))*((B_x/B_theta)**(1./2))*Z
+            K_s = 0.89*(Z_s**(3./4))
             N_x_theta = (Gamma*K_s*(pi**2)*D_x)/(L**2)
 
             # Calculate critical torque
             critical_torque = AF_torsional_buckling * N_x_theta * 2 * pi * (R**2)
+
             failure[s] = abs(Finternal[4, s] / critical_torque)
 
         failure[Ns] = 0  # no torsion at tip
@@ -1008,6 +1015,7 @@ class Structures(Assembly):
     zWire        = Float(iotype='in', desc='depth of wire attachement')
     tWire        = Float(iotype='in', desc='thickness of wire')
     TWire        = Array(iotype='in', desc='')
+    TEtension    = Float(iotype='in', desc='')
 
     # inputs for 'other stuff'
     mElseRotor   = Float(iotype='in', desc='')
@@ -1104,31 +1112,32 @@ class Structures(Assembly):
         self.connect('nCap',              'failure.nCap')
         self.connect('yWire',             'failure.yWire')
         self.connect('zWire',             'failure.zWire')
-        self.connect('tWire',             'failure.tWire')
-        self.connect('TWire',             'failure.TWire')
         self.connect('joint.EIx',         'failure.EIxJ')
         self.connect('joint.EIz',         'failure.EIzJ')
         self.connect('lBiscuit',          'failure.lBiscuit')
         self.connect('dQuad',             'failure.dQuad')
         self.connect('thetaQuad',         'failure.thetaQuad')
         self.connect('nTubeQuad',         'failure.nTubeQuad')
+        self.connect('lBiscuitQuad',      'failure.lBiscuitQuad')
         self.connect('RQuad',             'failure.RQuad')
         self.connect('hQuad',             'failure.hQuad')
         self.connect('quad.EIx',          'failure.EIQuad')  # confirm
         self.connect('quad.GJ',           'failure.GJQuad')  # confirm
-        self.connect('Fblade',            'failure.Fblade')
+        self.connect('tWire',             'failure.tWire')
+        self.connect('TWire',             'failure.TWire')
+        self.connect('TEtension',         'failure.TEtension')
         self.connect('b',                 'failure.b')
+        self.connect('Fblade',            'failure.Fblade')
         self.connect('spar.mSpar',        'failure.mSpar')
         self.connect('chord.mChord',      'failure.mChord')
         self.connect('mElseRotor',        'failure.mElseRotor')
-
-        # etc.
 
         # link up the outputs
         self.create_passthrough('mass.Mtot')
         self.create_passthrough('fem.q')
         self.create_passthrough('strains.Finternal')
         self.create_passthrough('strains.strain')
+        self.create_passthrough('failure.fail')
 
         self.driver.workflow.add('chord')
         self.driver.workflow.add('fem')
