@@ -1,5 +1,4 @@
-from Atlas import discretizeProperties, wireProperties, sparProperties, chordProperties
-#from Atlas import sparProperties
+from Atlas import DiscretizeProperties, wireProperties, SparProperties, ChordProperties
 import numpy as np
 import unittest
 
@@ -9,38 +8,42 @@ from openmdao.util.testutil import assert_rel_error
 def relative_err(x, y):
     return (np.abs(x-y)/np.linalg.norm(x)).max()
 
+
 def absolute_err(x, y):
     return np.abs(x-y).max()
+
 
 class AtlasTestProperties(unittest.TestCase):
 
     def test_wireProperties(self):
-        comp = wireProperties()
-        comp.type_flag = 1
+        props = wireProperties['Pianowire']
 
-        comp.run()
+        self.assertAlmostEquals(props['RHO'], 7.85e3, 4)
+        self.assertAlmostEquals(props['E'], 2.10e11, 3)
+        self.assertAlmostEquals(props['ULTIMATE'], 2.62e9, 3)
 
-        self.assertAlmostEquals(comp.RHO, 7850, 4)
-        self.assertAlmostEquals(comp.E, 2.1e11, 3)
-        self.assertAlmostEquals(comp.ULTIMATE, 2.62e9, 3)
+        props = wireProperties['Vectran']
 
-    
+        self.assertAlmostEquals(props['RHO'], 1.1065e3, 4)
+        self.assertAlmostEquals(props['E'], 3.921e10, 3)
+        self.assertAlmostEquals(props['ULTIMATE'], 9.828e8, 3)
+
     def test_discretizeProperties(self):
-        comp = discretizeProperties()
+        comp = DiscretizeProperties()
         comp.Ns = 10
         comp.ycmax = np.array([1.4656, 3.2944])
         comp.R = 10
         comp.c_ = np.array([0, 0.8000, 1.4000, 0.4000, 0.3600])
         comp.Cl_ = np.array([1.5000, 1.4300, 1.2300])
-        comp.Cm_ = np.array([-0.1500,   -0.1200,   -0.1200])
+        comp.Cm_ = np.array([-0.1500, -0.1200, -0.1200])
         comp.t_ = np.array([0.1400, 0.1400, 0.1400])
         comp.xtU_ = np.array([0.1500, 7.0000, 0.1500])
         comp.xtL_ = np.array([0.3000, 7.0000, 0.3000])
         comp.xEA_ = np.array([0.2700, 0.3300, 0.2400])
-        comp.yWire = np.array([5.8852,])
+        comp.yWire = np.array([5.8852, ])
         comp.d_ = np.array([0.0874, 0.0505, 0.0315])
         comp.theta_ = np.array([0.3491, 0.3491, 0.3491])
-        comp.nTube_ = np.array([4, 4 , 4])
+        comp.nTube_ = np.array([4, 4, 4])
         comp.nCap_ = np.array([0, 0, 0])
         comp.lBiscuit_ = np.array([0.3048, 0.3048, 0.1524])
 
@@ -79,31 +82,31 @@ class AtlasTestProperties(unittest.TestCase):
                        -0.1200, -0.1200, -0.1200])
         self.assertLess(relative_err(Cm, comp.Cm), tol)
 
-        t = np.array([0.1400, 0.1400, 0.1400, 0.1400, 0.1400, 0.1400, 0.1400, 
+        t = np.array([0.1400, 0.1400, 0.1400, 0.1400, 0.1400, 0.1400, 0.1400,
                       0.1400, 0.1400, 0.1400])
         self.assertLess(relative_err(t, comp.t), tol)
 
-        xtU = np.array([0.0500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 
+        xtU = np.array([0.0500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500,
                         0.1500, 0.1500, 0.1500])
         self.assertLess(relative_err(xtU, comp.xtU), tol)
 
-        xtL = np.array([0.0500, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 
+        xtL = np.array([0.0500, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000,
                         0.3000, 0.3000, 0.3000])
         self.assertLess(relative_err(xtL, comp.xtL), tol)
 
-        xEA = np.array([0.2700, 0.2711, 0.3039, 0.3272, 0.3138, 0.3004, 0.2870, 
+        xEA = np.array([0.2700, 0.2711, 0.3039, 0.3272, 0.3138, 0.3004, 0.2870,
                         0.2736, 0.2601, 0.2467])
         self.assertLess(relative_err(xEA, comp.xEA), tol)
 
-        d = np.array([0.0843, 0.0780, 0.0718, 0.0655, 0.0592, 0.0530, 0.0477, 
+        d = np.array([0.0843, 0.0780, 0.0718, 0.0655, 0.0592, 0.0530, 0.0477,
                       0.0431, 0.0384, 0.0338])
         self.assertLess(relative_err(d, comp.d), tol)
 
-        theta = np.array([0.3491, 0.3491, 0.3491, 0.3491, 0.3491, 0.3491, 
+        theta = np.array([0.3491, 0.3491, 0.3491, 0.3491, 0.3491, 0.3491,
                           0.3491, 0.3491, 0.3491, 0.3491])
         self.assertLess(relative_err(theta, comp.theta), tol)
 
-        nTube = np.array([4,4,4,4,4,4,4,4,4,4])
+        nTube = np.array([4, 4, 4, 4, 4, 4, 4, 4, 4, 4])
         self.assertLess(relative_err(nTube, comp.nTube), tol)
 
         nCap = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
@@ -119,13 +122,13 @@ class AtlasTestProperties(unittest.TestCase):
         self.assertLess(relative_err(yE, comp.yE), tol)
 
     def test_sparProperties(self):
-        comp = sparProperties()
+        comp = SparProperties()
         comp.yN = np.array([0, 14.5057])
-        comp.d = np.array([0.1016,])
-        comp.theta = np.array([0.6109,])
-        comp.nTube = np.array([4,])
+        comp.d = np.array([0.1016, ])
+        comp.theta = np.array([0.6109, ])
+        comp.nTube = np.array([4, ])
         comp.nCap = np.array([0, 0])
-        comp.lBiscuit = np.array([0.3048,])
+        comp.lBiscuit = np.array([0.3048, ])
         #comp.CFRPType = 1
         comp.CFRPType = 'NCT301-1X HS40 G150 33 +/-2%RW'
 
@@ -138,26 +141,23 @@ class AtlasTestProperties(unittest.TestCase):
         assert_rel_error(self, comp.GJ[0], 2.2828e4, tol)
         assert_rel_error(self, comp.mSpar[0], 4.7244, tol)
 
-
     def test_chordProperties(self):
-        
-        comp = chordProperties()
-        comp.yN = np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ],dtype=np.float64)
-        comp.c = np.array([ 0.2729, 1.3903, 1.1757, 1.0176, 0.8818, 0.7602, 0.6507, 0.5528, 0.4666, 0.3925 ])
-        comp.d = np.array([ 0.0843, 0.0780, 0.0718, 0.0655, 0.0592, 0.0530, 0.0477, 0.0431, 0.0384, 0.0338 ])
-        comp.flagGWing = 1
-        comp.xtU = np.array([ 0.0500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500 ])
+        comp = ChordProperties()
+        comp.yN = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], dtype=np.float64)
+        comp.c = np.array([0.2729, 1.3903, 1.1757, 1.0176, 0.8818, 0.7602, 0.6507, 0.5528, 0.4666, 0.3925])
+        comp.d = np.array([0.0843, 0.0780, 0.0718, 0.0655, 0.0592, 0.0530, 0.0477, 0.0431, 0.0384, 0.0338])
+        comp.GWing = 1
+        comp.xtU = np.array([0.0500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500, 0.1500])
 
         comp.run()
 
         tol = 0.001
-        expected_mChord = [ 0.018497, 0.167168, 0.133574, 0.110904, 0.092785, 0.077596, 0.064695, 0.053795, 0.044734, 0.037342 ]
-        expected_xCGChord = [ 0.37481, 0.29252, 0.29447, 0.29634, 0.29838, 0.30073, 0.30350, 0.30677, 0.31059, 0.31498 ]
-        for i, ( e_mChord, e_xCGChord ) in enumerate( zip( expected_mChord, expected_xCGChord )) :
+        expected_mChord = [0.018497, 0.167168, 0.133574, 0.110904, 0.092785, 0.077596, 0.064695, 0.053795, 0.044734, 0.037342]
+        expected_xCGChord = [0.37481, 0.29252, 0.29447, 0.29634, 0.29838, 0.30073, 0.30350, 0.30677, 0.31059, 0.31498]
+        for i, (e_mChord, e_xCGChord) in enumerate(zip(expected_mChord, expected_xCGChord)):
             assert_rel_error(self, comp.mChord[i], e_mChord, tol)
-            assert_rel_error(self, comp.xCGChord[i],e_xCGChord , tol)
+            assert_rel_error(self, comp.xCGChord[i], e_xCGChord, tol)
 
 
 if __name__ == "__main__":
     unittest.main()
-    
