@@ -20,6 +20,19 @@ coefficients.py
    :show-inheritance:
 
         
+.. index:: lift_drag.py
+
+.. _Atlas.lift_drag.py:
+
+lift_drag.py
+------------
+
+.. automodule:: Atlas.lift_drag
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: properties.py
 
 .. _Atlas.properties.py:
@@ -54,6 +67,19 @@ test_coefficients.py
 --------------------
 
 .. automodule:: Atlas.test.test_coefficients
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: test_lift_drag.py
+
+.. _Atlas.test.test_lift_drag.py:
+
+test_lift_drag.py
+-----------------
+
+.. automodule:: Atlas.test.test_lift_drag
    :members:
    :undoc-members:
    :show-inheritance:
