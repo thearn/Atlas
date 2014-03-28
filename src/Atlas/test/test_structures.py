@@ -1,4 +1,4 @@
-from Atlas import Flags, JointProperties, PrescribedLoad, FBlade, Strain, \
+from Atlas import Flags, JointProperties, PrescribedLoad, Fblade, Strain, \
                   MassProperties, FEM, Strains, Failures, Structures
 
 from scipy.io import loadmat
@@ -98,14 +98,14 @@ class TestStructures(unittest.TestCase):
         comp.cE  = data['cE']
         comp.xEA = data['xEA']
 
-        comp.Fblade = FBlade()
-        comp.Fblade.Fx = data['Fblade']['Fx'][0][0].flatten()
-        comp.Fblade.Fz = data['Fblade']['Fz'][0][0].flatten()
-        comp.Fblade.My = data['Fblade']['My'][0][0].flatten()
-        comp.Fblade.Q  = data['Fblade']['Q'][0][0].flatten()
-        comp.Fblade.P  = data['Fblade']['P'][0][0].flatten()
-        comp.Fblade.Pi = data['Fblade']['Pi'][0][0].flatten()
-        comp.Fblade.Pp = data['Fblade']['Pp'][0][0].flatten()
+        comp.fblade = Fblade()
+        comp.fblade.Fx = data['Fblade']['Fx'][0][0].flatten()
+        comp.fblade.Fz = data['Fblade']['Fz'][0][0].flatten()
+        comp.fblade.My = data['Fblade']['My'][0][0].flatten()
+        comp.fblade.Q  = data['Fblade']['Q'][0][0].flatten()
+        comp.fblade.P  = data['Fblade']['P'][0][0].flatten()
+        comp.fblade.Pi = data['Fblade']['Pi'][0][0].flatten()
+        comp.fblade.Pp = data['Fblade']['Pp'][0][0].flatten()
 
         comp.mSpar  = data['mSpar']
         comp.mChord = data['mChord']
@@ -366,14 +366,14 @@ class TestStructures(unittest.TestCase):
         comp.TEtension    = data['TEtension'][0][0]
 
         comp.b          = int(data['b'][0][0])
-        comp.Fblade     = FBlade()
-        comp.Fblade.Fx  = data['Fblade']['Fx'][0][0].flatten()
-        comp.Fblade.Fz  = data['Fblade']['Fz'][0][0].flatten()
-        comp.Fblade.My  = data['Fblade']['My'][0][0].flatten()
-        comp.Fblade.Q   = data['Fblade']['Q'][0][0].flatten()
-        comp.Fblade.P   = data['Fblade']['P'][0][0].flatten()
-        comp.Fblade.Pi  = data['Fblade']['Pi'][0][0].flatten()
-        comp.Fblade.Pp  = data['Fblade']['Pp'][0][0].flatten()
+        comp.fblade     = Fblade()
+        comp.fblade.Fx  = data['Fblade']['Fx'][0][0].flatten()
+        comp.fblade.Fz  = data['Fblade']['Fz'][0][0].flatten()
+        comp.fblade.My  = data['Fblade']['My'][0][0].flatten()
+        comp.fblade.Q   = data['Fblade']['Q'][0][0].flatten()
+        comp.fblade.P   = data['Fblade']['P'][0][0].flatten()
+        comp.fblade.Pi  = data['Fblade']['Pi'][0][0].flatten()
+        comp.fblade.Pp  = data['Fblade']['Pp'][0][0].flatten()
         comp.mSpar      = data['mSpar']
         comp.mChord     = data['mChord']
         comp.mElseRotor = data['mElseRotor'][0][0]
@@ -461,14 +461,14 @@ class TestStructures(unittest.TestCase):
         comp.R           = data['R'][0][0]
         comp.mPilot      = data['mPilot'][0][0]
 
-        comp.Fblade = FBlade()
-        comp.Fblade.Fx = data['Fblade']['Fx'][0][0].flatten()
-        comp.Fblade.Fz = data['Fblade']['Fz'][0][0].flatten()
-        comp.Fblade.My = data['Fblade']['My'][0][0].flatten()
-        comp.Fblade.Q  = data['Fblade']['Q'][0][0].flatten()
-        comp.Fblade.P  = data['Fblade']['P'][0][0].flatten()
-        comp.Fblade.Pi = data['Fblade']['Pi'][0][0].flatten()
-        comp.Fblade.Pp = data['Fblade']['Pp'][0][0].flatten()
+        comp.fblade = Fblade()
+        comp.fblade.Fx = data['Fblade']['Fx'][0][0].flatten()
+        comp.fblade.Fz = data['Fblade']['Fz'][0][0].flatten()
+        comp.fblade.My = data['Fblade']['My'][0][0].flatten()
+        comp.fblade.Q  = data['Fblade']['Q'][0][0].flatten()
+        comp.fblade.P  = data['Fblade']['P'][0][0].flatten()
+        comp.fblade.Pi = data['Fblade']['Pi'][0][0].flatten()
+        comp.fblade.Pp = data['Fblade']['Pp'][0][0].flatten()
 
         comp.presLoad = PrescribedLoad()
         comp.presLoad.y = data['presLoad']['y'][0][0][0][0]

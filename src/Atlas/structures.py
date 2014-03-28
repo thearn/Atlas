@@ -5,7 +5,9 @@ from math import pi, sqrt, sin, cos, tan, atan2
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, VarTree, Str, Enum
 
-from properties import SparProperties, ChordProperties, wireProperties, prepregProperties
+from properties import SparProperties, ChordProperties, \
+                       wireProperties, prepregProperties
+from lift_drag import Fblade
 
 
 # data structures used in structural calculations
@@ -100,16 +102,6 @@ class QuadSparProperties(SparProperties):
         super(QuadSparProperties, self).execute()
 
         self.mQuad = self.mSpar[0]
-
-
-class FBlade(VariableTree):
-    Fx = Array(desc='')
-    Fz = Array(desc='')
-    My = Array(desc='')
-    Q  = Array(desc='')
-    P  = Array(desc='')
-    Pi = Array(desc='')
-    Pp = Array(desc='')
 
 
 class Strain(VariableTree):
@@ -226,7 +218,7 @@ class FEM(Component):
     cE  = Array(iotype='in', desc='chord of each element')
     xEA = Array(iotype='in', desc='')
 
-    Fblade = VarTree(FBlade(), iotype='in')
+    fblade = VarTree(Fblade(), iotype='in')
 
     mSpar  = Array(iotype='in', desc='mass of spars')
     mChord = Array(iotype='in', desc='mass of chords')
@@ -260,7 +252,7 @@ class FEM(Component):
         yWire = self.yWire
         zWire = self.zWire
         TWire = self.TWire
-        Fblade = self.Fblade
+        fblade = self.fblade
         presLoad = self.presLoad
 
         Ns = max(yN.shape) - 1  # number of elements
@@ -332,12 +324,12 @@ class FEM(Component):
             if self.flags.Load == 0:  # include aero forces
                 # aerodynamic forces
                 xAC = 0.25
-                Faero[0] = Fblade.Fx[s] / 2
+                Faero[0] = fblade.Fx[s] / 2
                 Faero[1] = 0
-                Faero[2] = Fblade.Fz[s] / 2
-                Faero[3] = Fblade.Fz[s] * dy[s] / 12
-                Faero[4] = Fblade.My[s] / 2 + (xEA[s] - xAC) * cE[s] * Fblade.Fz[s] / 2
-                Faero[5] = -Fblade.Fx[s] * dy[s] / 12
+                Faero[2] = fblade.Fz[s] / 2
+                Faero[3] = fblade.Fz[s] * dy[s] / 12
+                Faero[4] = fblade.My[s] / 2 + (xEA[s] - xAC) * cE[s] * fblade.Fz[s] / 2
+                Faero[5] = -fblade.Fx[s] * dy[s] / 12
 
             Fg = np.zeros((6, 1))
             Fwire = np.zeros((12, 1))
@@ -609,7 +601,7 @@ class Failures(Component):
 
     # all this to get TQuad... maybe should be split out
     b            = Int(iotype='in', desc='number of blades')
-    Fblade       = VarTree(FBlade(), iotype='in')
+    fblade       = VarTree(Fblade(), iotype='in')
     mSpar        = Array(iotype='in', desc='mass of spars')
     mChord       = Array(iotype='in', desc='mass of chords')
     mElseRotor   = Float(iotype='in', desc='')
@@ -666,12 +658,12 @@ class Failures(Component):
         TWire        = self.TWire
         TEtension    = self.TEtension
         b            = self.b
-        Fblade       = self.Fblade
+        fblade       = self.fblade
         mSpar        = self.mSpar
         mChord       = self.mChord
         mElseRotor   = self.mElseRotor
 
-        TQuad = np.sum(Fblade.Fz)*b - (np.sum(mSpar + mChord)*b + mElseRotor/4) * 9.81
+        TQuad = np.sum(fblade.Fz)*b - (np.sum(mSpar + mChord)*b + mElseRotor/4) * 9.81
 
         Ns = max(yN.shape) - 1  # number of elements
         dy = np.zeros((Ns, 1))
@@ -1025,7 +1017,7 @@ class Structures(Assembly):
     mPilot       = Float(iotype='in', desc='mass of pilot')
 
     # inputs for FEM
-    Fblade       = VarTree(FBlade(), iotype='in')
+    fblade       = VarTree(Fblade(), iotype='in')
     presLoad     = VarTree(PrescribedLoad(), iotype='in')
 
     def configure(self):
@@ -1091,7 +1083,7 @@ class Structures(Assembly):
         self.connect('zWire',        'fem.zWire')
         self.connect('yWire',        'fem.yWire')
         self.connect('TWire',        'fem.TWire')
-        self.connect('Fblade',       'fem.Fblade')
+        self.connect('fblade',       'fem.fblade')
         self.connect('presLoad',     'fem.presLoad')
 
         self.add('strains', Strains())
@@ -1127,7 +1119,7 @@ class Structures(Assembly):
         self.connect('TWire',             'failure.TWire')
         self.connect('TEtension',         'failure.TEtension')
         self.connect('b',                 'failure.b')
-        self.connect('Fblade',            'failure.Fblade')
+        self.connect('fblade',            'failure.fblade')
         self.connect('spar.mSpar',        'failure.mSpar')
         self.connect('chord.mChord',      'failure.mChord')
         self.connect('mElseRotor',        'failure.mElseRotor')
