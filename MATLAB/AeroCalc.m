@@ -81,6 +81,7 @@ else
         %vi(s) = sqrt(0.25*b*dT(s)/(pi*rho*r(s)*dr(s)));
     end
 
+
     % Add ground effect (Bramwell)
 %     A = pi*R^2;
 %     solidity = b*mean(c)/(pi*R);
@@ -92,16 +93,15 @@ else
     % Add ground effect Cheesemen & Benett's
     vi = vi/(1+(R/h/4)^2);
 
+
     % Add ground effect (vi fit)
 %     hR = h/R;
 %     rR = r/R;
 %     if hR < 0.05
 %         hR = 0.05;
-%         disp('h out of bounds for ground effect model')
 %     end
 %     if hR > 0.5
 %         hR = 0.05;
-%         disp('h out of bounds for ground effect model')
 %     end
 %     vieps = 0.004467*exp(1.109*rR)+2.4466E-8*exp(18.04*rR);
 %     vislope = -148.8*rR.^6 + 385.7*rR.^5 - 380.5*rR.^4 + 178.5*rR.^3 - 38.92*rR.^2 + 3.704*rR + 0.6167;
@@ -111,6 +111,8 @@ else
 end
 
 % Compute lift and drag using full angles
+
+
 for s = 1:Ns
     U = sqrt( (Omega*r(s)+vw)^2 + (vc+vi(s))^2 ); %where vw is wind, vc is vertical velocity
     
@@ -145,7 +147,7 @@ for s = 1:Ns
             dD = dD + 0.5*rho*U^2*CdWire*tWire*L;
         end
     end
-    
+
     phi(s) = atan2(vc+vi(s),vw+Omega*r(s)); %where vw is wind, vc is vertical velocity
     Fblade.Fz(s) = chordFrac(s)*(dL*cos(phi(s)) - dD*sin(phi(s)));
     Fblade.Fx(s) = chordFrac(s)*(dD*cos(phi(s)) + dL*sin(phi(s)));
@@ -155,6 +157,9 @@ for s = 1:Ns
     Fblade.Pi(s) = chordFrac(s)*(dL*sin(phi(s))*r(s)*Omega);
     Fblade.Pp(s) = chordFrac(s)*(dD*cos(phi(s))*r(s)*Omega);
 end
+
+
+
 
 end
     
