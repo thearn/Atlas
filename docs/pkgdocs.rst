@@ -20,8 +20,10 @@ Package Metadata
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
     Atlas.lift_drag.liftDrag=Atlas.lift_drag:liftDrag
+    Atlas.thrust.Thrust=Atlas.thrust:Thrust
     Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
     Atlas.structures.Strains=Atlas.structures:Strains
+    Atlas.thrust.InducedVelocity=Atlas.thrust:InducedVelocity
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient
@@ -39,6 +41,7 @@ Package Metadata
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.vortex.vortexRing=Atlas.vortex:vortexRing
+    Atlas.thrust.Thrust=Atlas.thrust:Thrust
     Atlas.vortex.inducedVelocity=Atlas.vortex:inducedVelocity
     Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.structures.Structures=Atlas.structures:Structures
@@ -46,6 +49,7 @@ Package Metadata
     Atlas.structures.Flags=Atlas.structures:Flags
     Atlas.structures.MaterialFailure=Atlas.structures:MaterialFailure
     Atlas.structures.PrescribedLoad=Atlas.structures:PrescribedLoad
+    Atlas.thrust.InducedVelocity=Atlas.thrust:InducedVelocity
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.dragCoefficient=Atlas.coefficients:dragCoefficient

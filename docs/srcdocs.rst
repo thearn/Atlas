@@ -111,6 +111,19 @@ test_structures.py
    :show-inheritance:
 
         
+.. index:: test_thrust.py
+
+.. _Atlas.test.test_thrust.py:
+
+test_thrust.py
+--------------
+
+.. automodule:: Atlas.test.test_thrust
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: test_vortex.py
 
 .. _Atlas.test.test_vortex.py:
@@ -132,6 +145,19 @@ testvals.py
 -----------
 
 .. automodule:: Atlas.test.testvals
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: thrust.py
+
+.. _Atlas.thrust.py:
+
+thrust.py
+---------
+
+.. automodule:: Atlas.thrust
    :members:
    :undoc-members:
    :show-inheritance:
