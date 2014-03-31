@@ -7,6 +7,19 @@ Source Documentation
 ====================
 
         
+.. index:: aero.py
+
+.. _Atlas.aero.py:
+
+aero.py
+-------
+
+.. automodule:: Atlas.aero
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: coefficients.py
 
 .. _Atlas.coefficients.py:

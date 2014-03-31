@@ -256,9 +256,9 @@ class FEM(Component):
         presLoad = self.presLoad
 
         Ns = max(yN.shape) - 1  # number of elements
-        dy = np.zeros((Ns, 1))
-        for s in range(1, (Ns+1)):
-            dy[(s-1)] = yN[(s)] - yN[(s-1)]  # length of each element
+        dy = np.zeros(Ns)
+        for s in range(Ns+1):
+            dy[s-1] = yN[s] - yN[s-1]  # length of each element
 
         # FEM computation for structural deformations
         # -------------------------------------------
@@ -270,7 +270,7 @@ class FEM(Component):
         # Create global stiffness maxtrix and force vector
         k = np.zeros((12, 12, Ns))
 
-        for s in range(0, Ns):
+        for s in range(Ns):
 
             # Local elastic stiffness matrix
             k[0,   0, s] = 12 * EIx[s] / (dy[s] * dy[s] * dy[s])
@@ -345,7 +345,7 @@ class FEM(Component):
                 Fg[5] = 0
 
                 # Wire forces (using consistent force vector)
-                for w in range(0, len(yWire)):
+                for w in range(len(yWire)):
                     if (yWire[w] >= yN[s]) and (yWire[w] < yN[s+1]):
                         thetaWire = atan2(zWire, yWire[w])
                         a = yWire[w] - yN[s]
@@ -420,7 +420,7 @@ class FEM(Component):
         if self.flags.wingWarp > 0:  # Also add wingWarping constraint
             raise Exception('FEM is untested and surely broken for wingWarp > 0')
             ii = np.array([])
-            for ss in range(0, ((Ns + 1) * 6 - 1)):
+            for ss in range((Ns+1)*6 - 1):
                 if (ss > 5) and (ss != self.flags.wingWarp*6 + 5):
                     ii = np.array([ii, ss]).reshape(1, -1)
             Fc = F[(ii-1)]
@@ -467,8 +467,8 @@ class Strains(Component):
 
         Ns = max(self.yN.shape) - 1  # number of elements
         dy = np.zeros((Ns, 1))
-        for s in range(1, (Ns+1)):
-            dy[(s-1)] = self.yN[(s)] - self.yN[(s-1)]  # length of each element
+        for s in range(1, Ns+1):
+            dy[s-1] = self.yN[s] - self.yN[s-1]  # length of each element
 
         Ftemp = np.zeros((12, Ns))
         Finternal = np.zeros((6, Ns + 1))
@@ -484,7 +484,7 @@ class Strains(Component):
         strain.axial_y   = np.zeros((1, Ns + 1))
         strain.torsion_y = np.zeros((1, Ns + 1))
 
-        for s in range(0, Ns):
+        for s in range(Ns):
             # Determine internal forces acting at the nodes of each element
             Ftemp[:, s] = -(np.dot(self.k[:, :, s], self.q[s*6:s*6 + 12]) - self.F[s*6:s*6 + 12]).squeeze()
             # Finternal[:, s] = Ftemp[0:5, s]
@@ -666,9 +666,6 @@ class Failures(Component):
         TQuad = np.sum(fblade.Fz)*b - (np.sum(mSpar + mChord)*b + mElseRotor/4) * 9.81
 
         Ns = max(yN.shape) - 1  # number of elements
-        dy = np.zeros((Ns, 1))
-        for s in range(0, Ns):
-            dy[s] = yN[s] - yN[s]
 
         fail = Failure()
 
@@ -689,7 +686,7 @@ class Failures(Component):
         fail.buckling.x = np.zeros(Ns+1)
         fail.buckling.z = np.zeros(Ns+1)
 
-        for s in range(0, Ns):
+        for s in range(Ns):
             if yN[s] <= yWire:
                 critical_load_x = pi**2 * EIxJ / (k * L)**2
                 critical_load_z = pi**2 * EIzJ / (k * L)**2
@@ -746,7 +743,7 @@ class Failures(Component):
         # Wire tensile failure
         wire_props = wireProperties[flags.WireType]
         fail.wire = np.zeros(len(yWire))
-        for i in range(0, len(yWire)):
+        for i in range(len(yWire)):
             stress_wire = TWire[i] / (pi*(tWire/2)**2)
             fail.wire[i] = stress_wire / wire_props['ULTIMATE']
 
@@ -785,7 +782,7 @@ class Failures(Component):
         stress.plus = np.zeros((3, Ns))
         stress.minus = np.zeros((3, Ns))
 
-        for s in range(0, Ns):
+        for s in range(Ns):
             # Compute stresses in structural axes for each lamina angle
             # Q is the matrix of elastic constants in the material axis
             # Q_bar is the matrix of elastic constants in the structural axes for a
@@ -899,7 +896,7 @@ class Failures(Component):
 
         failure = np.zeros(Ns+1)
 
-        for s in range(0, Ns):
+        for s in range(Ns):
 
             if nCap[s] != 0:
                 AF_torsional_buckling = 1.25  # See "Validation - Torsional Buckling.xlsx"

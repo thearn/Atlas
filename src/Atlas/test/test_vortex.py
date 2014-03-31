@@ -1,5 +1,5 @@
 from testvals import values
-from Atlas import vortexRing, inducedVelocity
+from Atlas import VortexRing, InducedVelocity
 import numpy as np
 import unittest
 
@@ -8,9 +8,9 @@ def relative_err(x, y):
     return (np.abs(x-y)/np.linalg.norm(x)).max()
 
 
-class Test_vortexRing(unittest.TestCase):
+class Test_VortexRing(unittest.TestCase):
     """
-    Tests the vortexRing component
+    Tests the VortexRing component
     """
 
     @classmethod
@@ -19,7 +19,7 @@ class Test_vortexRing(unittest.TestCase):
         This sets up a component and runs it once, using stored input values.
         Each test below then checks individual outputs that result from the run.
         """
-        cls.comp = vortexRing()
+        cls.comp = VortexRing()
         cls.comp.yN = values.yN
         cls.comp.rho = values.rho
         cls.comp.dT = values.dT
@@ -50,11 +50,12 @@ class Test_vortexRing(unittest.TestCase):
         assert relative_err(self.comp.vr, values.vr) < 1e-7
 
 
-class Test_inducedVelocity(unittest.TestCase):
+class Test_InducedVelocity(unittest.TestCase):
 
     def test_vi(self):
+        comp = InducedVelocity()
 
-        comp = inducedVelocity()
+        # set inputs
         comp.qh = values.qh
         comp.Gamma = values.Gamma
         comp.z = values.z
@@ -66,7 +67,10 @@ class Test_inducedVelocity(unittest.TestCase):
         comp.Nw = values.Nw
         comp.dtheta = values.dtheta
 
+        # run
         comp.run()
+
+        # check outputs
         assert relative_err(comp.vi, values.vi) < 1e-7
 
 
