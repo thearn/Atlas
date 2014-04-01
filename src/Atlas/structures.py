@@ -5,38 +5,13 @@ from math import pi, sqrt, sin, cos, tan, atan2
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, VarTree, Str, Enum
 
+from configuration import AtlasConfiguration, Flags
 from properties import SparProperties, ChordProperties, \
                        wireProperties, prepregProperties
 from lift_drag import Fblade
 
 
 # data structures used in structural calculations
-
-class Flags(VariableTree):
-    Opt          = Int(1, desc='0 - single run, 1 - optimization')
-    ConFail      = Int(0, desc='1 - use structural failure as a constraint on optimization')
-    ConWireCont  = Int(0, desc='1 - use wire length continuity as a constraint to set appropriate wire forces in multi-point optimizations')
-    ConJigCont   = Int(0, desc='1 - use jig continuity')
-    ConDef       = Int(0, desc='1 - constraints on maximum deformation of the rotor')
-    MultiPoint   = Int(4, desc='0 - single point optimization, 1 - 4 point optimization (h=0.5, h=3, wind case, gravity load)')
-    Quad         = Int(1, desc='0 - prop drive, 1 - quad rotor')
-    FreeWake     = Int(1, desc='0 - momentum theory, 1 - free vortex ring wake')
-    PlotWake     = Int(0, desc='0 - dont plot wake, 1 - plot wake ')
-    DynamicClimb = Int(0, desc='0 - vc imposes downward velocity, 1 - vc represents climb (final altitude depends on Nw)')
-    Cover        = Int(0, desc='0 - no cover over root rotor blades, 1 - cover')
-    Load         = Int(0, desc='0 - normal run, 1 - gravity forces only, 2 - prescribed load from pLoad')
-    Cdfit        = Int(1, desc='0 - analytic model for drag coefficient, 1 - curve fit on BE airfoils')
-    GWing        = Int(1, desc='0 - Daedalus style wing, 1 - Gossamer style wing (changes amount of laminar flow)')
-    AeroStr      = Int(1, desc='0 - Assume flat wing, 1 - take deformation into account')
-    Movie        = Int(0, desc='0 - dont save animation, 1 - save animation')
-    wingWarp     = Int(0, desc='0 - no twist constraint, >0 - twist constraint at wingWarp')
-
-    CFRPType     = Str('NCT301-1X HS40 G150 33 +/-2%RW', desc='type of carbon fibre reinforced polymer')
-
-    WireType     = Enum('Pianowire',
-                        ('Pianowire', 'Vectran'),
-                        desc='Material to be used for lift wire')
-
 
 class JointProperties(VariableTree):
     """ Properties at joint location for buckling analysis """

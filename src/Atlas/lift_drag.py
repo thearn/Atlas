@@ -4,7 +4,7 @@
 from math import sqrt, sin, cos, atan2
 import numpy as np
 
-from openmdao.lib.datatypes.api import Float, Array, VarTree
+from openmdao.lib.datatypes.api import Int, Float, Array, VarTree
 from openmdao.main.api import Component, VariableTree
 
 
@@ -23,21 +23,21 @@ class LiftDrag(Component):
     Computes lift and drag
     """
 
-    rho   = Float(0.0, iotype='in', desc='Air density')
-    visc  = Float(0.0, iotype='in', desc='')
+    Ns  = Int(iotype="in", desc="number of Elements")
+    yN  = Array(iotype="in", desc='node locations')
+
+    rho   = Float(0.0, iotype='in', desc='air density')
+    visc  = Float(0.0, iotype='in', desc='air viscosity')
     vw    = Float(0.0, iotype='in', desc='wind')
     vc    = Float(0.0, iotype='in', desc='vertical velocity')
     Omega = Float(0.0, iotype='in', desc='Rotor angular velocity')
 
     r  = Array(iotype='in', desc='radial location of each element')
-    t  = Array(iotype='in', desc='')
-    vi = Array(iotype='in', desc='')
-    c  = Array(iotype='in', desc='')
-    Cl = Array(iotype='in', desc='')
+    vi = Array(iotype='in', desc='induced downwash distribution')
+    c  = Array(iotype='in', desc='chord distribution')
+    Cl = Array(iotype='in', desc='lift coefficient distribution')
     dr = Array(iotype='in', desc='length of each element')
-    d  = Array(iotype='in', desc='')
-
-    yN = Array(iotype='in', desc='')
+    d  = Array(iotype='in', desc='spar diameter distribution')
 
     yWire     = Array(iotype='in', desc='location of wire attachment along span')
     zWire     = Float(iotype='in', desc='depth of wire attachement')
@@ -55,29 +55,27 @@ class LiftDrag(Component):
     Fblade = VarTree(Fblade(), iotype='out', desc='')
 
     def execute(self):
-        Ns = max(self.yN.shape) - 1  # number of elements
-
         # Pre-allocate output arrays
-        self.Re = np.zeros(Ns)
-        self.Cd = np.zeros(Ns)
-        self.phi = np.zeros(Ns)
-        self.Fblade.Fx = np.zeros(Ns)
-        self.Fblade.Fz = np.zeros(Ns)
-        self.Fblade.My = np.zeros(Ns)
-        self.Fblade.Q = np.zeros(Ns)
-        self.Fblade.P = np.zeros(Ns)
-        self.Fblade.Pi = np.zeros(Ns)
-        self.Fblade.Pp = np.zeros(Ns)
+        self.Re = np.zeros(self.Ns)
+        self.Cd = np.zeros(self.Ns)
+        self.phi = np.zeros(self.Ns)
+        self.Fblade.Fx = np.zeros(self.Ns)
+        self.Fblade.Fz = np.zeros(self.Ns)
+        self.Fblade.My = np.zeros(self.Ns)
+        self.Fblade.Q = np.zeros(self.Ns)
+        self.Fblade.P = np.zeros(self.Ns)
+        self.Fblade.Pi = np.zeros(self.Ns)
+        self.Fblade.Pp = np.zeros(self.Ns)
 
         # Compute lift and drag using full angles
-        for s in range(Ns):
+        for s in range(self.Ns):
             # where vw is wind, vc is vertical velocity
             U = sqrt((self.Omega * self.r[s] + self.vw)**2 + (self.vc + self.vi[s])**2)
 
             # wing section
             if self.c[s] > 0.001:
                 self.Re[s] = self.rho * U * self.c[s] / self.visc
-                self.Cd[s] = self.dragCoefficientFit(self.Re[s], self.t[s], self.xtU[s], self.xtL[s])
+                self.Cd[s] = self.dragCoefficientFit(self.Re[s], self.xtU[s], self.xtL[s])
                 dL = 0.5 * self.rho * U**2 * self.Cl[s] * self.c[s] * self.dr[s]
                 dD = 0.5 * self.rho * U**2 * self.Cd[s] * self.c[s] * self.dr[s]
             else:
@@ -111,7 +109,7 @@ class LiftDrag(Component):
             self.Fblade.Pi[s] = self.chordFrac[s] * (dL * sin(self.phi[s]) * self.r[s] * self.Omega)
             self.Fblade.Pp[s] = self.chordFrac[s] * (dD * cos(self.phi[s]) * self.r[s] * self.Omega)
 
-    def dragCoefficientFit(self, Re, t, xtU, xtL):
+    def dragCoefficientFit(self, Re, xtU, xtL):
         """
         Computes the drag coefficient of an airfoil at Reynolds number Re,
         with thickness to chord ratio tc, and with xtcU and xtcL fraction of

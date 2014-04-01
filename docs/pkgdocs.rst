@@ -19,13 +19,13 @@ Package Metadata
     [openmdao.component]
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
-    Atlas.lift_drag.LiftDrag=Atlas.lift_drag:LiftDrag
+    Atlas.configuration.AtlasConfiguration=Atlas.configuration:AtlasConfiguration
     Atlas.thrust.ActuatorDiskInducedVelocity=Atlas.thrust:ActuatorDiskInducedVelocity
     Atlas.thrust.Thrust=Atlas.thrust:Thrust
     Atlas.vortex.InducedVelocity=Atlas.vortex:InducedVelocity
     Atlas.structures.Strains=Atlas.structures:Strains
-    Atlas.aero.Configuration=Atlas.aero:Configuration
-    Atlas.aero.AeroCalc=Atlas.aero:AeroCalc
+    Atlas.lift_drag.LiftDrag=Atlas.lift_drag:LiftDrag
+    Atlas.aero.Aero=Atlas.aero:Aero
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.DragCoefficient=Atlas.coefficients:DragCoefficient
@@ -35,20 +35,20 @@ Package Metadata
     Atlas.structures.Structures=Atlas.structures:Structures
     [openmdao.container]
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
-    Atlas.aero.Configuration=Atlas.aero:Configuration
     Atlas.structures.Failure=Atlas.structures:Failure
     Atlas.structures.PrescribedLoad=Atlas.structures:PrescribedLoad
     Atlas.lift_drag.Fblade=Atlas.lift_drag:Fblade
+    Atlas.configuration.Flags=Atlas.configuration:Flags
     Atlas.structures.Strain=Atlas.structures:Strain
     Atlas.structures.JointProperties=Atlas.structures:JointProperties
     Atlas.vortex.VortexRing=Atlas.vortex:VortexRing
     Atlas.coefficients.DragCoefficient=Atlas.coefficients:DragCoefficient
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
+    Atlas.configuration.AtlasConfiguration=Atlas.configuration:AtlasConfiguration
     Atlas.vortex.InducedVelocity=Atlas.vortex:InducedVelocity
     Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.thrust.Thrust=Atlas.thrust:Thrust
-    Atlas.aero.AeroCalc=Atlas.aero:AeroCalc
-    Atlas.structures.Flags=Atlas.structures:Flags
+    Atlas.aero.Aero=Atlas.aero:Aero
     Atlas.thrust.ActuatorDiskInducedVelocity=Atlas.thrust:ActuatorDiskInducedVelocity
     Atlas.structures.Structures=Atlas.structures:Structures
     Atlas.structures.BucklingFailure=Atlas.structures:BucklingFailure

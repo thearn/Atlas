@@ -33,6 +33,19 @@ coefficients.py
    :show-inheritance:
 
         
+.. index:: configuration.py
+
+.. _Atlas.configuration.py:
+
+configuration.py
+----------------
+
+.. automodule:: Atlas.configuration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: lift_drag.py
 
 .. _Atlas.lift_drag.py:
@@ -67,6 +80,19 @@ structures.py
 -------------
 
 .. automodule:: Atlas.structures
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: test_aero.py
+
+.. _Atlas.test.test_aero.py:
+
+test_aero.py
+------------
+
+.. automodule:: Atlas.test.test_aero
    :members:
    :undoc-members:
    :show-inheritance:

@@ -6,27 +6,24 @@ from openmdao.main.datatypes.api import Int, Float, Array
 
 class Thrust(Component):
 
-    #Aerocalc Inputs
-    yN    = Array(iotype="in", desc='Node locations')
+    # inputs
+    Ns    = Int(iotype="in",   desc="number of elements")
+    yN    = Array(iotype="in", desc='node locations')
+    dr    = Array(iotype="in", desc="length of each element")
+    r     = Array(iotype="in", desc="radial location of each element")
     ycmax = Float(iotype="in")
     Cl    = Array(iotype="in", desc="lift coefficient distribution")
     c     = Array(iotype="in", desc="chord distribution")
-    rho   = Float(iotype="in", desc="Air density")
-    Omega = Float(iotype="in", desc="Rotor angular velocity")
-
-    #Aerocalc intermediate values
-    dr = Array(iotype="in", desc="length of each element")
-    r  = Array(iotype="in", desc="radial location of each element")
+    rho   = Float(iotype="in", desc="air density")
+    Omega = Float(iotype="in", desc="rotor angular velocity")
 
     # outputs
     dT = Array(iotype="out", desc="Thrust")
     chordFrac = Array(iotype="out")
 
     def execute(self):
-        Ns = max(self.yN.shape) - 1  # number of elements
-
-        self.chordFrac = np.ones(Ns)
-        self.dT = np.zeros(Ns)
+        self.chordFrac = np.ones(self.Ns)
+        self.dT = np.zeros(self.Ns)
 
         # Compute multiplyer for partial element
         for index, element in enumerate(self.yN):
@@ -48,26 +45,23 @@ class ActuatorDiskInducedVelocity(Component):
     """
 
     # inputs
+    Ns  = Int(iotype="in",   desc="number of elements")
+    yN  = Array(iotype="in", desc='node locations')
+    r   = Array(iotype="in", desc="radial location of each element")
+    dr  = Array(iotype="in", desc="length of each element")
+    R   = Float(iotype="in", desc="rotor Radius")
+    b   = Float(iotype="in", desc="number of blades")
+    h   = Float(iotype="in", desc="height of rotor")
     vc  = Float(iotype="in", desc="vertical velocity")
-    rho = Float(iotype="in", desc="Air density")
-    b   = Float(iotype="in", desc="Number of blades")
-    R   = Float(iotype="in", desc="rotor radius")
-    h   = Float(iotype="in", desc="Height of rotor")
-
-    yN  = Int(iotype="in")
-
-    dT  = Array(iotype="in", desc="Thrust")
-    r   = Array(iotype="in")
-    dr  = Array(iotype="in")
+    rho = Float(iotype="in", desc="air density")
+    dT  = Array(iotype="in", desc="thrust")
 
     # outputs
-    vi  = Array(iotype="out")
+    vi  = Array(iotype="out", desc="induced downwash distribution")
 
     def execute(self):
-        Ns = max(self.yN.shape) - 1  # number of elements
-
-        self.vi = np.zeros(Ns)
-        sq = np.zeros(Ns)
+        self.vi = np.zeros(self.Ns)
+        sq = np.zeros(self.Ns)
 
         sq = 0.25 * self.vc**2 + \
              0.25 * self.b * self.dT / (np.pi * self.rho * self.r * self.dr)
