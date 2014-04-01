@@ -1,8 +1,8 @@
 from configuration import Flags, AtlasConfiguration
 from coefficients import DragCoefficient, frictionCoefficient
 from properties import prepregProperties, wireProperties, DiscretizeProperties, \
-                       SparProperties, ChordProperties
-from structures import JointProperties, PrescribedLoad, Strain, \
+                       JointProperties, SparProperties, ChordProperties
+from structures import PrescribedLoad, Strain, \
                        MassProperties, FEM, Strains, Failures, Structures
 from lift_drag import LiftDrag, Fblade
 from vortex import VortexRing, InducedVelocity

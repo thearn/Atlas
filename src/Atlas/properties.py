@@ -1,6 +1,6 @@
 # pylint: disable=line-too-long, invalid-name, bad-whitespace, trailing-whitespace, too-many-locals, line-too-long
-from openmdao.main.api import Component
-from openmdao.lib.datatypes.api import Float, Array, Int, Str
+from openmdao.main.api import Component, VariableTree
+from openmdao.lib.datatypes.api import Float, Array, Int, Str, VarTree
 import numpy as np
 from math import pi, sin, cos, floor, sqrt
 
@@ -328,6 +328,63 @@ class SparProperties(Component):
             self.mSpar[(s-1)] = (A_tube * RHO_TUBE + A_cap * RHO_CAP) * dy[(s-1)] + mass_biscuit
 
 
+class JointProperties(VariableTree):
+    """ Properties at joint location for buckling analysis """
+    d        = Float(desc='diameter')
+    theta    = Float(desc='wrap angle')
+    nTube    = Int(desc='number of tube layers')
+    nCap     = Int(desc='number of cap strips')
+    lBiscuit = Float(desc='unsupported biscuit length')
+
+
+class JointSparProperties(SparProperties):
+    """ subclass of SparProperties for the joints
+        (needed to dynamically create yN and get other properties from Jprop)
+    """
+
+    # inputs
+    Jprop = VarTree(JointProperties(), iotype='in')
+
+    def execute(self):
+        self.yN = np.array([0, 1])
+        self.d = [self.Jprop.d]
+        self.theta = [self.Jprop.theta]
+        self.nTube = [self.Jprop.nTube]
+        self.nCap = [self.Jprop.nCap]
+        self.lBiscuit = [self.Jprop.lBiscuit]
+        super(JointSparProperties, self).execute()
+
+
+class QuadSparProperties(SparProperties):
+    """ subclass of SparProperties for the QuadCopter-specific spars
+        (needed to dynamically create yN and nCap and provide scalar I/O)
+    """
+    # inputs
+    dQuad     = Float(iotype='in', desc='')
+    thetaQuad = Float(iotype='in', desc='')
+    nTubeQuad = Int(iotype='in', desc='number of tube layers')
+    lBiscuitQuad = Float(iotype='in', desc='')
+
+    RQuad  = Float(iotype='in', desc='distance from centre of helicopter to centre of quad rotors')
+    hQuad  = Float(iotype='in', desc='height of quad-rotor truss')
+
+    # outputs
+    mQuad        = Float(iotype='out', desc='mass of Quad spar (scalar')
+
+    def execute(self):
+        lQuad = sqrt(self.RQuad**2 + self.hQuad**2)
+        self.yN = np.array([0, lQuad])
+        self.nCap = np.array([0, 0])
+        self.d = [self.dQuad]
+        self.theta = [self.thetaQuad]
+        self.nTube = [self.nTubeQuad]
+        self.lBiscuit = [self.lBiscuitQuad]
+
+        super(QuadSparProperties, self).execute()
+
+        self.mQuad = self.mSpar[0]
+
+
 class DiscretizeProperties(Component):
     """
     Discretize properties along rotor blade. Y defines the locations at which
@@ -336,27 +393,27 @@ class DiscretizeProperties(Component):
     """
 
     # inputs
-    Ns        = Int(0, iotype='in', desc='number of elements')
-    ycmax     = Array(iotype='in', desc='')
-    R         = Float(0, iotype='in', desc='')
-    c_        = Array(iotype='in', desc='')
-    Cl_       = Array(iotype='in', desc='')
-    Cm_       = Array(iotype='in', desc='')
-    t_        = Array(iotype='in', desc='')
-    xtU_      = Array(iotype='in', desc='')
-    xtL_      = Array(iotype='in', desc='')
-    xEA_      = Array(iotype='in', desc='')
-    yWire     = Array(iotype='in', desc='')
-    d_        = Array(iotype='in', desc='')
-    theta_    = Array(iotype='in', desc='')
-    nTube_    = Array(iotype='in', desc='')
-    nCap_     = Array(iotype='in', desc='')
-    lBiscuit_ = Array(iotype='in', desc='')
+    Ns          = Int(iotype='in', desc='number of elements')
+    ycmax       = Array(iotype='in', desc='')
+    R           = Float(iotype='in', desc='')
+    c_in        = Array(iotype='in', desc='')
+    Cl_in       = Array(iotype='in', desc='')
+    Cm_in       = Array(iotype='in', desc='')
+    t_in        = Array(iotype='in', desc='')
+    xtU_in      = Array(iotype='in', desc='')
+    xtL_in      = Array(iotype='in', desc='')
+    xEA_in      = Array(iotype='in', desc='')
+    yWire       = Array(iotype='in', desc='')
+    d_in        = Array(iotype='in', desc='')
+    theta_in    = Array(iotype='in', desc='')
+    nTube_in    = Array(iotype='in', desc='')
+    nCap_in     = Array(iotype='in', desc='')
+    lBiscuit_in = Array(iotype='in', desc='')
 
     # outputs
     cE       = Array(iotype='out', desc='chord of each element')
     cN       = Array(iotype='out', desc='chord at each node')
-    c100     = Array(np.zeros(100), iotype='out', desc='')
+    c100     = Array(iotype='out', desc='')
     Cl       = Array(iotype='out', desc='lift coefficient')
     Cm       = Array(iotype='out', desc='')
     t        = Array(iotype='out', desc='airfoil thickness')
@@ -414,22 +471,22 @@ class DiscretizeProperties(Component):
         for s in range(1, (self.Ns + 1)):
             if s < sTrans[0]:  # root section
                 x = self.yE[(s-1)] / self.ycmax[0]
-                self.cE[(s-1)] = self.c_[0] + x * (self.c_[1] - self.c_[0])
+                self.cE[(s-1)] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
             else:  # chord section
                 # compute curve component
                 x = (self.yE[(s-1)] - self.ycmax[0]) / (self.R - self.ycmax[0])
-                pStart = self.c_[2]
-                pCurve = self.c_[3]
-                pEnd = self.c_[4]
+                pStart = self.c_in[2]
+                pCurve = self.c_in[3]
+                pEnd = self.c_in[4]
                 xx = x * (1 - pCurve) + sin(x * pi / 2) * pCurve
                 cZ[(s-1)] = pStart + (pEnd - pStart) * xx
 
                 # compute 1/r component
-                c3 = self.c_[2] / (self.c_[4] * self.R / self.ycmax[0])
-                cR[(s-1)] = self.c_[4] * self.R / self.yE[(s-1)] * (c3 + (1 - c3) * x)
+                c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax[0])
+                cR[(s-1)] = self.c_in[4] * self.R / self.yE[(s-1)] * (c3 + (1 - c3) * x)
 
-                # average based on c_(2)
-                self.cE[(s-1)] = cR[(s-1)] + (cZ[(s-1)] - cR[(s-1)]) * self.c_[1]
+                # average based on c_in(2)
+                self.cE[(s-1)] = cR[(s-1)] + (cZ[(s-1)] - cR[(s-1)]) * self.c_in[1]
 
             if self.cE[(s-1)] == 0:
                 self.cE[(s-1)] = 0.001
@@ -446,22 +503,22 @@ class DiscretizeProperties(Component):
         for s in range(1, (Ns100+1)):
             if s < sTrans100:  # root section
                 x = yE100[(s-1)] / self.ycmax[0]
-                self.c100[(s-1)] = self.c_[0] + x * (self.c_[1] - self.c_[0])
+                self.c100[(s-1)] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
             else:  # chord section
                 # compute chord component
                 x = (yE100[(s-1)] - self.ycmax[0]) / (self.R - self.ycmax[0])
-                pStart = self.c_[2]
-                pCurve = self.c_[3]
-                pEnd = self.c_[4]
+                pStart = self.c_in[2]
+                pCurve = self.c_in[3]
+                pEnd = self.c_in[4]
                 xx = x * (1 - pCurve) + sin(x * pi / 2) * pCurve
                 cZ100[(s-1)] = pStart + (pEnd - pStart) * xx
 
                 # compute 1/r component
-                c3 = self.c_[2] / (self.c_[4] * self.R / self.ycmax[0])
-                cR100[(s-1)] = self.c_[4] * self.R / yE100[(s-1)] * (c3 + (1 - c3) * x)
+                c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax[0])
+                cR100[(s-1)] = self.c_in[4] * self.R / yE100[(s-1)] * (c3 + (1 - c3) * x)
 
-                # average based on c_(2)
-                self.c100[(s-1)] = cR100[(s-1)] + (cZ100[(s-1)] - cR100[(s-1)]) * self.c_[1]
+                # average based on c_in(2)
+                self.c100[(s-1)] = cR100[(s-1)] + (cZ100[(s-1)] - cR100[(s-1)]) * self.c_in[1]
 
             if self.c100[(s-1)] == 0:
                 self.c100[(s-1)] = 0.001
@@ -471,10 +528,10 @@ class DiscretizeProperties(Component):
         Y = np.array([self.ycmax[0], self.ycmax[1], self.R])
         for s in range(1, (self.Ns+1)):
             if s < sTrans[0]:  # root section
-                self.Cl[(s-1)]  = self.Cl_[0]
-                self.Cm[(s-1)]  = self.Cm_[0]
-                self.t[(s-1)]   = self.t_[0]
-                self.xEA[(s-1)] = self.xEA_[0]
+                self.Cl[(s-1)]  = self.Cl_in[0]
+                self.Cm[(s-1)]  = self.Cm_in[0]
+                self.t[(s-1)]   = self.t_in[0]
+                self.xEA[(s-1)] = self.xEA_in[0]
             else:
                 # check which segment the element is on
                 for j in range(1, (max(Y.shape)+1)):
@@ -485,10 +542,10 @@ class DiscretizeProperties(Component):
                 x = (self.yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
 
                 # linearly interpolate between Y(j) and Y(j-1)
-                self.Cl[(s-1)]  = self.Cl_[(j - 1-1)] + x * (self.Cl_[(j-1)] - self.Cl_[(j - 1-1)])
-                self.Cm[(s-1)]  = self.Cm_[(j - 1-1)] + x * (self.Cm_[(j-1)] - self.Cm_[(j - 1-1)])
-                self.t[(s-1)]   = self.t_[(j - 1-1)] + x * (self.t_[(j-1)] - self.t_[(j - 1-1)])
-                self.xEA[(s-1)] = self.xEA_[(j - 1-1)] + x * (self.xEA_[(j-1)] - self.xEA_[(j - 1-1)])
+                self.Cl[(s-1)]  = self.Cl_in[(j - 1-1)] + x * (self.Cl_in[(j-1)] - self.Cl_in[(j - 1-1)])
+                self.Cm[(s-1)]  = self.Cm_in[(j - 1-1)] + x * (self.Cm_in[(j-1)] - self.Cm_in[(j - 1-1)])
+                self.t[(s-1)]   = self.t_in[(j - 1-1)] + x * (self.t_in[(j-1)] - self.t_in[(j - 1-1)])
+                self.xEA[(s-1)] = self.xEA_in[(j - 1-1)] + x * (self.xEA_in[(j-1)] - self.xEA_in[(j - 1-1)])
 
         self.Cl[(self.Ns-1)] = self.Cl[(self.Ns-1)] * 2 / 3
 
@@ -497,7 +554,7 @@ class DiscretizeProperties(Component):
         for s in range(1, (self.Ns + 1+1)):
             if self.yN[(s-1)] < self.ycmax[0]:
                 sTrans[0] = s
-            if self.yN[(s-1)] < self.xtU_[1]:
+            if self.yN[(s-1)] < self.xtU_in[1]:
                 sTrans[1] = s
 
         for s in range(1, (self.Ns + 1)):
@@ -506,15 +563,15 @@ class DiscretizeProperties(Component):
                 self.xtL[(s-1)] = 0.05
             else:
                 if s < sTrans[1]:
-                    self.xtU[(s-1)] = self.xtU_[0]
-                    self.xtL[(s-1)] = self.xtL_[0]
+                    self.xtU[(s-1)] = self.xtU_in[0]
+                    self.xtL[(s-1)] = self.xtL_in[0]
                 elif s == sTrans[1]:
-                    x = (self.xtU_[1] - self.yN[(s-1)]) / (self.yN[(s-1)] - self.yN[(s - 1-1)])
-                    self.xtU[(s-1)] = (1 - x) * self.xtU_[0] + x * self.xtU_[2]
-                    self.xtL[(s-1)] = (1 - x) * self.xtL_[0] + x * self.xtL_[2]
+                    x = (self.xtU_in[1] - self.yN[(s-1)]) / (self.yN[(s-1)] - self.yN[(s - 1-1)])
+                    self.xtU[(s-1)] = (1 - x) * self.xtU_in[0] + x * self.xtU_in[2]
+                    self.xtL[(s-1)] = (1 - x) * self.xtL_in[0] + x * self.xtL_in[2]
                 elif s > sTrans[1]:
-                    self.xtU[(s-1)] = self.xtU_[2]
-                    self.xtL[(s-1)] = self.xtL_[2]
+                    self.xtU[(s-1)] = self.xtU_in[2]
+                    self.xtL[(s-1)] = self.xtL_in[2]
 
         # compute str properties for each element
         Y = np.array([0, self.yWire[0], self.R])
@@ -526,11 +583,11 @@ class DiscretizeProperties(Component):
             x = (self.yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
 
             # linearly interpolate between Y(j) and Y(j-1)
-            self.d[(s-1)] = self.d_[(j - 1-1)] + x * (self.d_[(j-1)] - self.d_[(j - 1-1)])
-            self.theta[(s-1)] = self.theta_[(j - 1-1)] + x * (self.theta_[(j-1)] - self.theta_[(j - 1-1)])
-            self.nTube[(s-1)] = self.nTube_[(j - 1-1)] + x * (self.nTube_[(j-1)] - self.nTube_[(j - 1-1)])
+            self.d[(s-1)] = self.d_in[(j - 1-1)] + x * (self.d_in[(j-1)] - self.d_in[(j - 1-1)])
+            self.theta[(s-1)] = self.theta_in[(j - 1-1)] + x * (self.theta_in[(j-1)] - self.theta_in[(j - 1-1)])
+            self.nTube[(s-1)] = self.nTube_in[(j - 1-1)] + x * (self.nTube_in[(j-1)] - self.nTube_in[(j - 1-1)])
             self.nCap[(s-1)] = self.nCap[(j - 1-1)] + x * (self.nCap[(j-1)] - self.nCap[(j - 1-1)])
-            self.lBiscuit[(s-1)] = self.lBiscuit_[(j - 1-1)] + x * (self.lBiscuit_[(j-1)] - self.lBiscuit_[(j - 1-1)])
+            self.lBiscuit[(s-1)] = self.lBiscuit_in[(j - 1-1)] + x * (self.lBiscuit_in[(j-1)] - self.lBiscuit_in[(j - 1-1)])
 
 
 class ChordProperties(Component):

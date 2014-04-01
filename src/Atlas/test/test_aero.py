@@ -20,11 +20,15 @@ class AeroTestCase(unittest.TestCase):
         comp = Aero()
 
         # set inputs
+        comp.b     = 2
+        comp.R     = 10.0
+        comp.Ns    = 10
         comp.yN    = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        comp.dr    = [ 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]
+        comp.r     = [ 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+        comp.h     = 1.5000
 
         comp.ycmax = 1.4656
-        comp.b     = 2
-        comp.h     = 1.5000
 
         comp.rho   = 1.1800
         comp.visc  = 1.7800e-005

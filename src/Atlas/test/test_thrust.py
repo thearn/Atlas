@@ -14,7 +14,7 @@ class ThrustTestCase(unittest.TestCase):
         comp = thrust.ActuatorDiskInducedVelocity()
 
         comp.vc = 0.
-        comp.b = 2.
+        comp.b = 2
         comp.rho = 1.1800
         comp.R = 10.
         comp.h = 1.5000

@@ -3,81 +3,16 @@ import numpy as np
 from math import pi, sqrt, sin, cos, tan, atan2
 
 from openmdao.main.api import Assembly, Component, VariableTree
-from openmdao.lib.datatypes.api import Int, Float, Array, VarTree, Str, Enum
+from openmdao.lib.datatypes.api import Int, Float, Array, VarTree
 
-from configuration import AtlasConfiguration, Flags
-from properties import SparProperties, ChordProperties, \
-                       wireProperties, prepregProperties
+from configuration import Flags, PrescribedLoad
+from properties import JointProperties, \
+                       SparProperties, JointSparProperties, QuadSparProperties, \
+                       ChordProperties, wireProperties, prepregProperties
 from lift_drag import Fblade
 
 
 # data structures used in structural calculations
-
-class JointProperties(VariableTree):
-    """ Properties at joint location for buckling analysis """
-    d        = Float(desc='diameter')
-    theta    = Float(desc='wrap angle')
-    nTube    = Int(desc='number of tube layers')
-    nCap     = Int(desc='number of cap strips')
-    lBiscuit = Float(desc='unsupported biscuit length')
-
-
-class PrescribedLoad(VariableTree):
-    y = Float(9.9999, desc='Point load location')
-    pointZ = Float(0.15*9.8, desc='N')
-    pointM = Float(0, desc='Nm')
-    distributedX = Float(0, desc='N/m')
-    distributedZ = Float(0, desc='N/m')
-    distributedM = Float(0, desc='Nm/m')
-
-
-class JointSparProperties(SparProperties):
-    """ subclass of SparProperties for the joints
-        (needed to dynamically create yN and get other properties from Jprop)
-    """
-
-    # inputs
-    Jprop = VarTree(JointProperties(), iotype='in')
-
-    def execute(self):
-        self.yN = np.array([0, 1])
-        self.d = [self.Jprop.d]
-        self.theta = [self.Jprop.theta]
-        self.nTube = [self.Jprop.nTube]
-        self.nCap = [self.Jprop.nCap]
-        self.lBiscuit = [self.Jprop.lBiscuit]
-        super(JointSparProperties, self).execute()
-
-
-class QuadSparProperties(SparProperties):
-    """ subclass of SparProperties for the QuadCopter-specific spars
-        (needed to dynamically create yN and nCap and provide scalar I/O)
-    """
-    # inputs
-    dQuad     = Float(iotype='in', desc='')
-    thetaQuad = Float(iotype='in', desc='')
-    nTubeQuad = Int(iotype='in', desc='number of tube layers')
-    lBiscuitQuad = Float(iotype='in', desc='')
-
-    RQuad  = Float(iotype='in', desc='distance from centre of helicopter to centre of quad rotors')
-    hQuad  = Float(iotype='in', desc='height of quad-rotor truss')
-
-    # outputs
-    mQuad        = Float(iotype='out', desc='mass of Quad spar (scalar')
-
-    def execute(self):
-        lQuad = sqrt(self.RQuad**2 + self.hQuad**2)
-        self.yN = np.array([0, lQuad])
-        self.nCap = np.array([0, 0])
-        self.d = [self.dQuad]
-        self.theta = [self.thetaQuad]
-        self.nTube = [self.nTubeQuad]
-        self.lBiscuit = [self.lBiscuitQuad]
-
-        super(QuadSparProperties, self).execute()
-
-        self.mQuad = self.mSpar[0]
-
 
 class Strain(VariableTree):
     top    = Array(desc='')

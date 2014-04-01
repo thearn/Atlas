@@ -1,6 +1,8 @@
 from Atlas import Flags, JointProperties, PrescribedLoad, Fblade, Strain, \
                   MassProperties, FEM, Strains, Failures, Structures
 
+import os
+
 from scipy.io import loadmat
 
 import unittest
@@ -18,7 +20,8 @@ class TestStructures(unittest.TestCase):
         """ test of mass properties calculations """
         comp = MassProperties()
 
-        data = loadmat('mass.mat', struct_as_record=True, mat_dtype=True)
+        path = os.path.join(os.path.dirname(__file__), 'mass.mat')
+        data = loadmat(path, struct_as_record=True, mat_dtype=True)
 
         # populate inputs
         comp.flags = Flags()
@@ -81,7 +84,8 @@ class TestStructures(unittest.TestCase):
         """ test of FEM calculations """
         comp = FEM()
 
-        data = loadmat('FEM.mat', struct_as_record=True, mat_dtype=True)
+        path = os.path.join(os.path.dirname(__file__), 'FEM.mat')
+        data = loadmat(path, struct_as_record=True, mat_dtype=True)
 
         # populate inputs
         comp.flags = Flags()
@@ -182,7 +186,8 @@ class TestStructures(unittest.TestCase):
         comp = Strains()
 
         # populate inputs from MATLAB test data
-        data = loadmat('strains.mat', struct_as_record=True)
+        path = os.path.join(os.path.dirname(__file__), 'strains.mat')
+        data = loadmat(path, struct_as_record=True)
         comp.yN = data['yN']
         comp.d  = data['d']
         comp.k  = data['k']
@@ -301,7 +306,8 @@ class TestStructures(unittest.TestCase):
         """ test of failure calculations  """
         comp = Failures()
 
-        data = loadmat('failure.mat', struct_as_record=True, mat_dtype=True)
+        path = os.path.join(os.path.dirname(__file__), 'failure.mat')
+        data = loadmat(path, struct_as_record=True, mat_dtype=True)
 
         # populate inputs
         comp.flags = Flags()
@@ -388,7 +394,8 @@ class TestStructures(unittest.TestCase):
         """ full up test of integrated structures calculations """
         comp = Structures()
 
-        data = loadmat('StrCalc.mat', struct_as_record=True, mat_dtype=True)
+        path = os.path.join(os.path.dirname(__file__), 'StrCalc.mat')
+        data = loadmat(path, struct_as_record=True, mat_dtype=True)
 
         # populate inputs
         comp.flags = Flags()
