@@ -48,7 +48,6 @@ class Aero(Assembly):
         self.connect('Omega',     'thrust.Omega')
 
         self.add('induced', ActuatorDiskInducedVelocity())
-        self.connect('yN',        'induced.yN')
         self.connect('Ns',        'induced.Ns')
         self.connect('r',         'induced.r')
         self.connect('dr',        'induced.dr')

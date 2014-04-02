@@ -430,9 +430,9 @@ class DiscretizeProperties(Component):
 
     def execute(self):
 
-        self.yN = np.zeros(self.Ns + 1)
-        self.cN = np.zeros(self.Ns + 1)
-        sTrans = np.zeros(self.Ns + 1)
+        self.yN = np.zeros(self.Ns+1)
+        self.cN = np.zeros(self.Ns+1)
+        sTrans = np.zeros(self.Ns+1)
         self.yE = np.zeros(self.Ns)
         cR = np.zeros(self.Ns)
         cZ = np.zeros(self.Ns)

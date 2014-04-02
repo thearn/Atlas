@@ -22,21 +22,21 @@ class Thrust(Component):
     chordFrac = Array(iotype='out')
 
     def execute(self):
-        self.chordFrac = np.ones(self.Ns)
-        self.dT = np.zeros(self.Ns)
+        self.chordFrac = np.ones((self.Ns, 1))
+        self.dT = np.zeros((self.Ns, 1))
 
         # Compute multiplyer for partial element
         for index, element in enumerate(self.yN):
             if element < self.ycmax:
                 sTrans = index  # determine transitional partial element
-
         self.chordFrac[sTrans] = self.yN[sTrans+1] - self.ycmax  \
                                / (self.yN[sTrans+1] - self.yN[sTrans])
 
         # Compute thrust assuming small angles
-        self.dT = self.chordFrac * 0.5 * self.rho \
-                * (self.Omega * self.r)**2        \
-                * self.Cl * self.c * self.dr
+        for s in range(self.Ns):
+            self.dT[s] = self.chordFrac[s] * 0.5 * self.rho \
+                       * (self.Omega * self.r[s])**2        \
+                       * self.Cl[s] * self.c[s] * self.dr[s]
 
 
 class ActuatorDiskInducedVelocity(Component):
@@ -46,7 +46,6 @@ class ActuatorDiskInducedVelocity(Component):
 
     # inputs
     Ns  = Int(iotype='in',   desc='number of elements')
-    yN  = Array(iotype='in', desc='node locations')
     r   = Array(iotype='in', desc='radial location of each element')
     dr  = Array(iotype='in', desc='length of each element')
     R   = Float(iotype='in', desc='rotor radius')
@@ -60,13 +59,12 @@ class ActuatorDiskInducedVelocity(Component):
     vi  = Array(iotype='out', desc='induced downwash distribution')
 
     def execute(self):
-        self.vi = np.zeros(self.Ns)
-        sq = np.zeros(self.Ns)
+        self.vi = np.zeros((self.Ns, 1))
 
-        sq = 0.25 * self.vc**2 + \
-             0.25 * self.b * self.dT / (np.pi * self.rho * self.r * self.dr)
-
-        self.vi += -0.5 * self.vc + np.sqrt(sq)
+        for s in range(self.Ns):
+            sq = 0.25 * self.vc**2 + \
+                 0.25 * self.b * self.dT[s] / (np.pi * self.rho * self.r[s] * self.dr[s])
+            self.vi[s] = -0.5*self.vc + np.sqrt(sq)
 
         # Add ground effect Cheesemen & Benett's
         self.vi /= (1. + (self.R / self.h / 4.) ** 2)
