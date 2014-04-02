@@ -1,73 +1,76 @@
-from testvals import values
-from Atlas import vortexRing, inducedVelocity
+import os
 import numpy as np
 import unittest
+
+from scipy.io import loadmat
+
+from Atlas import VortexRing
 
 
 def relative_err(x, y):
     return (np.abs(x-y)/np.linalg.norm(x)).max()
 
 
-class Test_vortexRing(unittest.TestCase):
+class Test_VortexRing(unittest.TestCase):
     """
-    Tests the vortexRing component
+    Tests the VortexRing component
     """
 
-    @classmethod
-    def setUpClass(cls):
+    def test_Vortex(self):
+        """ Test the vortex ring component
         """
-        This sets up a component and runs it once, using stored input values.
-        Each test below then checks individual outputs that result from the run.
-        """
-        cls.comp = vortexRing()
-        cls.comp.yN = values.yN
-        cls.comp.rho = values.rho
-        cls.comp.dT = values.dT
-        cls.comp.vc = values.vc
-        cls.comp.Omega = values.Omega
-        cls.comp.b = values.b
-        cls.comp.h = values.h
-        cls.comp.Nw = values.Nw
-        cls.comp.Ntt = values.Ntt
-        cls.comp.Ntheta = values.Ntheta
-        cls.comp.qh = values.qh
+        comp = VortexRing()
 
-        cls.comp.run()
+        # populate inputs
+        path = os.path.join(os.path.dirname(__file__), 'vortex.mat')
+        data = loadmat(path, struct_as_record=True, mat_dtype=True)
 
-    def test_gamma(self):
-        assert relative_err(self.comp.Gamma, values.Gamma) < 1e-7
+        comp.b        = int(data['b'][0][0])
+        comp.yN       = data['yN']
+        comp.Ns       = max(comp.yN.shape) - 1
 
-    def test_z(self):
-        assert relative_err(self.comp.z, values.z) < 1e-7
+        comp.rho      = data['rho'][0][0]
+        comp.vc       = data['vc'][0][0]
+        comp.Omega    = data['Omega'][0][0]
+        comp.h        = data['h'][0][0]
+        comp.dT       = data['dT']
+        comp.q        = data['q']
+        comp.anhedral = data['anhedral'][0][0]
 
-    def test_r(self):
-        assert relative_err(self.comp.r, values.r) < 1e-7
-
-    def test_vz(self):
-        assert relative_err(self.comp.vz, values.vz) < 1e-7
-
-    def test_vr(self):
-        assert relative_err(self.comp.vr, values.vr) < 1e-7
-
-
-class Test_inducedVelocity(unittest.TestCase):
-
-    def test_vi(self):
-
-        comp = inducedVelocity()
-        comp.qh = values.qh
-        comp.Gamma = values.Gamma
-        comp.z = values.z
-        comp.r = values.r
-        comp.thetaArray = values.thetaArray
-        comp.yE = values.yE
-        comp.cr = values.cr
-        comp.Ns = values.Ns
-        comp.Nw = values.Nw
-        comp.dtheta = values.dtheta
-
+        # run
         comp.run()
-        assert relative_err(comp.vi, values.vi) < 1e-7
+
+        # check outputs
+        assert relative_err(comp.vi, data['vi']) < 1e-7
+
+        for i, val in enumerate(data['vi']):
+            self.assertAlmostEquals(comp.vi[i], val, 4,
+                msg='vi[%d] is %f, should be %f' % (i, comp.vi[i], val))
+
+        for i, row in enumerate(data['ring']['Gamma'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.Gamma[i, j], val, 4,
+                    msg='Gamma[%d, %d] is %f, should be %f' % (i, j, comp.Gamma[i, j], val))
+
+        for i, row in enumerate(data['ring']['z'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.z[i, j], val, 4,
+                    msg='z[%d, %d] is %f, should be %f' % (i, j, comp.z[i, j], val))
+
+        for i, row in enumerate(data['ring']['r'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.r[i, j], val, 4,
+                    msg='r[%d, %d] is %f, should be %f' % (i, j, comp.r[i, j], val))
+
+        for i, row in enumerate(data['ring']['vz'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.vz[i, j], val, 4,
+                    msg='vz[%d, %d] is %f, should be %f' % (i, j, comp.vz[i, j], val))
+
+        for i, row in enumerate(data['ring']['vr'][0][0]):
+            for j, val in enumerate(row):
+                self.assertAlmostEquals(comp.vr[i, j], val, 4,
+                    msg='vr[%d, %d] is %f, should be %f' % (i, j, comp.vr[i, j], val))
 
 
 if __name__ == "__main__":

@@ -3,106 +3,16 @@ import numpy as np
 from math import pi, sqrt, sin, cos, tan, atan2
 
 from openmdao.main.api import Assembly, Component, VariableTree
-from openmdao.lib.datatypes.api import Int, Float, Array, VarTree, Str, Enum
+from openmdao.lib.datatypes.api import Int, Float, Array, VarTree
 
-from properties import SparProperties, ChordProperties, \
-                       wireProperties, prepregProperties
+from configuration import Flags, PrescribedLoad
+from properties import JointProperties, \
+                       SparProperties, JointSparProperties, QuadSparProperties, \
+                       ChordProperties, wireProperties, prepregProperties
 from lift_drag import Fblade
 
 
 # data structures used in structural calculations
-
-class Flags(VariableTree):
-    Opt          = Int(1, desc='0 - single run, 1 - optimization')
-    ConFail      = Int(0, desc='1 - use structural failure as a constraint on optimization')
-    ConWireCont  = Int(0, desc='1 - use wire length continuity as a constraint to set appropriate wire forces in multi-point optimizations')
-    ConJigCont   = Int(0, desc='1 - use jig continuity')
-    ConDef       = Int(0, desc='1 - constraints on maximum deformation of the rotor')
-    MultiPoint   = Int(4, desc='0 - single point optimization, 1 - 4 point optimization (h=0.5, h=3, wind case, gravity load)')
-    Quad         = Int(1, desc='0 - prop drive, 1 - quad rotor')
-    FreeWake     = Int(1, desc='0 - momentum theory, 1 - free vortex ring wake')
-    PlotWake     = Int(0, desc='0 - dont plot wake, 1 - plot wake ')
-    DynamicClimb = Int(0, desc='0 - vc imposes downward velocity, 1 - vc represents climb (final altitude depends on Nw)')
-    Cover        = Int(0, desc='0 - no cover over root rotor blades, 1 - cover')
-    Load         = Int(0, desc='0 - normal run, 1 - gravity forces only, 2 - prescribed load from pLoad')
-    Cdfit        = Int(1, desc='0 - analytic model for drag coefficient, 1 - curve fit on BE airfoils')
-    GWing        = Int(1, desc='0 - Daedalus style wing, 1 - Gossamer style wing (changes amount of laminar flow)')
-    AeroStr      = Int(1, desc='0 - Assume flat wing, 1 - take deformation into account')
-    Movie        = Int(0, desc='0 - dont save animation, 1 - save animation')
-    wingWarp     = Int(0, desc='0 - no twist constraint, >0 - twist constraint at wingWarp')
-
-    CFRPType     = Str('NCT301-1X HS40 G150 33 +/-2%RW', desc='type of carbon fibre reinforced polymer')
-
-    WireType     = Enum('Pianowire',
-                        ('Pianowire', 'Vectran'),
-                        desc='Material to be used for lift wire')
-
-
-class JointProperties(VariableTree):
-    """ Properties at joint location for buckling analysis """
-    d        = Float(desc='diameter')
-    theta    = Float(desc='wrap angle')
-    nTube    = Int(desc='number of tube layers')
-    nCap     = Int(desc='number of cap strips')
-    lBiscuit = Float(desc='unsupported biscuit length')
-
-
-class PrescribedLoad(VariableTree):
-    y = Float(9.9999, desc='Point load location')
-    pointZ = Float(0.15*9.8, desc='N')
-    pointM = Float(0, desc='Nm')
-    distributedX = Float(0, desc='N/m')
-    distributedZ = Float(0, desc='N/m')
-    distributedM = Float(0, desc='Nm/m')
-
-
-class JointSparProperties(SparProperties):
-    """ subclass of SparProperties for the joints
-        (needed to dynamically create yN and get other properties from Jprop)
-    """
-
-    # inputs
-    Jprop = VarTree(JointProperties(), iotype='in')
-
-    def execute(self):
-        self.yN = np.array([0, 1])
-        self.d = [self.Jprop.d]
-        self.theta = [self.Jprop.theta]
-        self.nTube = [self.Jprop.nTube]
-        self.nCap = [self.Jprop.nCap]
-        self.lBiscuit = [self.Jprop.lBiscuit]
-        super(JointSparProperties, self).execute()
-
-
-class QuadSparProperties(SparProperties):
-    """ subclass of SparProperties for the QuadCopter-specific spars
-        (needed to dynamically create yN and nCap and provide scalar I/O)
-    """
-    # inputs
-    dQuad     = Float(iotype='in', desc='')
-    thetaQuad = Float(iotype='in', desc='')
-    nTubeQuad = Int(iotype='in', desc='number of tube layers')
-    lBiscuitQuad = Float(iotype='in', desc='')
-
-    RQuad  = Float(iotype='in', desc='distance from centre of helicopter to centre of quad rotors')
-    hQuad  = Float(iotype='in', desc='height of quad-rotor truss')
-
-    # outputs
-    mQuad        = Float(iotype='out', desc='mass of Quad spar (scalar')
-
-    def execute(self):
-        lQuad = sqrt(self.RQuad**2 + self.hQuad**2)
-        self.yN = np.array([0, lQuad])
-        self.nCap = np.array([0, 0])
-        self.d = [self.dQuad]
-        self.theta = [self.thetaQuad]
-        self.nTube = [self.nTubeQuad]
-        self.lBiscuit = [self.lBiscuitQuad]
-
-        super(QuadSparProperties, self).execute()
-
-        self.mQuad = self.mSpar[0]
-
 
 class Strain(VariableTree):
     top    = Array(desc='')
@@ -256,9 +166,9 @@ class FEM(Component):
         presLoad = self.presLoad
 
         Ns = max(yN.shape) - 1  # number of elements
-        dy = np.zeros((Ns, 1))
-        for s in range(1, (Ns+1)):
-            dy[(s-1)] = yN[(s)] - yN[(s-1)]  # length of each element
+        dy = np.zeros(Ns)
+        for s in range(Ns+1):
+            dy[s-1] = yN[s] - yN[s-1]  # length of each element
 
         # FEM computation for structural deformations
         # -------------------------------------------
@@ -270,7 +180,7 @@ class FEM(Component):
         # Create global stiffness maxtrix and force vector
         k = np.zeros((12, 12, Ns))
 
-        for s in range(0, Ns):
+        for s in range(Ns):
 
             # Local elastic stiffness matrix
             k[0,   0, s] = 12 * EIx[s] / (dy[s] * dy[s] * dy[s])
@@ -345,7 +255,7 @@ class FEM(Component):
                 Fg[5] = 0
 
                 # Wire forces (using consistent force vector)
-                for w in range(0, len(yWire)):
+                for w in range(len(yWire)):
                     if (yWire[w] >= yN[s]) and (yWire[w] < yN[s+1]):
                         thetaWire = atan2(zWire, yWire[w])
                         a = yWire[w] - yN[s]
@@ -420,7 +330,7 @@ class FEM(Component):
         if self.flags.wingWarp > 0:  # Also add wingWarping constraint
             raise Exception('FEM is untested and surely broken for wingWarp > 0')
             ii = np.array([])
-            for ss in range(0, ((Ns + 1) * 6 - 1)):
+            for ss in range((Ns+1)*6 - 1):
                 if (ss > 5) and (ss != self.flags.wingWarp*6 + 5):
                     ii = np.array([ii, ss]).reshape(1, -1)
             Fc = F[(ii-1)]
@@ -467,8 +377,8 @@ class Strains(Component):
 
         Ns = max(self.yN.shape) - 1  # number of elements
         dy = np.zeros((Ns, 1))
-        for s in range(1, (Ns+1)):
-            dy[(s-1)] = self.yN[(s)] - self.yN[(s-1)]  # length of each element
+        for s in range(1, Ns+1):
+            dy[s-1] = self.yN[s] - self.yN[s-1]  # length of each element
 
         Ftemp = np.zeros((12, Ns))
         Finternal = np.zeros((6, Ns + 1))
@@ -484,7 +394,7 @@ class Strains(Component):
         strain.axial_y   = np.zeros((1, Ns + 1))
         strain.torsion_y = np.zeros((1, Ns + 1))
 
-        for s in range(0, Ns):
+        for s in range(Ns):
             # Determine internal forces acting at the nodes of each element
             Ftemp[:, s] = -(np.dot(self.k[:, :, s], self.q[s*6:s*6 + 12]) - self.F[s*6:s*6 + 12]).squeeze()
             # Finternal[:, s] = Ftemp[0:5, s]
@@ -666,9 +576,6 @@ class Failures(Component):
         TQuad = np.sum(fblade.Fz)*b - (np.sum(mSpar + mChord)*b + mElseRotor/4) * 9.81
 
         Ns = max(yN.shape) - 1  # number of elements
-        dy = np.zeros((Ns, 1))
-        for s in range(0, Ns):
-            dy[s] = yN[s] - yN[s]
 
         fail = Failure()
 
@@ -689,7 +596,7 @@ class Failures(Component):
         fail.buckling.x = np.zeros(Ns+1)
         fail.buckling.z = np.zeros(Ns+1)
 
-        for s in range(0, Ns):
+        for s in range(Ns):
             if yN[s] <= yWire:
                 critical_load_x = pi**2 * EIxJ / (k * L)**2
                 critical_load_z = pi**2 * EIzJ / (k * L)**2
@@ -746,7 +653,7 @@ class Failures(Component):
         # Wire tensile failure
         wire_props = wireProperties[flags.WireType]
         fail.wire = np.zeros(len(yWire))
-        for i in range(0, len(yWire)):
+        for i in range(len(yWire)):
             stress_wire = TWire[i] / (pi*(tWire/2)**2)
             fail.wire[i] = stress_wire / wire_props['ULTIMATE']
 
@@ -785,7 +692,7 @@ class Failures(Component):
         stress.plus = np.zeros((3, Ns))
         stress.minus = np.zeros((3, Ns))
 
-        for s in range(0, Ns):
+        for s in range(Ns):
             # Compute stresses in structural axes for each lamina angle
             # Q is the matrix of elastic constants in the material axis
             # Q_bar is the matrix of elastic constants in the structural axes for a
@@ -899,7 +806,7 @@ class Failures(Component):
 
         failure = np.zeros(Ns+1)
 
-        for s in range(0, Ns):
+        for s in range(Ns):
 
             if nCap[s] != 0:
                 AF_torsional_buckling = 1.25  # See "Validation - Torsional Buckling.xlsx"
@@ -1113,8 +1020,8 @@ class Structures(Assembly):
         self.connect('lBiscuitQuad',      'failure.lBiscuitQuad')
         self.connect('RQuad',             'failure.RQuad')
         self.connect('hQuad',             'failure.hQuad')
-        self.connect('quad.EIx',          'failure.EIQuad')  # confirm
-        self.connect('quad.GJ',           'failure.GJQuad')  # confirm
+        self.connect('quad.EIx',          'failure.EIQuad')
+        self.connect('quad.GJ',           'failure.GJQuad')
         self.connect('tWire',             'failure.tWire')
         self.connect('TWire',             'failure.TWire')
         self.connect('TEtension',         'failure.TEtension')

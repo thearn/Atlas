@@ -3,70 +3,68 @@ import numpy as np
 from openmdao.main.api import Component
 from openmdao.main.datatypes.api import Int, Float, Array
 
+
 class Thrust(Component):
 
-    #Aerocalc Inputs
-    yN = Array(iotype="in")
-    ycmax = Float(iotype="in")
-    Cl = Array(iotype="in")
-    c = Array(iotype="in")
-    rho = Float(iotype="in")
-    Omega = Float(iotype="in")
+    # inputs
+    Ns    = Int(iotype='in',   desc='number of elements')
+    yN    = Array(iotype='in', desc='node locations')
+    dr    = Array(iotype='in', desc='length of each element')
+    r     = Array(iotype='in', desc='radial location of each element')
+    ycmax = Float(iotype='in')
+    Cl    = Array(iotype='in', desc='lift coefficient distribution')
+    c     = Array(iotype='in', desc='chord distribution')
+    rho   = Float(iotype='in', desc='air density')
+    Omega = Float(iotype='in', desc='rotor angular velocity')
 
-    #Aerocalc intermediate values
-    Ns = Int(iotype="in")
-    dr = Array(iotype="in")
-    r = Array(iotype="in")
-    dT = Array(iotype="out")
-    chordFrac = Array(iotype="out")
+    # outputs
+    dT = Array(iotype='out', desc='Thrust')
+    chordFrac = Array(iotype='out')
 
     def execute(self):
-        self.chordFrac = np.ones(self.Ns)
-        self.dT = np.zeros(self.Ns)
+        self.chordFrac = np.ones((self.Ns, 1))
+        self.dT = np.zeros((self.Ns, 1))
 
+        # Compute multiplyer for partial element
         for index, element in enumerate(self.yN):
             if element < self.ycmax:
-                sTrans = index
+                sTrans = index  # determine transitional partial element
+        self.chordFrac[sTrans] = self.yN[sTrans+1] - self.ycmax  \
+                               / (self.yN[sTrans+1] - self.yN[sTrans])
 
-        self.chordFrac[sTrans]  = self.yN[sTrans + 1]
-        self.chordFrac[sTrans] -= self.ycmax
-        self.chordFrac[sTrans] /= (self.yN[sTrans + 1] - self.yN[sTrans])
+        # Compute thrust assuming small angles
+        for s in range(self.Ns):
+            self.dT[s] = self.chordFrac[s] * 0.5 * self.rho \
+                       * (self.Omega * self.r[s])**2        \
+                       * self.Cl[s] * self.c[s] * self.dr[s]
 
-        self.dT += self.chordFrac
-        self.dT *= 0.5 
-        self.dT *= self.rho
-        self.dT *= (self.Omega * self.r) ** 2
-        self.dT *= self.Cl 
-        self.dT *= self.c
-        self.dT *= self.dr
 
-class InducedVelocity(Component):
-    vc  = Float(iotype="in")
-    rho = Float(iotype="in")
-    b   = Float(iotype="in")
-    R   = Float(iotype="in")
-    h   = Float(iotype="in")
+class ActuatorDiskInducedVelocity(Component):
+    '''
+    Compute induced velocity using annual-ring actuator disk theory
+    '''
 
-    Ns  = Int(iotype="in")
+    # inputs
+    Ns  = Int(iotype='in',   desc='number of elements')
+    r   = Array(iotype='in', desc='radial location of each element')
+    dr  = Array(iotype='in', desc='length of each element')
+    R   = Float(iotype='in', desc='rotor radius')
+    b   = Int(iotype='in', desc='number of blades')
+    h   = Float(iotype='in', desc='height of rotor')
+    vc  = Float(iotype='in', desc='vertical velocity')
+    rho = Float(iotype='in', desc='air density')
+    dT  = Array(iotype='in', desc='thrust')
 
-    dT = Array(iotype="in")
-    r  = Array(iotype="in")
-    dr = Array(iotype="in")
-
-    vi = Array(iotype="out")
+    # outputs
+    vi  = Array(iotype='out', desc='induced downwash distribution')
 
     def execute(self):
-        self.vi = np.zeros(self.Ns)
-        sqrt = np.zeros(self.Ns)
+        self.vi = np.zeros((self.Ns, 1))
 
-        sqrt = 0.25 * self.b * self.dT / (np.pi * self.rho * self.r * self.dr)
-        sqrt += 0.25 * self.vc ** 2
-        sqrt = np.sqrt(sqrt)
+        for s in range(self.Ns):
+            sq = 0.25 * self.vc**2 + \
+                 0.25 * self.b * self.dT[s] / (np.pi * self.rho * self.r[s] * self.dr[s])
+            self.vi[s] = -0.5*self.vc + np.sqrt(sq)
 
-        self.vi += -0.5 * self.vc
-        self.vi += sqrt
-
+        # Add ground effect Cheesemen & Benett's
         self.vi /= (1. + (self.R / self.h / 4.) ** 2)
-
-
-

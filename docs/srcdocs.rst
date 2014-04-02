@@ -7,6 +7,32 @@ Source Documentation
 ====================
 
         
+.. index:: aero.py
+
+.. _Atlas.aero.py:
+
+aero.py
+-------
+
+.. automodule:: Atlas.aero
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: aerostructural.py
+
+.. _Atlas.aerostructural.py:
+
+aerostructural.py
+-----------------
+
+.. automodule:: Atlas.aerostructural
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: coefficients.py
 
 .. _Atlas.coefficients.py:
@@ -15,6 +41,19 @@ coefficients.py
 ---------------
 
 .. automodule:: Atlas.coefficients
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: configuration.py
+
+.. _Atlas.configuration.py:
+
+configuration.py
+----------------
+
+.. automodule:: Atlas.configuration
    :members:
    :undoc-members:
    :show-inheritance:
@@ -59,6 +98,19 @@ structures.py
    :show-inheritance:
 
         
+.. index:: test_aero.py
+
+.. _Atlas.test.test_aero.py:
+
+test_aero.py
+------------
+
+.. automodule:: Atlas.test.test_aero
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: test_coefficients.py
 
 .. _Atlas.test.test_coefficients.py:
@@ -67,6 +119,19 @@ test_coefficients.py
 --------------------
 
 .. automodule:: Atlas.test.test_coefficients
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: test_configuration.py
+
+.. _Atlas.test.test_configuration.py:
+
+test_configuration.py
+---------------------
+
+.. automodule:: Atlas.test.test_configuration
    :members:
    :undoc-members:
    :show-inheritance:
@@ -111,6 +176,19 @@ test_structures.py
    :show-inheritance:
 
         
+.. index:: test_thrust.py
+
+.. _Atlas.test.test_thrust.py:
+
+test_thrust.py
+--------------
+
+.. automodule:: Atlas.test.test_thrust
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: test_vortex.py
 
 .. _Atlas.test.test_vortex.py:
@@ -132,6 +210,19 @@ testvals.py
 -----------
 
 .. automodule:: Atlas.test.testvals
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: thrust.py
+
+.. _Atlas.thrust.py:
+
+thrust.py
+---------
+
+.. automodule:: Atlas.thrust
    :members:
    :undoc-members:
    :show-inheritance:
