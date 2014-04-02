@@ -22,14 +22,14 @@ Package Metadata
     Atlas.configuration.AtlasConfiguration=Atlas.configuration:AtlasConfiguration
     Atlas.thrust.ActuatorDiskInducedVelocity=Atlas.thrust:ActuatorDiskInducedVelocity
     Atlas.properties.QuadSparProperties=Atlas.properties:QuadSparProperties
-    Atlas.vortex.InducedVelocity=Atlas.vortex:InducedVelocity
-    Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.aerostructural.AeroStructural=Atlas.aerostructural:AeroStructural
+    Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.lift_drag.LiftDrag=Atlas.lift_drag:LiftDrag
     Atlas.structures.FEM=Atlas.structures:FEM
-    Atlas.structures.Failures=Atlas.structures:Failures
+    Atlas.aero.Aero2=Atlas.aero:Aero2
     Atlas.aero.Aero=Atlas.aero:Aero
     Atlas.properties.JointSparProperties=Atlas.properties:JointSparProperties
+    Atlas.structures.Failures=Atlas.structures:Failures
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.coefficients.DragCoefficient=Atlas.coefficients:DragCoefficient
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
@@ -48,7 +48,7 @@ Package Metadata
     Atlas.vortex.VortexRing=Atlas.vortex:VortexRing
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.configuration.AtlasConfiguration=Atlas.configuration:AtlasConfiguration
-    Atlas.vortex.InducedVelocity=Atlas.vortex:InducedVelocity
+    Atlas.aerostructural.AeroStructural=Atlas.aerostructural:AeroStructural
     Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.configuration.PrescribedLoad=Atlas.configuration:PrescribedLoad
     Atlas.thrust.Thrust=Atlas.thrust:Thrust
@@ -60,10 +60,10 @@ Package Metadata
     Atlas.lift_drag.LiftDrag=Atlas.lift_drag:LiftDrag
     Atlas.structures.MaterialFailure=Atlas.structures:MaterialFailure
     Atlas.structures.Strains=Atlas.structures:Strains
+    Atlas.aero.Aero2=Atlas.aero:Aero2
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
     Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.structures.Failures=Atlas.structures:Failures
-    Atlas.aerostructural.AeroStructural=Atlas.aerostructural:AeroStructural
 
 - **keywords:** openmdao
 

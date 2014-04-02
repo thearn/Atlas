@@ -10,65 +10,56 @@ class VortexRing(Component):
     Computes the induced velocity on the rotor blades given the
     thrust distribution on the rotor
     """
-    # Inputs:
-    b      = Int(iotype="in", desc="Number of blades")
-    Ns     = Int(iotype='in', desc='number of elements')
-    yN     = Array(iotype="in", desc='Node locations')
-    rho    = Float(iotype="in", desc="Air density")
-    vc     = Float(iotype="in", desc="Vertical velocity")
-    Omega  = Float(iotype="in", desc="Rotor angular velocity")
-    h      = Float(iotype="in", desc="Height of rotor")
+    # inputs
+    b        = Int(iotype='in', desc='number of blades')
+    Ns       = Int(iotype='in', desc='number of elements')
+    yN       = Array(iotype='in', desc='node locations')
+    rho      = Float(iotype='in', desc='air density')
+    vc       = Float(iotype='in', desc='vertical velocity')
+    Omega    = Float(iotype='in', desc='rotor angular velocity')
+    h        = Float(iotype='in', desc='height of rotor')
+    dT       = Array(iotype='in', desc='thrust')
+    q        = Array(iotype='in', desc='deformation')
+    anhedral = Float(iotype='in')
 
-    dT     = Array(iotype="in", desc="Thrust")
-
-    q      = Array(iotype='in', desc='deformation')
-
-    anhedral = Float(0.8*pi/180, iotype='in')
-
-    # Outputs:
-    dtheta = Float(iotype="out")
-    cr     = Float(iotype="out")
-    Gamma  = Array(iotype="out")
-    z      = Array(iotype="out")
-    r      = Array(iotype="out")
-    vz     = Array(iotype="out")
-    vr     = Array(iotype="out")
-    thetaArray = Array(iotype="out")
-    yE     = Array(iotype="out")
-
-    # Outputs:
-    vi     = Array(iotype="out")
+    # outputs
+    vi       = Array(iotype='out', desc='induced velocity')
+    Gamma    = Array(iotype='out', desc='vortex strength')
+    z        = Array(iotype='out', desc='')
+    r        = Array(iotype='out', desc='')
+    vz       = Array(iotype='out', desc='')
+    vr       = Array(iotype='out', desc='')
 
     def execute(self):
-        dy = np.zeros(self.Ns)
-        self.yE = np.zeros(self.Ns)
+        dy = np.zeros((self.Ns, 1))
+        yE = np.zeros((self.Ns, 1))
         for s in range(self.Ns):
             dy[s] = self.yN[s+1] - self.yN[s]  # length of each element
-            self.yE[s] = 0.5 * (self.yN[s] + self.yN[s+1])  # radial location of each element
+            yE[s] = 0.5 * (self.yN[s] + self.yN[s+1])  # radial location of each element
 
         # set fidelity
         if self.Ns == 15:
             Nw = 15
             Ntt = 5
-            # Ntheta = 40
+            Ntheta = 40
         elif self.Ns == 10:
             Nw = 8
             Ntt = 3
-            # Ntheta = 20
+            Ntheta = 20
         else:
             Nw = 5
             Ntt = 1
-            # Ntheta = 15
+            Ntheta = 15
 
         # Break out deformations
         qq = np.zeros((6, self.Ns+1))
-        for s in range(1, self.Ns):
+        for s in range(1, self.Ns+1):
             qq[:, s] = self.q[s*6:s*6+6].T
-        qh = qq[2, :] - self.yN.T * self.anhedral
+        qh = (qq[2, :] - self.yN.T * self.anhedral).flatten()
 
-        self.cr = 0.5 * mean(dy)
-        self.dtheta = pi / Ntt
-        self.thetaArray = linspace(self.dtheta/2, pi - self.dtheta/2, Ntt)
+        cr = 0.5 * mean(dy)
+        dtheta = pi / Ntheta
+        self.thetaArray = linspace(dtheta/2, pi - dtheta/2, Ntheta)
 
         # pre-allocate
         self.Gamma = np.zeros((Nw+1, self.Ns+1))
@@ -79,14 +70,14 @@ class VortexRing(Component):
         self.vi    = np.zeros((self.Ns, 1))
 
         # create nacent vortex rings
-        GammaBound = self.dT / (self.rho*(self.Omega*self.yE)*dy)
+        GammaBound = self.dT / (self.rho*(self.Omega*yE)*dy)
 
         self.Gamma[0, 0] = -GammaBound[0]
         for s in range(1, self.Ns):
             self.Gamma[0, s] = GammaBound[s-1] - GammaBound[s]
         self.Gamma[0, self.Ns] = GammaBound[self.Ns-1]
 
-        self.r[0, :] = self.yN
+        self.r[0, :] = self.yN.T
         self.z[0, :] = qh[:]
 
         # free-wake time stepping
@@ -104,14 +95,14 @@ class VortexRing(Component):
                                 r  = self.r[ii, ss]
                                 zp = self.z[i, s]
                                 yp = self.r[i, s]
-                                M  = self.Gamma[ii, ss] * r * self.dtheta / (2*pi)
+                                M  = self.Gamma[ii, ss] * r * dtheta / (2*pi)
                                 X2 = (-r*sin(self.thetaArray))**2
                                 Y2 = (yp - r*cos(self.thetaArray))**2
                                 Z2 = (zp - zr)**2
                                 Normal = sqrt(X2 + Y2 + Z2)
                                 for iii in range(max(self.thetaArray.shape)):
-                                    if Normal[iii] < self.cr:
-                                        Normal[iii] = self.cr
+                                    if Normal[iii] < cr:
+                                        Normal[iii] = cr
                                 Norm3 = Normal**3
                                 self.vr[i, s] = self.vr[i, s] + np.sum(-cos(self.thetaArray) * (zp - zr) / Norm3) * M
                                 self.vz[i, s] = self.vz[i, s] + np.sum((cos(self.thetaArray) * yp - r) / Norm3) * M
@@ -119,8 +110,8 @@ class VortexRing(Component):
                                 Z2 = (zp - zr)**2
                                 Normal = sqrt(X2 + Y2 + Z2)
                                 for iii in range(max(self.thetaArray.shape)):
-                                    if Normal[iii] < self.cr:
-                                        Normal[iii] = self.cr
+                                    if Normal[iii] < cr:
+                                        Normal[iii] = cr
                                 Norm3 = Normal**3
                                 self.vr[i, s] = self.vr[i, s] - np.sum(-cos(self.thetaArray) * (zp - zr) / Norm3) * M
                                 self.vz[i, s] = self.vz[i, s] - np.sum((cos(self.thetaArray) * yp - r) / Norm3) * M
@@ -145,17 +136,19 @@ class VortexRing(Component):
                 self.r[i+1, :] = self.r[i, :]
                 self.z[i+1, :] = self.z[i, :]
 
-            GammaBound = self.dT / (self.rho*(self.Omega*self.yE)*dy)
+            # Create nacent vortex rings
+            GammaBound = self.dT / (self.rho*(self.Omega*yE)*dy)
             self.Gamma[0, 0] = -GammaBound[0]
             for s in range(1, self.Ns):
                 self.Gamma[0, s] = GammaBound[s-1] - GammaBound[s]
             self.Gamma[0, self.Ns] = GammaBound[self.Ns-1]
-            self.r[0, :] = self.yN
+            self.r[0, :] = self.yN.T
             self.z[0, :] = qh[:]
 
-        for s in range(self.Ns):           # for each element
+        # Compute induced velocity on rotor (rp = [0 r(s) 0])
+        for s in range(self.Ns):                # for each element
             self.vi[s] = 0
-            for ii in range(Nw):      # add the velocity induced from each disk
+            for ii in range(Nw):                # add the velocity induced from each disk
                 for ss in range(1, self.Ns+1):  # and each ring on each disk (inner ring cancels itself out)
                     if (ii == 0):
                         ringFrac = 0.675
@@ -165,16 +158,16 @@ class VortexRing(Component):
                     zr = self.z[ii, ss]
                     r  = self.r[ii, ss]
                     zp = (qh[s] + qh[s+1]) / 2
-                    yp = self.yE[s]
+                    yp = yE[s]
 
-                    M  = self.Gamma[ii, ss] * r * self.dtheta / (2*pi)
+                    M  = self.Gamma[ii, ss] * r * dtheta / (2*pi)
                     X2 = (-r*sin(self.thetaArray))**2
                     Y2 = (yp - r*cos(self.thetaArray))**2
                     Z2 = (zp - zr)**2
                     Normal = sqrt(X2 + Y2 + Z2)
                     for iii in range(max(self.thetaArray.shape)):
-                        if Normal[iii] < self.cr:
-                            Normal[iii] = self.cr
+                        if Normal[iii] < cr:
+                            Normal[iii] = cr
                     Norm3 = Normal**3
 
                     self.vi[s] = self.vi[s] + ringFrac * np.sum((cos(self.thetaArray)*yp - r) / Norm3) * M
@@ -184,8 +177,8 @@ class VortexRing(Component):
                     Z2 = (zp - zr)**2
                     Normal = sqrt(X2 + Y2 + Z2)
                     for iii in range(max(self.thetaArray.shape)):
-                        if Normal[iii] < self.cr:
-                            Normal[iii] = self.cr
+                        if Normal[iii] < cr:
+                            Normal[iii] = cr
                     Norm3 = Normal**3
 
                     self.vi[s] = self.vi[s] - ringFrac * np.sum((cos(self.thetaArray)*yp - r) / Norm3) * M
