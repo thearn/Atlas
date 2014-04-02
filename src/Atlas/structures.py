@@ -1020,8 +1020,8 @@ class Structures(Assembly):
         self.connect('lBiscuitQuad',      'failure.lBiscuitQuad')
         self.connect('RQuad',             'failure.RQuad')
         self.connect('hQuad',             'failure.hQuad')
-        self.connect('quad.EIx',          'failure.EIQuad')  # confirm
-        self.connect('quad.GJ',           'failure.GJQuad')  # confirm
+        self.connect('quad.EIx',          'failure.EIQuad')
+        self.connect('quad.GJ',           'failure.GJQuad')
         self.connect('tWire',             'failure.tWire')
         self.connect('TWire',             'failure.TWire')
         self.connect('TEtension',         'failure.TEtension')

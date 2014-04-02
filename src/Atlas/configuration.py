@@ -104,10 +104,12 @@ class AtlasConfiguration(Component):
     TWire        = Array([1100], iotype='out', desc='')
     TEtension    = Float(50.0,   iotype='out', desc='')
 
-    mElseRotor  = Float(5.11,    iotype='out', desc='')
-    mElseCentre = Float(6.487+3, iotype='out', desc='')
-    mElseR      = Float(0.032,   iotype='out', desc='')
-    mPilot      = Float(71.0,    iotype='out', desc='mass of pilot (kg)')
+    anhedral     = Float(0.8*pi/180, iotype='out')
+
+    mElseRotor   = Float(5.11,    iotype='out', desc='')
+    mElseCentre  = Float(6.487+3, iotype='out', desc='')
+    mElseR       = Float(0.032,   iotype='out', desc='')
+    mPilot       = Float(71.0,    iotype='out', desc='mass of pilot (kg)')
 
     # outputs (calculated)
     yN    = Array(iotype='out', desc='node locations')
