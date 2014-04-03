@@ -31,6 +31,7 @@ class Thrust(Component):
                 sTrans = index  # determine transitional partial element
         self.chordFrac[sTrans] = self.yN[sTrans+1] - self.ycmax  \
                                / (self.yN[sTrans+1] - self.yN[sTrans])
+
         # Compute thrust assuming small angles
         for s in range(self.Ns):
             self.dT[s] = self.chordFrac[s] * 0.5 * self.rho \
