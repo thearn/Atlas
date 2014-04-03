@@ -157,8 +157,6 @@ class AeroTestCase(unittest.TestCase):
                 msg='Cd[%d] is %f, should be %f' % (i, comp.Cd[i], val))
 
         for i, val in enumerate(data['Fblade']['Fx'][0][0]):
-            print 'val:', val
-            print 'comp.Fx[i]', comp.Fblade.Fx[i]
             self.assertAlmostEquals(comp.Fblade.Fx[i], val, 4,
                 msg='Fx[%d] is %f, should be %f' % (i, comp.Fblade.Fx[i], val))
 
