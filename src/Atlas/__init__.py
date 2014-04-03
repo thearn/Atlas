@@ -8,4 +8,4 @@ from lift_drag import LiftDrag, Fblade
 from vortex import VortexRing
 from thrust import Thrust, ActuatorDiskInducedVelocity
 from aero import Aero, Aero2
-from aerostructural import Results, AeroStructural
+from aerostructural import AeroStructural, Results

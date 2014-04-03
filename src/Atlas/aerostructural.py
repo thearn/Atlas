@@ -50,12 +50,13 @@ class Results(Component):
             self.di[s] = atan2(qq[2, s+1] - qq[2, s], self.yN[s+1] - self.yN[s])
 
         # Compute totals
+        # (Note: reshaping is due to numpy vs MATLAB 1D array shapes.. should scrub this)
         self.Ttot   = np.sum(self.fblade.Fz.reshape(-1, 1) * np.cos(self.di)) * self.b * 4
-        self.MomRot = np.sum(self.fblade.Fz.reshape(-1, 1) * self.yE)
+        self.MomRot = np.sum(self.fblade.Fz.reshape(-1, 1) * self.yE.reshape(-1, 1))
         self.Qtot   = np.sum(self.fblade.Q)  * self.b * 4
         Pitot       = np.sum(self.fblade.Pi) * self.b * 4
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
-        self.Ptot   = Pptot + Pitot
+        self.Ptot   = Pptot + Pitot  # non-covered centre
 
 
 class AeroStructural(Assembly):
@@ -117,7 +118,7 @@ class AeroStructural(Assembly):
         self.connect('discrete.xtU',        'aero.xtU')
         self.connect('discrete.xtL',        'aero.xtL')
 
-        # Then run Structures Calc (simply to determine the spar
+        # Then run Structures calc (simply to determine the spar
         # deflection for accurate ground effect computation)
         self.add('struc', Structures())
         self.connect('config.flags',        'struc.flags')
@@ -152,7 +153,7 @@ class AeroStructural(Assembly):
         self.connect('aero.Fblade',         'struc.fblade')
         self.connect('config.presLoad',     'struc.presLoad')
 
-        # Then run more accurate Vortex method
+        # Then run Aero calc with more accurate Vortex method
         self.add('aero2', Aero2())
         self.connect('config.b',            'aero2.b')
         self.connect('config.R',            'aero2.R')
@@ -213,6 +214,7 @@ class AeroStructural(Assembly):
         self.connect('aero2.Fblade',        'struc2.fblade')
         self.connect('config.presLoad',     'struc2.presLoad')
 
+        # calculate results
         self.add('results', Results())
         self.connect('config.b',            'results.b')
         self.connect('config.Ns',           'results.Ns')

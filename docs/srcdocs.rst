@@ -111,6 +111,19 @@ test_aero.py
    :show-inheritance:
 
         
+.. index:: test_aerostructural.py
+
+.. _Atlas.test.test_aerostructural.py:
+
+test_aerostructural.py
+----------------------
+
+.. automodule:: Atlas.test.test_aerostructural
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: test_coefficients.py
 
 .. _Atlas.test.test_coefficients.py:
@@ -158,6 +171,19 @@ test_properties.py
 ------------------
 
 .. automodule:: Atlas.test.test_properties
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: test_results.py
+
+.. _Atlas.test.test_results.py:
+
+test_results.py
+---------------
+
+.. automodule:: Atlas.test.test_results
    :members:
    :undoc-members:
    :show-inheritance:

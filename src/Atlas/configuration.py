@@ -145,6 +145,6 @@ class AtlasConfiguration(Component):
         # Properties at joint location for buckling analysis
         self.Jprop.d = self.d[1]
         self.Jprop.theta = self.theta[1]
-        self.Jprop.nTube = self.nTube[1]
-        self.Jprop.nCap = self.nCap[1]
+        self.Jprop.nTube = int(self.nTube[1])
+        self.Jprop.nCap  = int(self.nCap[1])
         self.Jprop.lBiscuit = self.lBiscuit[1]
