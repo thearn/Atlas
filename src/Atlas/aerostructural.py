@@ -1,8 +1,61 @@
-from openmdao.main.api import Assembly
+import numpy as np
+from math import pi, atan2
 
-from Atlas import AtlasConfiguration, DiscretizeProperties, Aero, Aero2, Structures
+from openmdao.main.api import Assembly, Component
+from openmdao.main.datatypes.api import Int, Float, Array, VarTree
+
+from Atlas import AtlasConfiguration, DiscretizeProperties, Aero, Aero2, Structures, Fblade
 
 # see: HeliCalc.m
+
+
+class Results(Component):
+    # inputs
+    b          = Int(iotype='in', desc='number of blades')
+    Ns         = Int(iotype='in', desc='number of elements')
+    yN         = Array(iotype='in', desc='node locations')
+    yE         = Array(iotype='in', desc='')
+    cE         = Array(iotype='in', desc='chord of each element')
+    Cl         = Array(iotype='in', desc='lift coefficient distribution')
+    q          = Array(iotype='in', desc='deformation')
+    phi        = Array(iotype='in', desc='')
+    collective = Float(iotype='in', desc='collective angle in radians')
+    fblade     = VarTree(Fblade(), iotype='in')
+
+    # outputs
+    di         = Array(iotype='out', desc='dihedral angle')
+    alphaJig   = Array(iotype='out', desc='aerodynamic jig angle')
+    Ttot       = Float(iotype='out', desc='')
+    Qtot       = Float(iotype='out', desc='')
+    MomRot     = Float(iotype='out', desc='')
+    Ptot       = Float(iotype='out', desc='')
+
+    def execute(self):
+        # Compute aerodynamic jig angle
+        self.alphaJig = np.zeros(self.cE.shape)
+
+        qq = np.zeros((6, self.Ns+1))
+        for s in range(1, self.Ns+1):
+            qq[:, s] = self.q[s*6:s*6+6].T
+
+        Clalpha = 2*pi
+        for s in range(0, max(self.yN.shape)-1):
+            self.alphaJig[s] = self.Cl[s] / Clalpha            \
+                             - (qq[4, s] + qq[4, s+1]) / 2     \
+                             + self.phi[s] - self.collective
+
+        # Compute dihedral angle
+        self.di = np.zeros((self.Ns, 1))
+        for s in range(0, self.Ns):
+            self.di[s] = atan2(qq[2, s+1] - qq[2, s], self.yN[s+1] - self.yN[s])
+
+        # Compute totals
+        self.Ttot   = np.sum(self.fblade.Fz.reshape(-1, 1) * np.cos(self.di)) * self.b * 4
+        self.MomRot = np.sum(self.fblade.Fz.reshape(-1, 1) * self.yE)
+        self.Qtot   = np.sum(self.fblade.Q)  * self.b * 4
+        Pitot       = np.sum(self.fblade.Pi) * self.b * 4
+        Pptot       = np.sum(self.fblade.Pp) * self.b * 4
+        self.Ptot   = Pptot + Pitot
 
 
 class AeroStructural(Assembly):
@@ -160,12 +213,25 @@ class AeroStructural(Assembly):
         self.connect('aero2.Fblade',        'struc2.fblade')
         self.connect('config.presLoad',     'struc2.presLoad')
 
+        self.add('results', Results())
+        self.connect('config.b',            'results.b')
+        self.connect('config.Ns',           'results.Ns')
+        self.connect('discrete.yN',         'results.yN')
+        self.connect('discrete.yE',         'results.yE')
+        self.connect('discrete.cE',         'results.cE')
+        self.connect('discrete.Cl',         'results.Cl')
+        self.connect('struc2.q',            'results.q')
+        self.connect('aero2.phi',           'results.phi')
+        self.connect('config.collective',   'results.collective')
+        self.connect('aero2.Fblade',        'results.fblade')
+
         self.driver.workflow.add('config')
         self.driver.workflow.add('discrete')
         self.driver.workflow.add('aero')
         self.driver.workflow.add('struc')
         self.driver.workflow.add('aero2')
         self.driver.workflow.add('struc2')
+        self.driver.workflow.add('results')
 
 
 if __name__ == "__main__":

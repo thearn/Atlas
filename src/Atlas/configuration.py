@@ -95,6 +95,7 @@ class AtlasConfiguration(Component):
     lBiscuitQuad = Float(12*2.54/100, iotype='out', desc='')
     hQuad        = Float(3.2,         iotype='out', desc='height of quad-rotor truss')
 
+    collective   = Float(0*pi/180, iotype='out', desc='collective angle in radians')
     etaP         = Float(0.0, iotype='out', desc='')
 
     yWire        = Array(np.array([5.8852]),  # actual spars
