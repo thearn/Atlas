@@ -65,8 +65,8 @@ class Results(Component):
         self.Ptot   = Pptot + Pitot  # non-covered centre
 
 
-class Switcher(Component):
-    """ select the appropriate blade Switcher """
+class Switch(Component):
+    """ select the appropriate blade switch """
 
     # inputs
     fblade_initial  = VarTree(Fblade(), iotype='in')
@@ -74,35 +74,19 @@ class Switcher(Component):
 
     # outputs
     fblade          = VarTree(Fblade(), iotype='out')
-    fblade_err      = Float(iotype='out')
 
     def __init__(self):
-        super(Switcher, self).__init__()
+        super(Switch, self).__init__()
         self.initial = True
         self.force_execute = True
 
     def execute(self):
         if self.initial:
             self.fblade = self.fblade_initial
-            self.fblade_last = self.fblade_initial
-            self.fblade_err = 999999
             self.initial = False
         else:
             self.fblade_last = self.fblade
             self.fblade = self.fblade_updated
-
-            self.fblade_err = (
-                relative_err(self.fblade_updated.Fx, self.fblade.Fx) +
-                relative_err(self.fblade_updated.Fz, self.fblade.Fz) +
-                relative_err(self.fblade_updated.My, self.fblade.My) +
-                relative_err(self.fblade_updated.Q,  self.fblade.Q)  +
-                relative_err(self.fblade_updated.P,  self.fblade.P)  +
-                relative_err(self.fblade_updated.Pi, self.fblade.P)  +
-                relative_err(self.fblade_updated.Pp, self.fblade.Pp)
-            ).max()
-
-            print 'fblade updated:', self.fblade
-            print 'fblade delta:', self.fblade_err
 
 
 class AeroStructural(Assembly):
@@ -224,16 +208,22 @@ class AeroStructural(Assembly):
         self.connect('config.presLoad',     'struc.presLoad')
 
         # converge aero and structures via fixed point iteration
-        self.add('switcher', Switcher())
-        self.connect('aero.Fblade',         'switcher.fblade_initial')
-        self.connect('switcher.fblade',     'struc.fblade')
-        self.connect('struc.q',             'aero2.q')
-        self.connect('aero2.Fblade',        'switcher.fblade_updated')
+        self.add('switch', Switch())
+        self.connect('aero.Fblade',         'switch.fblade_initial')
+        self.connect('switch.fblade',       'struc.fblade')
+        # self.connect('struc.q',             'aero2.q')
+        self.connect('aero2.Fblade',        'switch.fblade_updated')
 
         self.add('iterate', FixedPointIterator())
-        self.iterate.workflow.add('switcher')
-        self.iterate.workflow.add('struc')
-        self.iterate.workflow.add('aero2')
+        self.iterate.tolerance = 1e-10
+        q_dim = 6*(self.config.Ns+1)
+        self.aero2.q = np.zeros((q_dim, 1))
+        for i in range(q_dim):
+            self.iterate.add_parameter('aero2.q[%d]' % i, low=-1e999, high=1e999)
+            self.iterate.add_constraint('aero2.q[%d] = struc.q[%d]' % (i, i))
+
+        # force aero2 to run (due to bug in invalidation logic)
+        self.aero2.force_execute = True
 
         # calculate results
         self.add('results', Results())
