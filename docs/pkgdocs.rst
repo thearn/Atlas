@@ -24,10 +24,12 @@ Package Metadata
     Atlas.vortex.VortexRing=Atlas.vortex:VortexRing
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.configuration.AtlasConfiguration=Atlas.configuration:AtlasConfiguration
+    Atlas.aerostructural.Forces=Atlas.aerostructural:Forces
     Atlas.aerostructural.AeroStructural=Atlas.aerostructural:AeroStructural
     Atlas.thrust.Thrust=Atlas.thrust:Thrust
     Atlas.aerostructural.Results=Atlas.aerostructural:Results
-    Atlas.aero.Aero=Atlas.aero:Aero
+    Atlas.helicalc.HeliCalc=Atlas.helicalc:HeliCalc
+    Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
     Atlas.thrust.ActuatorDiskInducedVelocity=Atlas.thrust:ActuatorDiskInducedVelocity
     Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.structures.Structures=Atlas.structures:Structures
@@ -35,7 +37,7 @@ Package Metadata
     Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.aero.Aero2=Atlas.aero:Aero2
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
-    Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
+    Atlas.aero.Aero=Atlas.aero:Aero
     Atlas.structures.Failures=Atlas.structures:Failures
     [openmdao.container]
     Atlas.properties.DiscretizeProperties=Atlas.properties:DiscretizeProperties
@@ -49,14 +51,16 @@ Package Metadata
     Atlas.vortex.VortexRing=Atlas.vortex:VortexRing
     Atlas.properties.SparProperties=Atlas.properties:SparProperties
     Atlas.configuration.AtlasConfiguration=Atlas.configuration:AtlasConfiguration
+    Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
+    Atlas.aerostructural.Forces=Atlas.aerostructural:Forces
     Atlas.aerostructural.AeroStructural=Atlas.aerostructural:AeroStructural
-    Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.configuration.PrescribedLoad=Atlas.configuration:PrescribedLoad
     Atlas.thrust.Thrust=Atlas.thrust:Thrust
     Atlas.aerostructural.Results=Atlas.aerostructural:Results
-    Atlas.aero.Aero=Atlas.aero:Aero
+    Atlas.helicalc.HeliCalc=Atlas.helicalc:HeliCalc
     Atlas.properties.JointProperties=Atlas.properties:JointProperties
     Atlas.thrust.ActuatorDiskInducedVelocity=Atlas.thrust:ActuatorDiskInducedVelocity
+    Atlas.structures.FEM=Atlas.structures:FEM
     Atlas.structures.Structures=Atlas.structures:Structures
     Atlas.structures.BucklingFailure=Atlas.structures:BucklingFailure
     Atlas.lift_drag.LiftDrag=Atlas.lift_drag:LiftDrag
@@ -64,7 +68,7 @@ Package Metadata
     Atlas.structures.Strains=Atlas.structures:Strains
     Atlas.aero.Aero2=Atlas.aero:Aero2
     Atlas.structures.MassProperties=Atlas.structures:MassProperties
-    Atlas.properties.ChordProperties=Atlas.properties:ChordProperties
+    Atlas.aero.Aero=Atlas.aero:Aero
     Atlas.structures.Failures=Atlas.structures:Failures
 
 - **keywords:** openmdao

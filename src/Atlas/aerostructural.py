@@ -3,10 +3,16 @@ from math import pi, atan2
 
 from openmdao.main.api import Assembly, Component
 from openmdao.main.datatypes.api import Int, Float, Array, VarTree
+from openmdao.lib.drivers.api import FixedPointIterator
 
-from Atlas import AtlasConfiguration, DiscretizeProperties, Aero, Aero2, Structures, Fblade
+from Atlas import AtlasConfiguration, DiscretizeProperties, \
+                  Aero, Aero2, Structures, Fblade
 
-# see: HeliCalc.m
+from openmdao.util.log import enable_trace  # , disable_trace
+
+
+def relative_err(x, y):
+    return (np.abs(x-y)/np.linalg.norm(x)).max()
 
 
 class Results(Component):
@@ -57,6 +63,46 @@ class Results(Component):
         Pitot       = np.sum(self.fblade.Pi) * self.b * 4
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
         self.Ptot   = Pptot + Pitot  # non-covered centre
+
+
+class Switcher(Component):
+    """ select the appropriate blade Switcher """
+
+    # inputs
+    fblade_initial  = VarTree(Fblade(), iotype='in')
+    fblade_updated  = VarTree(Fblade(), iotype='in')
+
+    # outputs
+    fblade          = VarTree(Fblade(), iotype='out')
+    fblade_err      = Float(iotype='out')
+
+    def __init__(self):
+        super(Switcher, self).__init__()
+        self.initial = True
+        self.force_execute = True
+
+    def execute(self):
+        if self.initial:
+            self.fblade = self.fblade_initial
+            self.fblade_last = self.fblade_initial
+            self.fblade_err = 999999
+            self.initial = False
+        else:
+            self.fblade_last = self.fblade
+            self.fblade = self.fblade_updated
+
+            self.fblade_err = (
+                relative_err(self.fblade_updated.Fx, self.fblade.Fx) +
+                relative_err(self.fblade_updated.Fz, self.fblade.Fz) +
+                relative_err(self.fblade_updated.My, self.fblade.My) +
+                relative_err(self.fblade_updated.Q,  self.fblade.Q)  +
+                relative_err(self.fblade_updated.P,  self.fblade.P)  +
+                relative_err(self.fblade_updated.Pi, self.fblade.P)  +
+                relative_err(self.fblade_updated.Pp, self.fblade.Pp)
+            ).max()
+
+            print 'fblade updated:', self.fblade
+            print 'fblade delta:', self.fblade_err
 
 
 class AeroStructural(Assembly):
@@ -118,8 +164,33 @@ class AeroStructural(Assembly):
         self.connect('discrete.xtU',        'aero.xtU')
         self.connect('discrete.xtL',        'aero.xtL')
 
-        # Then run Structures calc (simply to determine the spar
-        # deflection for accurate ground effect computation)
+        # Then run Aero calc with more accurate Vortex method
+        self.add('aero2', Aero2())
+        self.connect('config.b',            'aero2.b')
+        self.connect('config.R',            'aero2.R')
+        self.connect('config.Ns',           'aero2.Ns')
+        self.connect('discrete.yN',         'aero2.yN')
+        self.connect('config.dr',           'aero2.dr')
+        self.connect('config.r',            'aero2.r')
+        self.connect('config.h',            'aero2.h')
+        self.connect('config.ycmax[0]',     'aero2.ycmax')
+        self.connect('config.rho',          'aero2.rho')
+        self.connect('config.visc',         'aero2.visc')
+        self.connect('config.vw',           'aero2.vw')
+        self.connect('config.vc',           'aero2.vc')
+        self.connect('config.Omega',        'aero2.Omega')
+        self.connect('discrete.cE',         'aero2.c')
+        self.connect('discrete.Cl',         'aero2.Cl')
+        self.connect('discrete.d',          'aero2.d')
+        self.connect('config.yWire',        'aero2.yWire')
+        self.connect('config.zWire',        'aero2.zWire')
+        self.connect('config.tWire',        'aero2.tWire')
+        self.connect('discrete.Cm',         'aero2.Cm')
+        self.connect('discrete.xtU',        'aero2.xtU')
+        self.connect('discrete.xtL',        'aero2.xtL')
+        self.connect('config.anhedral',     'aero2.anhedral')
+
+        # Structures calc
         self.add('struc', Structures())
         self.connect('config.flags',        'struc.flags')
         self.connect('discrete.yN',         'struc.yN')
@@ -150,69 +221,19 @@ class AeroStructural(Assembly):
         self.connect('config.mElseR',       'struc.mElseR')
         self.connect('config.R',            'struc.R')
         self.connect('config.mPilot',       'struc.mPilot')
-        self.connect('aero.Fblade',         'struc.fblade')
         self.connect('config.presLoad',     'struc.presLoad')
 
-        # Then run Aero calc with more accurate Vortex method
-        self.add('aero2', Aero2())
-        self.connect('config.b',            'aero2.b')
-        self.connect('config.R',            'aero2.R')
-        self.connect('config.Ns',           'aero2.Ns')
-        self.connect('discrete.yN',         'aero2.yN')
-        self.connect('config.dr',           'aero2.dr')
-        self.connect('config.r',            'aero2.r')
-        self.connect('config.h',            'aero2.h')
-        self.connect('config.ycmax[0]',     'aero2.ycmax')
-        self.connect('config.rho',          'aero2.rho')
-        self.connect('config.visc',         'aero2.visc')
-        self.connect('config.vw',           'aero2.vw')
-        self.connect('config.vc',           'aero2.vc')
-        self.connect('config.Omega',        'aero2.Omega')
-        self.connect('discrete.cE',         'aero2.c')
-        self.connect('discrete.Cl',         'aero2.Cl')
-        self.connect('discrete.d',          'aero2.d')
-        self.connect('config.yWire',        'aero2.yWire')
-        self.connect('config.zWire',        'aero2.zWire')
-        self.connect('config.tWire',        'aero2.tWire')
-        self.connect('discrete.Cm',         'aero2.Cm')
-        self.connect('discrete.xtU',        'aero2.xtU')
-        self.connect('discrete.xtL',        'aero2.xtL')
+        # converge aero and structures via fixed point iteration
+        self.add('switcher', Switcher())
+        self.connect('aero.Fblade',         'switcher.fblade_initial')
+        self.connect('switcher.fblade',     'struc.fblade')
         self.connect('struc.q',             'aero2.q')
-        self.connect('config.anhedral',     'aero2.anhedral')
+        self.connect('aero2.Fblade',        'switcher.fblade_updated')
 
-        # Perform structural calculation once more with more accurate idea of drag
-        self.add('struc2', Structures())
-        self.connect('config.flags',        'struc2.flags')
-        self.connect('discrete.yN',         'struc2.yN')
-        self.connect('discrete.d',          'struc2.d')
-        self.connect('discrete.theta',      'struc2.theta')
-        self.connect('discrete.nTube',      'struc2.nTube')
-        self.connect('discrete.nCap',       'struc2.nCap')
-        self.connect('discrete.lBiscuit',   'struc2.lBiscuit')
-        self.connect('config.Jprop',        'struc2.Jprop')
-        self.connect('config.b',            'struc2.b')
-        self.connect('discrete.cE',         'struc2.cE')
-        self.connect('discrete.xEA',        'struc2.xEA')
-        self.connect('discrete.xtU',        'struc2.xtU')
-        self.connect('config.dQuad',        'struc2.dQuad')
-        self.connect('config.thetaQuad',    'struc2.thetaQuad')
-        self.connect('config.nTubeQuad',    'struc2.nTubeQuad')
-        self.connect('config.lBiscuitQuad', 'struc2.lBiscuitQuad')
-        self.connect('config.RQuad',        'struc2.RQuad')
-        self.connect('config.hQuad',        'struc2.hQuad')
-        self.connect('config.ycmax[0]',     'struc2.ycmax')
-        self.connect('config.yWire',        'struc2.yWire')
-        self.connect('config.zWire',        'struc2.zWire')
-        self.connect('config.tWire',        'struc2.tWire')
-        self.connect('config.TWire',        'struc2.TWire')
-        self.connect('config.TEtension',    'struc2.TEtension')
-        self.connect('config.mElseRotor',   'struc2.mElseRotor')
-        self.connect('config.mElseCentre',  'struc2.mElseCentre')
-        self.connect('config.mElseR',       'struc2.mElseR')
-        self.connect('config.R',            'struc2.R')
-        self.connect('config.mPilot',       'struc2.mPilot')
-        self.connect('aero2.Fblade',        'struc2.fblade')
-        self.connect('config.presLoad',     'struc2.presLoad')
+        self.add('iterate', FixedPointIterator())
+        self.iterate.workflow.add('switcher')
+        self.iterate.workflow.add('struc')
+        self.iterate.workflow.add('aero2')
 
         # calculate results
         self.add('results', Results())
@@ -222,7 +243,7 @@ class AeroStructural(Assembly):
         self.connect('discrete.yE',         'results.yE')
         self.connect('discrete.cE',         'results.cE')
         self.connect('discrete.Cl',         'results.Cl')
-        self.connect('struc2.q',            'results.q')
+        self.connect('struc.q',             'results.q')
         self.connect('aero2.phi',           'results.phi')
         self.connect('config.collective',   'results.collective')
         self.connect('aero2.Fblade',        'results.fblade')
@@ -230,12 +251,13 @@ class AeroStructural(Assembly):
         self.driver.workflow.add('config')
         self.driver.workflow.add('discrete')
         self.driver.workflow.add('aero')
-        self.driver.workflow.add('struc')
-        self.driver.workflow.add('aero2')
-        self.driver.workflow.add('struc2')
+        self.driver.workflow.add('iterate')
         self.driver.workflow.add('results')
 
 
 if __name__ == "__main__":
     top = AeroStructural()
+
+    enable_trace()
+
     top.run()
