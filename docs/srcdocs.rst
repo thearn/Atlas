@@ -59,6 +59,19 @@ configuration.py
    :show-inheritance:
 
         
+.. index:: helicalc.py
+
+.. _Atlas.helicalc.py:
+
+helicalc.py
+-----------
+
+.. automodule:: Atlas.helicalc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: lift_drag.py
 
 .. _Atlas.lift_drag.py:
@@ -145,6 +158,19 @@ test_configuration.py
 ---------------------
 
 .. automodule:: Atlas.test.test_configuration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: test_helicalc.py
+
+.. _Atlas.test.test_helicalc.py:
+
+test_helicalc.py
+----------------
+
+.. automodule:: Atlas.test.test_helicalc
    :members:
    :undoc-members:
    :show-inheritance:

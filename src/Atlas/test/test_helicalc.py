@@ -4,7 +4,7 @@ import unittest
 
 from scipy.io import loadmat
 
-from Atlas import AeroStructural, Flags, PrescribedLoad
+from Atlas import HeliCalc, Flags, PrescribedLoad
 
 from openmdao.main.api import set_as_top
 
@@ -13,15 +13,15 @@ def relative_err(x, y):
     return (np.abs(x-y)/np.linalg.norm(x)).max()
 
 
-class Test_AeroStructural(unittest.TestCase):
+class Test_HeliCalc(unittest.TestCase):
     """
-    Test the AeroStructural assembly against the HeliCalc.m module from the MATLAB model
+    Test the HeliCalc assembly against the HeliCalc.m module from the MATLAB model
     """
 
-    def test_AeroStructural(self):
-        """ Test the AeroStructural assembly
+    def test_HeliCalc(self):
+        """ Test the HeliCalc assembly
         """
-        asm = set_as_top(AeroStructural())
+        asm = set_as_top(HeliCalc())
 
         # populate inputs
         path = os.path.join(os.path.dirname(__file__), 'HeliCalc.mat')
@@ -109,74 +109,77 @@ class Test_AeroStructural(unittest.TestCase):
         # run
         asm.run()
 
-        # compare outputs to MATLAB data
+        # check outputs
         for i, val in enumerate(data['out']['alphaJig'][0][0]):
-            msg = 'alphaJig[%d] is %f, compared to %f' % (i, asm.results.alphaJig[i], val)
-            print msg
+            self.assertAlmostEquals(asm.results.alphaJig[i], val, 4,
+                msg='alphaJig[%d] is %f, should be %f' % (i, asm.results.alphaJig[i], val))
 
         val = data['out']['Ttot'][0][0]
-        msg = 'Ttot is %f, compared to %f' % (asm.results.Ttot, val)
-        print msg
+        self.assertAlmostEquals(asm.results.Ttot, val, 4,
+                msg='Ttot is %f, should be %f' % (asm.results.Ttot, val))
 
         val = data['out']['Ptot'][0][0]
-        msg = 'Ptot is %f, compared to %f' % (asm.results.Ptot, val)
-        print msg
+        self.assertAlmostEquals(asm.results.Ptot, val, 4,
+                msg='Ptot is %f, should be %f' % (asm.results.Ptot, val))
 
         val = data['out']['MomRot'][0][0]
-        msg = 'MomRot is %f, compared to %f' % (asm.results.MomRot, val)
-        print msg
+        self.assertAlmostEquals(asm.results.MomRot, val, 4,
+                msg='MomRot is %f, should be %f' % (asm.results.MomRot, val))
 
         val = data['out']['Mtot'][0][0]
-        msg = 'Mtot is %f, compared to %f' % (asm.struc.Mtot, val)
-        print msg
+        self.assertAlmostEquals(asm.struc2.Mtot, val, 4,
+                msg='Mtot is %f, should be %f' % (asm.struc2.Mtot, val))
 
         val = data['out']['mQuad'][0][0]
-        msg = 'mQuad is %f, compared to %f' % (asm.struc.mass.mQuad, val)
-        print msg
+        self.assertAlmostEquals(asm.struc2.mass.mQuad, val, 4,
+                msg='mQuad is %f, should be %f' % (asm.struc2.mass.mQuad, val))
 
         val = data['out']['mCover'][0][0]
-        msg = 'mCover is %f, compared to %f' % (asm.struc.mass.mCover, val)
-        print msg
+        self.assertAlmostEquals(asm.struc2.mass.mCover, val, 4,
+                msg='mCover is %f, should be %f' % (asm.struc2.mass.mCover, val))
 
         val = data['out']['mWire'][0][0]
-        msg = 'mWire is %f, compared to %f' % (asm.struc.mass.mWire, val)
-        print msg
+        self.assertAlmostEquals(asm.struc2.mass.mWire, val, 4,
+                msg='mWire is %f, should be %f' % (asm.struc2.mass.mWire, val))
 
-        # for i, val in enumerate(data['out']['mSpar'][0][0]):
-        #     msg = 'mSpar[%d] is %f, compared to %f' % (i, asm.struc.mass.mSpar[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['mSpar'][0][0]):
+            self.assertAlmostEquals(asm.struc2.mass.mSpar[i], val, 4,
+                msg='mSpar[%d] is %f, should be %f' % (i, asm.struc2.mass.mSpar[i], val))
 
-        # for i, val in enumerate(data['out']['mChord'][0][0]):
-        #     msg = 'mChord[%d] is %f, compared to %f' % (i, asm.struc.mass.mChord[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['mChord'][0][0]):
+            self.assertAlmostEquals(asm.struc2.mass.mChord[i], val, 4,
+                msg='mChord[%d] is %f, should be %f' % (i, asm.struc2.mass.mChord[i], val))
 
-        # for i, val in enumerate(data['out']['Cl'][0][0]):
-        #     msg = 'Cl[%d] is %f, compared to %f' % (i, asm.results.Cl[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['Cl'][0][0]):
+            self.assertAlmostEquals(asm.results.Cl[i], val, 4,
+                msg='Cl[%d] is %f, should be %f' % (i, asm.results.Cl[i], val))
 
-        # for i, val in enumerate(data['out']['Cm'][0][0]):
-        #     msg = 'Cm[%d] is %f, compared to %f' % (i, asm.aero2.Cm[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['Cm'][0][0]):
+            self.assertAlmostEquals(asm.aero2.Cm[i], val, 4,
+                msg='Cm[%d] is %f, should be %f' % (i, asm.aero2.Cm[i], val))
 
-        # for i, val in enumerate(data['out']['xtU'][0][0]):
-        #     msg = 'xtU[%d] is %f, compared to %f' % (i, asm.aero2.xtU[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['xtU'][0][0]):
+            self.assertAlmostEquals(asm.aero2.xtU[i], val, 4,
+                msg='xtU[%d] is %f, should be %f' % (i, asm.aero2.xtU[i], val))
 
-        # for i, val in enumerate(data['out']['xtL'][0][0]):
-        #     msg = 'xtL[%d] is %f, compared to %f' % (i, asm.aero2.xtL[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['xtL'][0][0]):
+            self.assertAlmostEquals(asm.aero2.xtL[i], val, 4,
+                msg='xtL[%d] is %f, should be %f' % (i, asm.aero2.xtL[i], val))
 
-        # for i, val in enumerate(data['out']['xEA'][0][0]):
-        #     msg = 'xEA[%d] is %f, compared to %f' % (i, asm.struc.xEA[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['xEA'][0][0]):
+            self.assertAlmostEquals(asm.struc2.xEA[i], val, 4,
+                msg='xEA[%d] is %f, should be %f' % (i, asm.struc2.xEA[i], val))
 
-        # for i, val in enumerate(data['out']['d'][0][0]):
-        #     msg = 'd[%d] is %f, compared to %f' % (i, asm.struc.d[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['d'][0][0]):
+            self.assertAlmostEquals(asm.struc2.d[i], val, 4,
+                msg='d[%d] is %f, should be %f' % (i, asm.struc2.d[i], val))
 
-        # for i, val in enumerate(data['out']['q'][0][0]):
-        #     msg = 'q[%d] is %f, compared to %f' % (i, asm.struc.q[i], val)
-        #     print msg
+        for i, val in enumerate(data['out']['q'][0][0]):
+            self.assertAlmostEquals(asm.struc2.q[i], val, 4,
+                msg='q[%d] is %f, should be %f' % (i, asm.struc2.q[i], val))
+
+        # TODO: could check all the other stuff in 'out', but the sub assemblies
+        #       are tested elsewhere; the 'results' data is the key objective here
 
 
 if __name__ == "__main__":

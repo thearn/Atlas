@@ -86,27 +86,29 @@ class MassProperties(Component):
     mPilot      = Float(iotype='in', desc='mass of pilot (kg)')
 
     # outputs
-    xCG  = Array(iotype='out', desc='')
-    Mtot = Float(0.0, iotype='out', desc='total mass')
+    xCG         = Array(iotype='out', desc='')
+    Mtot        = Float(0.0, iotype='out', desc='total mass')
+    mCover      = Float(0.0, iotype='out', desc='mass of cover')
+    mWire       = Float(0.0, iotype='out', desc='mass of wire')
 
     def execute(self):
         self.xCG = ((self.xCGChord * self.mChord) + (self.xEA * self.mSpar)) / (self.mChord + self.mSpar)
 
         if self.flags.Cover:
-            mCover = (self.ycmax**2 * 0.0528 + self.ycmax * 0.605 / 4) * 1.15
+            self.mCover = (self.ycmax**2 * 0.0528 + self.ycmax * 0.605 / 4) * 1.15
         else:
-            mCover = 0
+            self.mCover = 0
 
         wire_props = wireProperties[self.flags.WireType]
 
         LWire = sqrt(self.zWire**2 + self.yWire**2)
-        mWire = pi * (self.tWire / 2)**2 * wire_props['RHO'] * LWire
+        self.mWire = pi * (self.tWire / 2)**2 * wire_props['RHO'] * LWire
 
         if self.flags.Quad:
-            self.Mtot = (np.sum(self.mSpar)*self.b + np.sum(self.mChord)*self.b + mWire*self.b + self.mQuad + mCover) * 4 \
+            self.Mtot = (np.sum(self.mSpar)*self.b + np.sum(self.mChord)*self.b + self.mWire*self.b + self.mQuad + self.mCover) * 4 \
                       + self.mElseRotor + self.mElseCentre + self.mElseR * self.R + self.mPilot
         else:
-            self.Mtot = np.sum(self.mSpar)*self.b + np.sum(self.mChord)*self.b + mWire*self.b + mCover \
+            self.Mtot = np.sum(self.mSpar)*self.b + np.sum(self.mChord)*self.b + self.mWire*self.b + self.mCover \
                       + self.mElseRotor + self.mElseCentre + self.mElseR * self.R + self.mPilot
 
 
