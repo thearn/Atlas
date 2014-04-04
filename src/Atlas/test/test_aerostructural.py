@@ -15,7 +15,7 @@ def relative_err(x, y):
 
 class Test_AeroStructural(unittest.TestCase):
     """
-    Test the AeroStructural assembly against the AeroStructural.m module from the MATLAB model
+    Test the AeroStructural assembly against the HeliCalc.m module from the MATLAB model
     """
 
     def test_AeroStructural(self):
