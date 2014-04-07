@@ -66,7 +66,7 @@ class Results(Component):
 
 
 class Switch(Component):
-    """ select the appropriate blade switch """
+    """ select the appropriate source for blade force data """
 
     # inputs
     fblade_initial  = VarTree(Fblade(), iotype='in')
