@@ -70,15 +70,12 @@ class MassProperties(Component):
     xEA      = Array(iotype='in', desc='')
     mQuad    = Float(iotype='in', desc='')
 
-    # inputs for cover
     ycmax    = Float(iotype='in', desc='')
 
-    # inputs for wire
     yWire   = Array(iotype='in', desc='location of wire attachment along span')
     zWire   = Float(iotype='in', desc='depth of wire attachement')
     tWire   = Float(iotype='in', desc='thickness of wire')
 
-    # inputs for other
     mElseRotor  = Float(iotype='in', desc='')
     mElseCentre = Float(iotype='in', desc='')
     mElseR      = Float(iotype='in', desc='')
@@ -117,7 +114,7 @@ class FEM(Component):
     Computes the deformation of the spar
     """
 
-    # flags
+    # inputs
     flags    = VarTree(Flags(), iotype='in')
 
     yN  = Array(iotype='in', desc='')
@@ -136,7 +133,6 @@ class FEM(Component):
     mChord = Array(iotype='in', desc='mass of chords')
     xCG    = Array(iotype='in', desc='')
 
-    # inputs for wire
     yWire = Array(iotype='in', desc='location of wire attachment along span')
     zWire = Float(iotype='in', desc='depth of wire attachement')
     TWire = Array(iotype='in', desc='')
@@ -342,7 +338,6 @@ class FEM(Component):
             Kc = K[6:, 6:]
 
         # Solve constrained system
-        # qc = np.linalg.solve(Kc, Fc)
         qc, _, _, _ = np.linalg.lstsq(Kc, Fc)
 
         if self.flags.wingWarp > 0:
@@ -399,7 +394,6 @@ class Strains(Component):
         for s in range(Ns):
             # Determine internal forces acting at the nodes of each element
             Ftemp[:, s] = -(np.dot(self.k[:, :, s], self.q[s*6:s*6 + 12]) - self.F[s*6:s*6 + 12]).squeeze()
-            # Finternal[:, s] = Ftemp[0:5, s]
             Finternal[0, s] = Ftemp[0, s]  # x-shear load
             Finternal[1, s] = Ftemp[1, s]  # y-axial load
             Finternal[2, s] = Ftemp[2, s]  # z-shear load
