@@ -27,6 +27,7 @@ class Results(Component):
     phi        = Array(iotype='in', desc='')
     collective = Float(iotype='in', desc='collective angle in radians')
     fblade     = VarTree(Fblade(), iotype='in')
+    Mtot        = Float(0.0, iotype='in', desc='total mass')
 
     # outputs
     di         = Array(iotype='out', desc='dihedral angle')
@@ -35,6 +36,8 @@ class Results(Component):
     Qtot       = Float(iotype='out', desc='')
     MomRot     = Float(iotype='out', desc='')
     Ptot       = Float(iotype='out', desc='')
+
+    Constr1 = Float(iotype="out", descr="")
 
     def execute(self):
         # Compute aerodynamic jig angle
@@ -63,6 +66,8 @@ class Results(Component):
         Pitot       = np.sum(self.fblade.Pi) * self.b * 4
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
         self.Ptot   = Pptot + Pitot  # non-covered centre
+
+        self.Constr1 = self.Mtot*9.8 - self.Ttot
 
 
 class Switch(Component):
@@ -234,6 +239,7 @@ class AeroStructural(Assembly):
         self.connect('discrete.cE',         'results.cE')
         self.connect('discrete.Cl',         'results.Cl')
         self.connect('struc.q',             'results.q')
+        self.connect('struc.Mtot',          'results.Mtot')
         self.connect('aero2.phi',           'results.phi')
         self.connect('config.collective',   'results.collective')
         self.connect('aero2.Fblade',        'results.fblade')
