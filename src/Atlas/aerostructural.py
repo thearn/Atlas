@@ -11,10 +11,6 @@ from Atlas import AtlasConfiguration, DiscretizeProperties, \
 from openmdao.util.log import enable_trace  # , disable_trace
 
 
-def relative_err(x, y):
-    return (np.abs(x-y)/np.linalg.norm(x)).max()
-
-
 class Results(Component):
     # inputs
     b          = Int(iotype='in', desc='number of blades')
@@ -71,7 +67,7 @@ class Results(Component):
 
 
 class Switch(Component):
-    """ select the appropriate blade switch """
+    """ select the appropriate source for blade force data """
 
     # inputs
     fblade_initial  = VarTree(Fblade(), iotype='in')
@@ -221,11 +217,12 @@ class AeroStructural(Assembly):
 
         self.add('iterate', FixedPointIterator())
         self.iterate.tolerance = 1e-10
+        self.iterate.add_parameter('aero2.q', low=-1e999, high=1e999)
+        self.iterate.add_constraint('aero2.q = struc.q')
+
+        # make sure we have a valid parameter value for first iteration
         q_dim = 6*(self.config.Ns+1)
         self.aero2.q = np.zeros((q_dim, 1))
-        for i in range(q_dim):
-            self.iterate.add_parameter('aero2.q[%d]' % i, low=-1e999, high=1e999)
-            self.iterate.add_constraint('aero2.q[%d] = struc.q[%d]' % (i, i))
 
         # force aero2 to run (due to bug in invalidation logic)
         self.aero2.force_execute = True
