@@ -95,6 +95,7 @@ class VortexRing(Component):
                                 r  = self.r[ii, ss]
                                 zp = self.z[i, s]
                                 yp = self.r[i, s]
+
                                 M  = self.Gamma[ii, ss] * r * dtheta / (2*pi)
                                 X2 = (-r*sin(self.thetaArray))**2
                                 Y2 = (yp - r*cos(self.thetaArray))**2
@@ -104,8 +105,11 @@ class VortexRing(Component):
                                     if Normal[iii] < cr:
                                         Normal[iii] = cr
                                 Norm3 = Normal**3
+
                                 self.vr[i, s] = self.vr[i, s] + np.sum(-cos(self.thetaArray) * (zp - zr) / Norm3) * M
                                 self.vz[i, s] = self.vz[i, s] + np.sum((cos(self.thetaArray) * yp - r) / Norm3) * M
+
+                                # ground effect ring
                                 zr = -2*self.h - self.z[ii, ss]
                                 Z2 = (zp - zr)**2
                                 Normal = sqrt(X2 + Y2 + Z2)
@@ -113,6 +117,7 @@ class VortexRing(Component):
                                     if Normal[iii] < cr:
                                         Normal[iii] = cr
                                 Norm3 = Normal**3
+
                                 self.vr[i, s] = self.vr[i, s] - np.sum(-cos(self.thetaArray) * (zp - zr) / Norm3) * M
                                 self.vz[i, s] = self.vz[i, s] - np.sum((cos(self.thetaArray) * yp - r) / Norm3) * M
 
