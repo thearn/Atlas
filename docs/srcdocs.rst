@@ -59,6 +59,19 @@ configuration.py
    :show-inheritance:
 
         
+.. index:: heli_opt.py
+
+.. _Atlas.heli_opt.py:
+
+heli_opt.py
+-----------
+
+.. automodule:: Atlas.heli_opt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
 .. index:: helicalc.py
 
 .. _Atlas.helicalc.py:

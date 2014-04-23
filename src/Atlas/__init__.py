@@ -10,3 +10,4 @@ from thrust import Thrust, ActuatorDiskInducedVelocity
 from aero import Aero, Aero2
 from aerostructural import AeroStructural, Results
 from helicalc import HeliCalc
+from heli_opt import HeliOpt
