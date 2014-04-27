@@ -190,3 +190,4 @@ class VortexRing(Component):
 
         # vi is positive downwards
         self.vi = -self.vi
+        print 'vi:\n', self.vi

@@ -1,0 +1,4 @@
+# build cython module
+cython vortexC.pyx
+gcc -c -fPIC -I/usr/include/python2.7 -I/usr/local/lib/python2.7/dist-packages/numpy/core/include vortexC.c
+gcc -shared vortexC.o -o vortexC.so
