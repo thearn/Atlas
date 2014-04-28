@@ -64,7 +64,7 @@ class HeliOpt(Assembly):
 if __name__ == '__main__':
     opt = set_as_top(HeliOpt())
 
-    enable_trace()
+    # enable_trace()
     opt.run()
 
     print 'Objective:  Ptot =', opt.aso.Ptot

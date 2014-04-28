@@ -2,7 +2,9 @@
 from openmdao.main.api import Assembly
 from openmdao.main.datatypes.api import Int, Float, Array
 
-from Atlas import Thrust, ActuatorDiskInducedVelocity, LiftDrag, VortexRing
+from Atlas import Thrust, ActuatorDiskInducedVelocity, LiftDrag
+# from Atlas import VortexRing
+from Atlas import VortexRingC as VortexRing  # use cython compiled version
 
 
 class Aero(Assembly):

@@ -87,9 +87,9 @@ class VortexRing(Component):
                 # Compute induced velocity on all ix(Ns+1) rings from all iix(Ns+1) rings
                 self.vz = np.zeros((Nw+1, self.Ns+1))
                 self.vr = np.zeros((Nw+1, self.Ns+1))
-                for i in range(t):                       # for each disk
-                    for s in range(self.Ns+1):           # and for each ring on each disk
-                        for ii in range(t):              # add the velocity induced from each disk
+                for i in range(t):                          # for each disk
+                    for s in range(self.Ns+1):              # and for each ring on each disk
+                        for ii in range(t):                 # add the velocity induced from each disk
                             for ss in range(1, self.Ns+1):  # and each ring on each disk (inner ring cancels itself out)
                                 zr = self.z[ii, ss]
                                 r  = self.r[ii, ss]
@@ -190,4 +190,3 @@ class VortexRing(Component):
 
         # vi is positive downwards
         self.vi = -self.vi
-        print 'vi:\n', self.vi
