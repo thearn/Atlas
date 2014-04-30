@@ -5,13 +5,15 @@
 #
 
 from setuptools import setup, find_packages
+from setuptools import Extension
 
-install_requires = ['openmdao.main']
+import numpy as np
+
+install_requires = ['openmdao.main', 'numpy']
 
 # Cython version of VortexRing component implemented by
 #   AUTHOR = "Herb Schilling"
 #   EMAIL = "herbschilling@gmail.com"
-from setuptools import Extension
 try:
     from Cython.Distutils import build_ext
 except ImportError:
@@ -25,13 +27,16 @@ ext_modules = [ ]
 
 if use_cython:
     ext_modules += [
-        Extension("Atlas.vortexC", [ "src/Atlas/vortexC.pyx" ]),
-
+        Extension("Atlas.vortexC",
+                  ["src/Atlas/vortexC.pyx"],
+                  include_dirs=[np.get_include()])
     ]
     cmdclass.update({ 'build_ext': build_ext })
 else:
     ext_modules += [
-        Extension("Atlas.vortexC", [ "src/Atlas/vortexC.c" ]),
+        Extension("Atlas.vortexC",
+                  ["src/Atlas/vortexC.c"],
+                  include_dirs=[np.get_include()])
     ]
 
 kwargs = {'author': 'Tristan A. Hearn',
@@ -130,7 +135,6 @@ kwargs = {'author': 'Tristan A. Hearn',
                             'test/test_coefficients.py',
                             'test/test_properties.py',
                             'test/results.mat',
-                            'test/openmdao_log.txt',
                             'test/test_configuration.py']},
  'package_dir': {'': 'src'},
  'packages': ['Atlas', 'Atlas.test'],
