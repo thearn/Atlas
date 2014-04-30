@@ -1,14 +1,38 @@
 import unittest
 
-import os
 import numpy as np
-from scipy.io import loadmat
-
-import Atlas
 
 
 def relative_err(x, y):
     return (np.abs(x-y)/np.linalg.norm(x)).max()
+
+
+# setup code (as a string for use by timeit)
+setup_code = '''
+import os
+from scipy.io import loadmat
+
+import Atlas
+from Atlas import %s as VortexRing
+
+# populate inputs
+path = os.path.join(os.path.dirname(Atlas.__file__), 'test/vortex.mat')
+data = loadmat(path, struct_as_record=True, mat_dtype=True)
+
+comp = VortexRing()
+
+comp.b        = int(data['b'][0][0])
+comp.yN       = data['yN'].flatten()
+comp.Ns       = max(comp.yN.shape) - 1
+
+comp.rho      = data['rho'][0][0]
+comp.vc       = data['vc'][0][0]
+comp.Omega    = data['Omega'][0][0]
+comp.h        = data['h'][0][0]
+comp.dT       = data['dT']
+comp.q        = data['q']
+comp.anhedral = data['anhedral'][0][0]
+'''
 
 
 class Test_Vortex(unittest.TestCase):
@@ -18,25 +42,10 @@ class Test_Vortex(unittest.TestCase):
 
     def initialize(self, classname):
         """ create and initialize VortexRing component """
+        comp = {}
+        data = {}
 
-        # create VortexRing or VortexRingC component
-        comp = getattr(Atlas, classname)()
-
-        # populate inputs from MATLAB data
-        path = os.path.join(os.path.dirname(Atlas.__file__), 'test/vortex.mat')
-        data = loadmat(path, struct_as_record=True, mat_dtype=True)
-
-        comp.b        = int(data['b'][0][0])
-        comp.yN       = data['yN'].flatten()
-        comp.Ns       = max(comp.yN.shape) - 1
-
-        comp.rho      = data['rho'][0][0]
-        comp.vc       = data['vc'][0][0]
-        comp.Omega    = data['Omega'][0][0]
-        comp.h        = data['h'][0][0]
-        comp.dT       = data['dT']
-        comp.q        = data['q']
-        comp.anhedral = data['anhedral'][0][0]
+        exec(setup_code % classname)
 
         return comp, data
 
@@ -91,6 +100,27 @@ class Test_Vortex(unittest.TestCase):
         comp.run()
 
         self.check_outputs(comp, data)
+
+    def test_TimeVortex(self):
+        """ test that the cython version is at least 50x faster
+        """
+        import timeit
+
+        # run each component one time
+        t = timeit.Timer("comp.run()", setup_code % 'VortexRing')
+        tp = t.timeit(1)
+
+        t = timeit.Timer("comp.run()", setup_code % 'VortexRingC')
+        tc = t.timeit(1)
+
+        # assert a 50x speed-up
+        speedup = tp/tc
+        self.assertTrue(speedup > 50)
+
+        print
+        print "Python function:", tp, "sec"
+        print "Cython function:", tc, "sec"
+        print "Cython speed-up: %dx" % speedup
 
 
 if __name__ == "__main__":
