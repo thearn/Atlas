@@ -58,7 +58,15 @@ class HeliOpt(Assembly):
         # constraint: lift >= weight
         self.driver.add_constraint('aso.Mtot*9.8-aso.Ttot<=0')
 
-        # constraint: structural failure in rotor spar
+        # TODO: optional constraints
+        #
+        #    if flags.ConFail:
+        #       Structural Failure in Rotor Spar (ConFail)
+        #       Buckling failure of spar (ConFailBuck)
+        #       Tensile failure in wire (ConFailWire)
+        #
+        #    if flags.ConDef:
+        #       Constraints on Maximum Deformation (ConDelta)
 
 
 if __name__ == '__main__':
