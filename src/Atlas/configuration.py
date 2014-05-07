@@ -29,9 +29,7 @@ class Flags(VariableTree):
 
     CFRPType     = Str('NCT301-1X HS40 G150 33 +/-2%RW', desc='type of carbon fibre reinforced polymer')
 
-    WireType     = Enum('Pianowire',
-                        ('Pianowire', 'Vectran'),
-                        desc='Material to be used for lift wire')
+    WireType     = Enum('Pianowire', ('Pianowire', 'Vectran'), desc='Material to be used for lift wire')
 
 
 class PrescribedLoad(VariableTree):

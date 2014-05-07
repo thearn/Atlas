@@ -82,7 +82,6 @@ class Switch(Component):
             self.fblade = self.fblade_initial
             self.initial = False
         else:
-            self.fblade_last = self.fblade
             self.fblade = self.fblade_updated
 
 
