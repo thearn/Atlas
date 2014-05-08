@@ -4,6 +4,11 @@ from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Float, Array
 from openmdao.lib.drivers.api import SLSQPdriver
 
+try:
+    from pyopt_driver import pyopt_driver
+except ImportError:
+    pass
+
 from openmdao.util.log import enable_trace  # , disable_trace
 
 from numpy import pi
@@ -149,8 +154,17 @@ class HeliOptM(Assembly):
     """ Multipoint aero-structural optimization """
 
     def configure(self):
-        # add an optimizer and an AeroStructural assembly
-        self.add('driver', SLSQPdriver())
+        # add an optimizer and a multi-point AeroStructural assembly
+        if pyopt_driver and 'SNOPT' in pyopt_driver._check_imports():
+            self.add("driver", pyopt_driver.pyOptDriver())
+            self.driver.optimizer = "SNOPT"
+            self.driver.options = {
+                # any changes to default SNOPT options?
+            }
+        else:
+            print 'SNOPT not available, using SLSQP'
+            self.add('driver', SLSQPdriver())
+
         self.add('mp', Multipoint())
 
         self.mp.alt_low = 0.5         # low altitude
