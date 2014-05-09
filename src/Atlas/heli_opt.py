@@ -5,7 +5,7 @@ from openmdao.lib.drivers.api import SLSQPdriver
 try:
     from pyopt_driver import pyopt_driver
 except ImportError:
-    pass
+    pyopt_driver = None
 
 from openmdao.util.log import enable_trace  # , disable_trace
 

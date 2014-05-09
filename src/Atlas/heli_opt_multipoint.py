@@ -7,7 +7,7 @@ from openmdao.lib.drivers.api import SLSQPdriver
 try:
     from pyopt_driver import pyopt_driver
 except ImportError:
-    pass
+    pyopt_driver = None
 
 from openmdao.util.log import enable_trace  # , disable_trace
 
@@ -22,7 +22,7 @@ class ConfigOptM(AtlasConfiguration):
     # inputs for optimizer
     H_opt     = Float(iotype='in', desc='height of aircraft')
     Omega_opt = Float(iotype='in', desc='rotor angular velocity')
-    Cl_opt    = Float(iotype='in', desc='lift coefficient distribution')
+    Cl_opt    = Array(iotype='in', desc='lift coefficient distribution')
 
     TWire_opt = Float(iotype='in', desc='')
 
@@ -87,7 +87,7 @@ class Multipoint(Assembly):
 
     vw         = Float(iotype='in', desc='wind velocity')
 
-    Cl_max     = Float(iotype='in')
+    Cl_max     = Array(iotype='in')
 
     # optimizer parameters
     Omega_opt  = Float(iotype='in', desc='rotor angular velocity')
@@ -179,6 +179,8 @@ class HeliOptM(Assembly):
 
         self.mp.vw = 0/3.6
 
+        self.Cl_max = [1.4, 1.35, 1.55]    # max control
+
         # objective: minimize total power
         self.driver.add_objective('mp.P')
 
@@ -188,13 +190,13 @@ class HeliOptM(Assembly):
         self.mp.Omega_opt = 0.17*2*pi  # initial value
 
         # parameter: lift coefficient distribution
-        self.driver.add_parameter('mp.Cl_opt',
-                                  low=[0.8, 0.8], high=[1.4, 1.3])
+        self.driver.add_parameter('mp.Cl_opt')
+                                  # low=[0.8, 0.8], high=[1.4, 1.3])
         self.mp.Cl_opt = [1.0, 1.0]  # initial value
 
         # constraint: lift >= weight
-        self.driver.add_constraint('mp.M_low*9.8-mp.Ttot_low<=0')
-        self.driver.add_constraint('mp.M_high*9.8-mp.Ttot_high<=0')
+        self.driver.add_constraint('mp.Mtot_low*9.8-mp.Ttot_low<=0')
+        self.driver.add_constraint('mp.Mtot_high*9.8-mp.Ttot_high<=0')
 
         # TODO: optional constraints
         #    if flags.ConFail:
@@ -215,8 +217,6 @@ class HeliOptM(Assembly):
         vrCon = VariableTree()
         vrCon.MaxDelta    = -0.1
         vrCon.MinDelta    = 0.1
-        vrCon.ClMax       = [1.4, 1.25, 0.85]  # min control
-        vrCon.ClMax       = [1.4, 1.35, 1.55]  # max control
         vrCon.FOSmat      = 0.55    # 1.3
         vrCon.FOSbuck     = 0.5     # 1.3
         vrCon.FOSquadbuck = 5.
@@ -227,7 +227,7 @@ class HeliOptM(Assembly):
 if __name__ == '__main__':
     opt = set_as_top(HeliOptM())
 
-    # enable_trace()
+    enable_trace()
     opt.run()
 
     print 'Objective:  Ptot =', opt.mp.Ptot
