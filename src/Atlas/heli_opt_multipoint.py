@@ -42,10 +42,7 @@ class ConfigOptM(AtlasConfiguration):
         if self.vw_opt:
             self.vw = [self.vw_opt]
 
-        print '--', self.get_pathname(), '--'
-        print 'Omega:', self.Omega
-        print 'H:', self.H
-        print 'Cl:', self.Cl
+        print self.parent.name, '\t', self.Omega, '\t', self.Cl, '\t', self.H, '\t', self.TWire, '\t', self.vw_opt
 
 
 class AeroStructuralOptM(AeroStructural):
@@ -107,8 +104,8 @@ class Multipoint(Assembly):
         self.add('low', AeroStructuralOptM())
 
         self.connect('Omega_opt', 'low.Omega_opt')
-        self.connect('alt_low',   'low.H_opt')
         self.connect('Cl_opt',    'low.Cl_opt')
+        self.connect('alt_low',   'low.H_opt')
 
         self.create_passthrough('low.Mtot', 'Mtot_low')
         self.create_passthrough('low.Ttot', 'Ttot_low')
@@ -117,8 +114,8 @@ class Multipoint(Assembly):
         self.add('high', AeroStructuralOptM())
 
         self.connect('Omega_opt',  'high.Omega_opt')
-        self.connect('alt_high',   'high.H_opt')
         self.connect('Cl_opt',     'high.Cl_opt')
+        self.connect('alt_high',   'high.H_opt')
         self.connect('TWire_high', 'high.TWire_opt')
 
         self.create_passthrough('high.Mtot', 'Mtot_high')
@@ -127,10 +124,10 @@ class Multipoint(Assembly):
         # wind case
         self.add('wind', AeroStructuralOptM())
 
-        self.connect('alt_high',   'wind.H_opt')
         omega = '(Omega_opt**3 * OmegaRatio)**(1./3.)'
         self.connect(omega,        'wind.Omega_opt')
         self.connect('Cl_max',     'wind.Cl_opt')
+        self.connect('alt_high',   'wind.H_opt')
         self.connect('TWire_wind', 'wind.TWire_opt')
         self.connect('vw',         'wind.vw_opt')
         # TODO: verify that the following flags are respected
@@ -140,9 +137,9 @@ class Multipoint(Assembly):
         # gravity case
         self.add('grav', AeroStructuralOptM())
 
-        self.connect('alt_high',   'grav.H_opt')
         self.connect('Omega_opt',  'grav.Omega_opt')
         self.connect('Cl_opt',     'grav.Cl_opt')
+        self.connect('alt_high',   'grav.H_opt')
         self.connect('TWire_grav', 'grav.TWire_opt')
         # TODO: verify that the following flags are respected
         self.grav.config.flags.Load     = 1  # gravity and wire forces only
@@ -197,7 +194,8 @@ class HeliOptM(Assembly):
         self.mp.Omega_opt = 0.17*2*pi  # initial value
 
         # parameter: lift coefficient distribution
-        self.driver.add_parameter('mp.Cl_opt')
+        # FIXME:
+        # self.driver.add_parameter('mp.Cl_opt')
                                   # low=[0.8, 0.8], high=[1.4, 1.3])
         # self.mp.Cl_opt = [1.0, 1.0]  # initial value
         self.mp.Cl_opt = [1.5, 1.43, 1.23]
@@ -233,69 +231,74 @@ class HeliOptM(Assembly):
 
 
 if __name__ == '__main__':
-    print '====== AeroStructuralOptM ======'
-    low = set_as_top(AeroStructuralOptM())
-    low.replace('config', ConfigOptM())
+    # TODO: create units tests for the following
+    if False:
+        print '====== AeroStructuralOptM ======'
+        low = set_as_top(AeroStructuralOptM())
+        low.replace('config', ConfigOptM())
 
-    low.Omega_opt =  0.17*2*pi           # initial value
-    low.Cl_opt    = [1.4, 1.35, 1.55]    # max control
+        low.Omega_opt =  0.17*2*pi           # initial value
+        low.Cl_opt    = [1.4, 1.35, 1.55]    # max control
 
-    low.H_opt     = 0.5                  # low altitude
+        low.H_opt     = 0.5                  # low altitude
 
-    low.run()
+        low.run()
 
-    print 'low Ptot =', low.Ptot
-    print 'low Mtot =', low.Mtot
-    print 'low Ttot =', low.Ttot
+        print 'low Ptot =', low.Ptot
+        print 'low Mtot =', low.Mtot
+        print 'low Ttot =', low.Ttot
 
-    print '====== Multipoint ======'
-    mp = set_as_top(Multipoint())
+    if False:
+        print '====== Multipoint ======'
+        mp = set_as_top(Multipoint())
 
-    mp.Omega_opt = 0.17*2*pi         # initial value
-    mp.Cl_opt = [1.4, 1.35, 1.55]    # max control
+        mp.Omega_opt = 0.17*2*pi         # initial value
+        mp.Cl_opt = [1.4, 1.35, 1.55]    # max control
 
-    mp.alt_low = 0.5         # low altitude
-    mp.alt_high = 3.5        # high altitude
-    mp.alt_ratio = 35./60.   # proportion of time near ground
+        mp.alt_low = 0.5         # low altitude
+        mp.alt_high = 3.5        # high altitude
+        mp.alt_ratio = 35./60.   # proportion of time near ground
 
-    mp.TWire_high = 900
-    mp.TWire_wind = 2100
-    mp.TWire_grav = 110
+        mp.TWire_high = 900
+        mp.TWire_wind = 2100
+        mp.TWire_grav = 110
 
-    mp.OmegaRatio  = 2
+        mp.OmegaRatio  = 2
 
-    mp.vw = 0/3.6
+        mp.vw = 0/3.6
 
-    mp.Cl_max = [1.4, 1.35, 1.55]    # max control
+        mp.Cl_max = [1.4, 1.35, 1.55]    # max control
 
-    mp.run()
+        mp.run()
 
-    print 'low Ptot =', mp.low.Ptot
-    print 'low Mtot =', mp.Mtot_low
-    print 'low Ttot =', mp.Ttot_low
-    print
-    print 'high Ptot =', mp.high.Ptot
-    print 'high Mtot =', mp.Mtot_high
-    print 'high Ttot =', mp.Ttot_high
-    print
-    print 'wind Ptot =', mp.wind.Ptot
-    print 'wind Mtot =', mp.wind.Mtot
-    print 'wind Ttot =', mp.wind.Ttot
-    print
-    print 'grav Ptot =', mp.grav.Ptot
-    print 'grav Mtot =', mp.grav.Mtot
-    print 'grav Ttot =', mp.grav.Ttot
-    print
-    print 'P =', mp.P
+        print 'low Ptot =', mp.low.Ptot
+        print 'low Mtot =', mp.Mtot_low
+        print 'low Ttot =', mp.Ttot_low
+        print
+        print 'high Ptot =', mp.high.Ptot
+        print 'high Mtot =', mp.Mtot_high
+        print 'high Ttot =', mp.Ttot_high
+        print
+        print 'wind Ptot =', mp.wind.Ptot
+        print 'wind Mtot =', mp.wind.Mtot
+        print 'wind Ttot =', mp.wind.Ttot
+        print
+        print 'grav Ptot =', mp.grav.Ptot
+        print 'grav Mtot =', mp.grav.Mtot
+        print 'grav Ttot =', mp.grav.Ttot
+        print
+        print 'P =', mp.P
 
-    print '====== HeliOptM ======'
-    opt = set_as_top(HeliOptM())
+    if True:
+        print '====== HeliOptM ======'
+        opt = set_as_top(HeliOptM())
 
-    # enable_trace()
-    opt.run()
+        # enable_trace()
+        opt.run()
 
-    print 'Objective:  Ptot =', opt.mp.Ptot
+        print 'Objective:  P =', opt.mp.P
 
-    print 'Constraint: Weight-Lift =', (opt.mp.Mtot*9.8-opt.mp.Ttot)
+        print 'Constraint: Low Weight-Lift =', opt.mp.Mtot_low*9.8-opt.mp.Ttot_low<=0
+        print 'Constraint: High Weight-Lift =', opt.mp.Mtot_high*9.8-opt.mp.Ttot_high<=0
 
-    print 'Parameter:  Omega =', opt.mp.config.Omega
+        print 'Parameter:  Omega =', opt.mp.Omega_opt

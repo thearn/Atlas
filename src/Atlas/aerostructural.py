@@ -59,10 +59,7 @@ class Results(Component):
         self.Qtot   = np.sum(self.fblade.Q)  * self.b * 4
         Pitot       = np.sum(self.fblade.Pi) * self.b * 4
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
-        print 'Pptot:', Pptot
-        print 'Pitot:', Pitot
         self.Ptot   = Pptot + Pitot  # non-covered centre
-        print 'Ptot:', self.Ptot
 
 
 class Switch(Component):
