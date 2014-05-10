@@ -9,7 +9,7 @@ try:
 except ImportError:
     pyopt_driver = None
 
-from openmdao.util.log import enable_trace  # , disable_trace
+from openmdao.util.log import enable_trace, disable_trace
 
 from numpy import pi
 
@@ -20,12 +20,11 @@ class ConfigOptM(AtlasConfiguration):
     """ Atlas configuration for multipoint optimization """
 
     # inputs for optimizer
-    H_opt     = Float(iotype='in', desc='height of aircraft')
     Omega_opt = Float(iotype='in', desc='rotor angular velocity')
     Cl_opt    = Array(iotype='in', desc='lift coefficient distribution')
 
+    H_opt     = Float(iotype='in', desc='height of aircraft')
     TWire_opt = Float(iotype='in', desc='')
-
     vw_opt    = Float(0.0,  iotype='in', desc='wind velocity')
 
     def execute(self):
@@ -33,14 +32,20 @@ class ConfigOptM(AtlasConfiguration):
 
         # use optimizer provided values
         self.Omega = self.Omega_opt
-        self.H     = self.H_opt + self.zWire
         self.Cl    = self.Cl_opt
 
-        if self.TWire:
+        self.H     = self.H_opt + self.zWire
+
+        if self.TWire_opt:
             self.TWire = [self.TWire_opt]
 
         if self.vw_opt:
             self.vw = [self.vw_opt]
+
+        print '--', self.get_pathname(), '--'
+        print 'Omega:', self.Omega
+        print 'H:', self.H
+        print 'Cl:', self.Cl
 
 
 class AeroStructuralOptM(AeroStructural):
@@ -54,8 +59,9 @@ class AeroStructuralOptM(AeroStructural):
 
         # create passthroughs for variables used by the optimizer
         self.create_passthrough('config.Omega_opt')
-        self.create_passthrough('config.H_opt')
         self.create_passthrough('config.Cl_opt')
+
+        self.create_passthrough('config.H_opt')
         self.create_passthrough('config.TWire_opt')
         self.create_passthrough('config.vw_opt')
 
@@ -99,10 +105,9 @@ class Multipoint(Assembly):
     def configure(self):
         # low altitude
         self.add('low', AeroStructuralOptM())
-        self.low.replace('config', ConfigOptM())
 
-        self.connect('alt_low',   'low.H_opt')
         self.connect('Omega_opt', 'low.Omega_opt')
+        self.connect('alt_low',   'low.H_opt')
         self.connect('Cl_opt',    'low.Cl_opt')
 
         self.create_passthrough('low.Mtot', 'Mtot_low')
@@ -110,10 +115,9 @@ class Multipoint(Assembly):
 
         # high altitude
         self.add('high', AeroStructuralOptM())
-        self.high.replace('config', ConfigOptM())
 
-        self.connect('alt_high',   'high.H_opt')
         self.connect('Omega_opt',  'high.Omega_opt')
+        self.connect('alt_high',   'high.H_opt')
         self.connect('Cl_opt',     'high.Cl_opt')
         self.connect('TWire_high', 'high.TWire_opt')
 
@@ -122,11 +126,10 @@ class Multipoint(Assembly):
 
         # wind case
         self.add('wind', AeroStructuralOptM())
-        self.high.replace('config', ConfigOptM())
 
         self.connect('alt_high',   'wind.H_opt')
-        omega_expr = 'math.pow(Omega_opt**3 * OmegaRatio, float(1)/3)'
-        self.connect(omega_expr,   'wind.Omega_opt')  # FIXME
+        omega = '(Omega_opt**3 * OmegaRatio)**(1./3.)'
+        self.connect(omega,        'wind.Omega_opt')
         self.connect('Cl_max',     'wind.Cl_opt')
         self.connect('TWire_wind', 'wind.TWire_opt')
         self.connect('vw',         'wind.vw_opt')
@@ -136,18 +139,22 @@ class Multipoint(Assembly):
 
         # gravity case
         self.add('grav', AeroStructuralOptM())
-        self.high.replace('config', ConfigOptM())
 
         self.connect('alt_high',   'grav.H_opt')
         self.connect('Omega_opt',  'grav.Omega_opt')
         self.connect('Cl_opt',     'grav.Cl_opt')
         self.connect('TWire_grav', 'grav.TWire_opt')
         # TODO: verify that the following flags are respected
-        self.high.config.flags.Load     = 1  # gravity and wire forces only
-        self.high.config.flags.FreeWake = 0  # momentum theory
-        self.high.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
+        self.grav.config.flags.Load     = 1  # gravity and wire forces only
+        self.grav.config.flags.FreeWake = 0  # momentum theory
+        self.grav.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
 
         self.connect('alt_ratio*low.Ptot + (1 - alt_ratio)*high.Ptot', 'P')
+
+        self.driver.workflow.add('low')
+        self.driver.workflow.add('high')
+        self.driver.workflow.add('wind')
+        self.driver.workflow.add('grav')
 
 
 class HeliOptM(Assembly):
@@ -179,7 +186,7 @@ class HeliOptM(Assembly):
 
         self.mp.vw = 0/3.6
 
-        self.Cl_max = [1.4, 1.35, 1.55]    # max control
+        self.mp.Cl_max = [1.4, 1.35, 1.55]    # max control
 
         # objective: minimize total power
         self.driver.add_objective('mp.P')
@@ -192,7 +199,8 @@ class HeliOptM(Assembly):
         # parameter: lift coefficient distribution
         self.driver.add_parameter('mp.Cl_opt')
                                   # low=[0.8, 0.8], high=[1.4, 1.3])
-        self.mp.Cl_opt = [1.0, 1.0]  # initial value
+        # self.mp.Cl_opt = [1.0, 1.0]  # initial value
+        self.mp.Cl_opt = [1.5, 1.43, 1.23]
 
         # constraint: lift >= weight
         self.driver.add_constraint('mp.Mtot_low*9.8-mp.Ttot_low<=0')
@@ -225,9 +233,65 @@ class HeliOptM(Assembly):
 
 
 if __name__ == '__main__':
+    print '====== AeroStructuralOptM ======'
+    low = set_as_top(AeroStructuralOptM())
+    low.replace('config', ConfigOptM())
+
+    low.Omega_opt =  0.17*2*pi           # initial value
+    low.Cl_opt    = [1.4, 1.35, 1.55]    # max control
+
+    low.H_opt     = 0.5                  # low altitude
+
+    low.run()
+
+    print 'low Ptot =', low.Ptot
+    print 'low Mtot =', low.Mtot
+    print 'low Ttot =', low.Ttot
+
+    print '====== Multipoint ======'
+    mp = set_as_top(Multipoint())
+
+    mp.Omega_opt = 0.17*2*pi         # initial value
+    mp.Cl_opt = [1.4, 1.35, 1.55]    # max control
+
+    mp.alt_low = 0.5         # low altitude
+    mp.alt_high = 3.5        # high altitude
+    mp.alt_ratio = 35./60.   # proportion of time near ground
+
+    mp.TWire_high = 900
+    mp.TWire_wind = 2100
+    mp.TWire_grav = 110
+
+    mp.OmegaRatio  = 2
+
+    mp.vw = 0/3.6
+
+    mp.Cl_max = [1.4, 1.35, 1.55]    # max control
+
+    mp.run()
+
+    print 'low Ptot =', mp.low.Ptot
+    print 'low Mtot =', mp.Mtot_low
+    print 'low Ttot =', mp.Ttot_low
+    print
+    print 'high Ptot =', mp.high.Ptot
+    print 'high Mtot =', mp.Mtot_high
+    print 'high Ttot =', mp.Ttot_high
+    print
+    print 'wind Ptot =', mp.wind.Ptot
+    print 'wind Mtot =', mp.wind.Mtot
+    print 'wind Ttot =', mp.wind.Ttot
+    print
+    print 'grav Ptot =', mp.grav.Ptot
+    print 'grav Mtot =', mp.grav.Mtot
+    print 'grav Ttot =', mp.grav.Ttot
+    print
+    print 'P =', mp.P
+
+    print '====== HeliOptM ======'
     opt = set_as_top(HeliOptM())
 
-    enable_trace()
+    # enable_trace()
     opt.run()
 
     print 'Objective:  Ptot =', opt.mp.Ptot
