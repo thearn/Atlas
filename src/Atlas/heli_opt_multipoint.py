@@ -148,10 +148,7 @@ class Multipoint(Assembly):
 
         self.connect('alt_ratio*low.Ptot + (1 - alt_ratio)*high.Ptot', 'P')
 
-        self.driver.workflow.add('low')
-        self.driver.workflow.add('high')
-        self.driver.workflow.add('wind')
-        self.driver.workflow.add('grav')
+        self.driver.workflow.add(['low', 'high', 'wind', 'grav'])
 
 
 class HeliOptM(Assembly):
@@ -195,10 +192,11 @@ class HeliOptM(Assembly):
 
         # parameter: lift coefficient distribution
         # FIXME:
-        # self.driver.add_parameter('mp.Cl_opt')
+        self.driver.add_parameter('mp.Cl_opt',
+                                  low=0.8, high=1.5)
+        self.mp.Cl_opt = [1.5, 1.43, 1.23]
                                   # low=[0.8, 0.8], high=[1.4, 1.3])
         # self.mp.Cl_opt = [1.0, 1.0]  # initial value
-        self.mp.Cl_opt = [1.5, 1.43, 1.23]
 
         # constraint: lift >= weight
         self.driver.add_constraint('mp.Mtot_low*9.8-mp.Ttot_low<=0')
@@ -298,7 +296,8 @@ if __name__ == '__main__':
 
         print 'Objective:  P =', opt.mp.P
 
-        print 'Constraint: Low Weight-Lift =', opt.mp.Mtot_low*9.8-opt.mp.Ttot_low<=0
-        print 'Constraint: High Weight-Lift =', opt.mp.Mtot_high*9.8-opt.mp.Ttot_high<=0
+        print 'Constraint: Low Weight-Lift =', opt.mp.Mtot_low*9.8-opt.mp.Ttot_low
+        print 'Constraint: High Weight-Lift =', opt.mp.Mtot_high*9.8-opt.mp.Ttot_high
 
         print 'Parameter:  Omega =', opt.mp.Omega_opt
+        print 'Parameter:  Cl =', opt.mp.Cl_opt
