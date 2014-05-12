@@ -36,7 +36,7 @@ class ConfigLow(AtlasConfiguration):
 
 
 class AeroStructuralLow(AeroStructural):
-    """ AeroStructural assembly for multipoint optimization """
+    """ AeroStructural assembly for low altitude case in multipoint optimization """
 
     def configure(self):
         super(AeroStructuralLow, self).configure()
@@ -84,7 +84,7 @@ class ConfigHigh(AtlasConfiguration):
 
 
 class AeroStructuralHigh(AeroStructural):
-    """ AeroStructural assembly for multipoint optimization """
+    """ AeroStructural assembly for high altitude case in multipoint optimization """
 
     def configure(self):
         super(AeroStructuralHigh, self).configure()
@@ -138,7 +138,7 @@ class ConfigWind(AtlasConfiguration):
 
 
 class AeroStructuralWind(AeroStructural):
-    """ AeroStructural assembly for multipoint optimization """
+    """ AeroStructural assembly for wind case in multipoint optimization """
 
     def configure(self):
         super(AeroStructuralWind, self).configure()
@@ -163,7 +163,7 @@ class AeroStructuralWind(AeroStructural):
 class ConfigGravity(AtlasConfiguration):
     """ Atlas configuration for gravity case """
 
-    Omega_opt = Float(iotype='in', desc='rotor angular velocity')
+    Omega_opt  = Float(iotype='in', desc='rotor angular velocity')
     OmegaRatio = Float(iotype='in')
 
     Cl_opt    = Array(iotype='in')
@@ -189,7 +189,7 @@ class ConfigGravity(AtlasConfiguration):
 
 
 class AeroStructuralGravity(AeroStructural):
-    """ AeroStructural assembly for multipoint optimization """
+    """ AeroStructural assembly for gravity case in multipoint optimization """
 
     def configure(self):
         super(AeroStructuralGravity, self).configure()
@@ -211,7 +211,7 @@ class AeroStructuralGravity(AeroStructural):
 
 
 class Multipoint(Assembly):
-    """ Assembly for multipoint optimization.
+    """ Assembly for multipoint AeroStructural optimization.
 
         Evaluates AeroStructural for four cases:
             low altitude
@@ -221,9 +221,9 @@ class Multipoint(Assembly):
     """
 
     # configuration inputs
-    alt_low   = Float(iotype='in', desc='low altitude')
-    alt_high  = Float(iotype='in', desc='high altitude')
-    alt_ratio = Float(iotype='in', desc='proportion of time near ground')
+    alt_low    = Float(iotype='in', desc='low altitude')
+    alt_high   = Float(iotype='in', desc='high altitude')
+    alt_ratio  = Float(iotype='in', desc='proportion of time near ground')
 
     TWire_high = Float(iotype='in')
     TWire_wind = Float(iotype='in')
@@ -242,7 +242,7 @@ class Multipoint(Assembly):
     Cl1_high   = Float(iotype='in')
 
     # outputs
-    P       = Float(iotype='out', desc='')
+    P          = Float(iotype='out', desc='')
 
     def configure(self):
         # low altitude
@@ -276,9 +276,9 @@ class Multipoint(Assembly):
         self.connect('alt_high',   'wind.H_opt')
         self.connect('TWire_wind', 'wind.TWire_opt')
         self.connect('vw',         'wind.vw_opt')
-        # TODO: verify that the following flags are respected
-        self.high.config.flags.FreeWake = 0  # momentum theory
-        self.high.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
+        # FIXME: the following two flags are ignored
+        self.wind.config.flags.FreeWake = 0  # momentum theory
+        self.wind.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
 
         # gravity case
         self.add('grav', AeroStructuralGravity())
@@ -288,8 +288,9 @@ class Multipoint(Assembly):
         self.connect('Cl_max',     'grav.Cl_opt')
         self.connect('alt_high',   'grav.H_opt')
         self.connect('TWire_grav', 'grav.TWire_opt')
-        # TODO: verify that the following flags are respected
+
         self.grav.config.flags.Load     = 1  # gravity and wire forces only
+        # FIXME: the following two flags are ignored
         self.grav.config.flags.FreeWake = 0  # momentum theory
         self.grav.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
 

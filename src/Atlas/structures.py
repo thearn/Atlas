@@ -163,7 +163,7 @@ class FEM(Component):
         fblade = self.fblade
         presLoad = self.presLoad
 
-        Ns = max(yN.shape) - 1  # number of elements
+        Ns = len(yN) - 1  # number of elements
         dy = np.zeros(Ns)
         for s in range(Ns+1):
             dy[s-1] = yN[s] - yN[s-1]  # length of each element
@@ -372,24 +372,24 @@ class Strains(Component):
         # short alias
         d = self.d
 
-        Ns = max(self.yN.shape) - 1  # number of elements
+        Ns = len(self.yN) - 1  # number of elements
         dy = np.zeros((Ns, 1))
         for s in range(1, Ns+1):
             dy[s-1] = self.yN[s] - self.yN[s-1]  # length of each element
 
         Ftemp = np.zeros((12, Ns))
-        Finternal = np.zeros((6, Ns + 1))
+        Finternal = np.zeros((6, Ns+1))
 
         strain = Strain()
-        strain.top    = np.zeros((3, Ns + 1))
-        strain.bottom = np.zeros((3, Ns + 1))
-        strain.back   = np.zeros((3, Ns + 1))
-        strain.front  = np.zeros((3, Ns + 1))
+        strain.top    = np.zeros((3, Ns+1))
+        strain.bottom = np.zeros((3, Ns+1))
+        strain.back   = np.zeros((3, Ns+1))
+        strain.front  = np.zeros((3, Ns+1))
 
-        strain.bending_x = np.zeros((1, Ns + 1))
-        strain.bending_z = np.zeros((1, Ns + 1))
-        strain.axial_y   = np.zeros((1, Ns + 1))
-        strain.torsion_y = np.zeros((1, Ns + 1))
+        strain.bending_x = np.zeros((1, Ns+1))
+        strain.bending_z = np.zeros((1, Ns+1))
+        strain.axial_y   = np.zeros((1, Ns+1))
+        strain.torsion_y = np.zeros((1, Ns+1))
 
         for s in range(Ns):
             # Determine internal forces acting at the nodes of each element
