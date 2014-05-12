@@ -211,6 +211,7 @@ class AeroStructural(Assembly):
         self.connect('aero2.Fblade',        'switch.fblade_updated')
 
         self.add('iterate', FixedPointIterator())
+        # self.iterate.max_iteration = 2
         self.iterate.tolerance = 1e-10
         self.iterate.add_parameter('aero2.q', low=-1e999, high=1e999)
         self.iterate.add_constraint('aero2.q = struc.q')

@@ -16,63 +16,194 @@ from numpy import pi
 from Atlas import AtlasConfiguration, AeroStructural
 
 
-class ConfigOptM(AtlasConfiguration):
-    """ Atlas configuration for multipoint optimization """
+class ConfigLow(AtlasConfiguration):
+    """ Atlas configuration for low altitude """
 
-    # inputs for optimizer
     Omega_opt = Float(iotype='in', desc='rotor angular velocity')
 
-    Cl_opt    = Array(iotype='in')
-    Cl0_opt   = Float(iotype='in')
-    Cl1_opt   = Float(iotype='in')
-
     H_opt     = Float(iotype='in', desc='height of aircraft')
-    TWire_opt = Float(iotype='in', desc='')
-    vw_opt    = Float(0.0,  iotype='in', desc='wind velocity')
 
     def execute(self):
-        super(ConfigOptM, self).execute()
+        super(ConfigLow, self).execute()
 
         # use optimizer provided values
         self.Omega = self.Omega_opt
 
-        if self.Cl0_opt:
-            self.Cl[0] = self.Cl0_opt
-            self.Cl[1] = self.Cl1_opt
-            self.Cl[2] = self.Cl1_opt
-        else:
-            self.Cl = self.Cl_opt
-
         self.H     = self.H_opt + self.zWire
 
-        if self.TWire_opt:
-            self.TWire = [self.TWire_opt]
-
-        if self.vw_opt:
-            self.vw = [self.vw_opt]
-
-        print self.parent.name, '\t', self.Omega, '\t', self.Cl, '\t', self.H, '\t', self.TWire, '\t', self.vw_opt
+        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        print '\t', self.Cl
 
 
-class AeroStructuralOptM(AeroStructural):
+class AeroStructuralLow(AeroStructural):
     """ AeroStructural assembly for multipoint optimization """
 
     def configure(self):
-        super(AeroStructuralOptM, self).configure()
+        super(AeroStructuralLow, self).configure()
 
         # replace config with optimizer driven config
-        self.replace('config', ConfigOptM())
+        self.replace('config', ConfigLow())
 
         # create passthroughs for variables used by the optimizer
         self.create_passthrough('config.Omega_opt')
 
-        self.create_passthrough('config.Cl_opt')
+        self.create_passthrough('config.H_opt')
+
+        self.create_passthrough('struc.Mtot')
+        self.create_passthrough('results.Ttot')
+        self.create_passthrough('results.Ptot')
+
+
+class ConfigHigh(AtlasConfiguration):
+    """ Atlas configuration for high altitude """
+
+    Omega_opt = Float(iotype='in', desc='rotor angular velocity')
+
+    Cl0_opt   = Float(iotype='in')
+    Cl1_opt   = Float(iotype='in')
+
+    H_opt     = Float(iotype='in', desc='height of aircraft')
+
+    TWire_opt = Float(iotype='in', desc='')
+
+    def execute(self):
+        super(ConfigHigh, self).execute()
+
+        # use optimizer provided values
+        self.Omega = self.Omega_opt
+
+        self.Cl[0] = self.Cl0_opt
+        self.Cl[1] = self.Cl1_opt
+
+        self.H = self.H_opt + self.zWire
+
+        self.TWire = [self.TWire_opt]
+
+        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        print '\t', self.Cl
+
+
+class AeroStructuralHigh(AeroStructural):
+    """ AeroStructural assembly for multipoint optimization """
+
+    def configure(self):
+        super(AeroStructuralHigh, self).configure()
+
+        # replace config with optimizer driven config
+        self.replace('config', ConfigHigh())
+
+        # create passthroughs for variables used by the optimizer
+        self.create_passthrough('config.Omega_opt')
         self.create_passthrough('config.Cl0_opt')
         self.create_passthrough('config.Cl1_opt')
 
         self.create_passthrough('config.H_opt')
         self.create_passthrough('config.TWire_opt')
+
+        self.create_passthrough('struc.Mtot')
+        self.create_passthrough('results.Ttot')
+        self.create_passthrough('results.Ptot')
+
+
+class ConfigWind(AtlasConfiguration):
+    """ Atlas configuration for wind case """
+
+    Omega_opt = Float(iotype='in', desc='rotor angular velocity')
+    OmegaRatio = Float(iotype='in')
+
+    Cl_opt    = Array(iotype='in')
+
+    H_opt     = Float(iotype='in', desc='height of aircraft')
+
+    TWire_opt = Float(iotype='in', desc='')
+
+    vw_opt    = Float(iotype='in', desc='wind velocity')
+
+    def execute(self):
+        super(ConfigWind, self).execute()
+
+        # use optimizer provided values
+        self.Omega = (self.Omega_opt**3 * self.OmegaRatio)**(1./3.)
+
+        self.Cl = self.Cl_opt
+
+        self.H = self.H_opt + self.zWire
+
+        self.TWire = [self.TWire_opt]
+
+        self.vw = self.vw_opt
+
+        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        print '\t', self.Cl
+
+
+class AeroStructuralWind(AeroStructural):
+    """ AeroStructural assembly for multipoint optimization """
+
+    def configure(self):
+        super(AeroStructuralWind, self).configure()
+
+        # replace config with optimizer driven config
+        self.replace('config', ConfigWind())
+
+        # create passthroughs for variables used by the optimizer
+        self.create_passthrough('config.Omega_opt')
+        self.create_passthrough('config.OmegaRatio')
+
+        self.create_passthrough('config.Cl_opt')
+        self.create_passthrough('config.H_opt')
+        self.create_passthrough('config.TWire_opt')
         self.create_passthrough('config.vw_opt')
+
+        self.create_passthrough('struc.Mtot')
+        self.create_passthrough('results.Ttot')
+        self.create_passthrough('results.Ptot')
+
+
+class ConfigGravity(AtlasConfiguration):
+    """ Atlas configuration for gravity case """
+
+    Omega_opt = Float(iotype='in', desc='rotor angular velocity')
+    OmegaRatio = Float(iotype='in')
+
+    Cl_opt    = Array(iotype='in')
+
+    H_opt     = Float(iotype='in', desc='height of aircraft')
+
+    TWire_opt = Float(iotype='in', desc='')
+
+    def execute(self):
+        super(ConfigGravity, self).execute()
+
+        # use optimizer provided values
+        self.Omega = (self.Omega_opt**3 * self.OmegaRatio)**(1./3.)
+
+        self.Cl = self.Cl_opt
+
+        self.H = self.H_opt + self.zWire
+
+        self.TWire = [self.TWire_opt]
+
+        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        print '\t', self.Cl
+
+
+class AeroStructuralGravity(AeroStructural):
+    """ AeroStructural assembly for multipoint optimization """
+
+    def configure(self):
+        super(AeroStructuralGravity, self).configure()
+
+        # replace config with optimizer driven config
+        self.replace('config', ConfigGravity())
+
+        # create passthroughs for variables used by the optimizer
+        self.create_passthrough('config.Omega_opt')
+        self.create_passthrough('config.OmegaRatio')
+
+        self.create_passthrough('config.Cl_opt')
+        self.create_passthrough('config.H_opt')
+        self.create_passthrough('config.TWire_opt')
 
         self.create_passthrough('struc.Mtot')
         self.create_passthrough('results.Ttot')
@@ -89,7 +220,7 @@ class Multipoint(Assembly):
             gravity only
     """
 
-    # inputs
+    # configuration inputs
     alt_low   = Float(iotype='in', desc='low altitude')
     alt_high  = Float(iotype='in', desc='high altitude')
     alt_ratio = Float(iotype='in', desc='proportion of time near ground')
@@ -105,10 +236,8 @@ class Multipoint(Assembly):
     Cl_max     = Array(iotype='in')
 
     # optimizer parameters
-    Omega_low  = Float(iotype='in', desc='rotor angular velocity, low')
-    Cl_opt     = Array(iotype='in')
-
-    Omega_high = Float(iotype='in', desc='rotor angular velocity, high')
+    Omega_low  = Float(iotype='in', desc='rotor angular velocity, low altitude')
+    Omega_high = Float(iotype='in', desc='rotor angular velocity, high altitude')
     Cl0_high   = Float(iotype='in')
     Cl1_high   = Float(iotype='in')
 
@@ -117,10 +246,9 @@ class Multipoint(Assembly):
 
     def configure(self):
         # low altitude
-        self.add('low', AeroStructuralOptM())
+        self.add('low', AeroStructuralLow())
 
         self.connect('Omega_low', 'low.Omega_opt')
-        self.connect('Cl_opt',    'low.Cl_opt')
         self.connect('alt_low',   'low.H_opt')
 
         self.create_passthrough('low.Mtot', 'Mtot_low')
@@ -128,7 +256,7 @@ class Multipoint(Assembly):
 
         # high altitude
         # need a different rotor speed and lift distribution at altitude
-        self.add('high', AeroStructuralOptM())
+        self.add('high', AeroStructuralHigh())
 
         self.connect('Omega_high', 'high.Omega_opt')
         self.connect('Cl0_high',   'high.Cl0_opt')
@@ -140,10 +268,10 @@ class Multipoint(Assembly):
         self.create_passthrough('high.Ttot', 'Ttot_high')
 
         # wind case
-        self.add('wind', AeroStructuralOptM())
+        self.add('wind', AeroStructuralWind())
 
-        omega = '(Omega_high**3 * OmegaRatio)**(1./3.)'
-        self.connect(omega,        'wind.Omega_opt')
+        self.connect('Omega_high', 'wind.Omega_opt')
+        self.connect('OmegaRatio', 'wind.OmegaRatio')
         self.connect('Cl_max',     'wind.Cl_opt')
         self.connect('alt_high',   'wind.H_opt')
         self.connect('TWire_wind', 'wind.TWire_opt')
@@ -153,9 +281,10 @@ class Multipoint(Assembly):
         self.high.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
 
         # gravity case
-        self.add('grav', AeroStructuralOptM())
+        self.add('grav', AeroStructuralGravity())
 
-        self.connect(omega,        'grav.Omega_opt')
+        self.connect('Omega_high', 'grav.Omega_opt')
+        self.connect('OmegaRatio', 'grav.OmegaRatio')
         self.connect('Cl_max',     'grav.Cl_opt')
         self.connect('alt_high',   'grav.H_opt')
         self.connect('TWire_grav', 'grav.TWire_opt')
@@ -196,7 +325,7 @@ class HeliOptM(Assembly):
 
         self.mp.OmegaRatio  = 2
 
-        self.mp.vw = 0/3.6
+        self.mp.vw = 0/3.6   # zero
 
         self.mp.Cl_max = [1.4, 1.35, 1.55]    # max control
 
@@ -206,16 +335,13 @@ class HeliOptM(Assembly):
         # parameter: rotor speed
         self.driver.add_parameter('mp.Omega_low',
                                   low=0.15*2*pi, high=0.25*2*pi)
-        self.mp.Omega_opt = 0.20*2*pi  # initial value
+        self.mp.Omega_low = 0.20*2*pi  # initial value
 
         self.driver.add_parameter('mp.Omega_high',
                                   low=0.15*2*pi, high=0.19*2*pi)
-        self.mp.Omega_opt = 0.17*2*pi  # initial value
+        self.mp.Omega_high = 0.17*2*pi  # initial value
 
-        # parameter: lift coefficient distribution
-        self.driver.add_parameter('mp.Cl_opt')
-        self.mp.Cl_opt = [1.5, 1.43, 1.23]
-
+        # parameter: lift distribution at high altitude
         self.driver.add_parameter('mp.Cl0_high',
                                   low=0.8, high=1.4)
         self.mp.Cl0_high = 1.
@@ -256,28 +382,10 @@ class HeliOptM(Assembly):
 
 if __name__ == '__main__':
     # TODO: create units tests for the following
-    if False:
-        print '====== AeroStructuralOptM ======'
-        low = set_as_top(AeroStructuralOptM())
-        low.replace('config', ConfigOptM())
 
-        low.Omega_opt =  0.17*2*pi           # initial value
-        low.Cl_opt    = [1.4, 1.35, 1.55]    # max control
-
-        low.H_opt     = 0.5                  # low altitude
-
-        low.run()
-
-        print 'low Ptot =', low.Ptot
-        print 'low Mtot =', low.Mtot
-        print 'low Ttot =', low.Ttot
-
-    if False:
+    if True:
         print '====== Multipoint ======'
         mp = set_as_top(Multipoint())
-
-        mp.Omega_opt = 0.17*2*pi         # initial value
-        mp.Cl_opt = [1.4, 1.35, 1.55]    # max control
 
         mp.alt_low = 0.5         # low altitude
         mp.alt_high = 3.5        # high altitude
@@ -287,33 +395,38 @@ if __name__ == '__main__':
         mp.TWire_wind = 2100
         mp.TWire_grav = 110
 
-        mp.OmegaRatio  = 2
+        mp.OmegaRatio = 2
 
         mp.vw = 0/3.6
 
-        mp.Cl_max = [1.4, 1.35, 1.55]    # max control
+        mp.Cl_max = [1.4, 1.35, 1.55]  # max control
+
+        mp.Omega_low  = 1.0512
+        mp.Omega_high = 1.0771
+        mp.Cl0_high   = 1.4000
+        mp.Cl1_high   = 1.3000
 
         mp.run()
 
-        print 'low Ptot =', mp.low.Ptot
-        print 'low Mtot =', mp.Mtot_low
-        print 'low Ttot =', mp.Ttot_low
+        print 'low Ptot  =', mp.low.Ptot,  ' (reference:  421.3185)'
+        print 'low Mtot  =', mp.Mtot_low,  ' (reference:  126.1670)'
+        print 'low Ttot  =', mp.Ttot_low,  ' (reference: 1236.4369)'
         print
-        print 'high Ptot =', mp.high.Ptot
-        print 'high Mtot =', mp.Mtot_high
-        print 'high Ttot =', mp.Ttot_high
+        print 'high Ptot =', mp.high.Ptot, ' (reference:  846.6429)'
+        print 'high Mtot =', mp.Mtot_high, ' (reference:  126.1670)'
+        print 'high Ttot =', mp.Ttot_high, ' (reference: 1236.4368)'
         print
-        print 'wind Ptot =', mp.wind.Ptot
-        print 'wind Mtot =', mp.wind.Mtot
-        print 'wind Ttot =', mp.wind.Ttot
+        print 'wind Ptot =', mp.wind.Ptot, ' (reference: 1815.7617)'
+        print 'wind Mtot =', mp.wind.Mtot, ' (reference:  126.1670)'
+        print 'wind Ttot =', mp.wind.Ttot, ' (reference: 2239.7556)'
         print
-        print 'grav Ptot =', mp.grav.Ptot
-        print 'grav Mtot =', mp.grav.Mtot
-        print 'grav Ttot =', mp.grav.Ttot
+        print 'grav Ptot =', mp.grav.Ptot, ' (reference:    0.00000'
+        print 'grav Mtot =', mp.grav.Mtot, ' (reference:  126.1670)'
+        print 'grav Ttot =', mp.grav.Ttot, ' (reference:    0.0000)'
         print
-        print 'P =', mp.P
+        print 'P =', mp.P,                 ' (reference: 598.537)'
 
-    if True:
+    if False:
         print '====== HeliOptM ======'
         opt = set_as_top(HeliOptM())
 
@@ -325,5 +438,5 @@ if __name__ == '__main__':
         print 'Constraint: Low Weight-Lift =', opt.mp.Mtot_low*9.8-opt.mp.Ttot_low
         print 'Constraint: High Weight-Lift =', opt.mp.Mtot_high*9.8-opt.mp.Ttot_high
 
-        print 'Parameter:  Omega =', opt.mp.Omega_opt
-        print 'Parameter:  Cl =', opt.mp.Cl_opt
+        print 'Parameter:  Omega (Low) =', opt.mp.Omega_low
+        print 'Parameter:  Omega (High) =', opt.mp.Omega_high
