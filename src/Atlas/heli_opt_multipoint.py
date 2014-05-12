@@ -21,7 +21,10 @@ class ConfigOptM(AtlasConfiguration):
 
     # inputs for optimizer
     Omega_opt = Float(iotype='in', desc='rotor angular velocity')
-    Cl_opt    = Array(iotype='in', desc='lift coefficient distribution')
+
+    Cl_opt    = Array(iotype='in')
+    Cl0_opt   = Float(iotype='in')
+    Cl1_opt   = Float(iotype='in')
 
     H_opt     = Float(iotype='in', desc='height of aircraft')
     TWire_opt = Float(iotype='in', desc='')
@@ -32,7 +35,13 @@ class ConfigOptM(AtlasConfiguration):
 
         # use optimizer provided values
         self.Omega = self.Omega_opt
-        self.Cl    = self.Cl_opt
+
+        if self.Cl0_opt:
+            self.Cl[0] = self.Cl0_opt
+            self.Cl[1] = self.Cl1_opt
+            self.Cl[2] = self.Cl1_opt
+        else:
+            self.Cl = self.Cl_opt
 
         self.H     = self.H_opt + self.zWire
 
@@ -56,7 +65,10 @@ class AeroStructuralOptM(AeroStructural):
 
         # create passthroughs for variables used by the optimizer
         self.create_passthrough('config.Omega_opt')
+
         self.create_passthrough('config.Cl_opt')
+        self.create_passthrough('config.Cl0_opt')
+        self.create_passthrough('config.Cl1_opt')
 
         self.create_passthrough('config.H_opt')
         self.create_passthrough('config.TWire_opt')
@@ -93,8 +105,12 @@ class Multipoint(Assembly):
     Cl_max     = Array(iotype='in')
 
     # optimizer parameters
-    Omega_opt  = Float(iotype='in', desc='rotor angular velocity')
-    Cl_opt     = Array(iotype='in', desc='lift coefficient distribution')
+    Omega_low  = Float(iotype='in', desc='rotor angular velocity, low')
+    Cl_opt     = Array(iotype='in')
+
+    Omega_high = Float(iotype='in', desc='rotor angular velocity, high')
+    Cl0_high   = Float(iotype='in')
+    Cl1_high   = Float(iotype='in')
 
     # outputs
     P       = Float(iotype='out', desc='')
@@ -103,7 +119,7 @@ class Multipoint(Assembly):
         # low altitude
         self.add('low', AeroStructuralOptM())
 
-        self.connect('Omega_opt', 'low.Omega_opt')
+        self.connect('Omega_low', 'low.Omega_opt')
         self.connect('Cl_opt',    'low.Cl_opt')
         self.connect('alt_low',   'low.H_opt')
 
@@ -111,10 +127,12 @@ class Multipoint(Assembly):
         self.create_passthrough('low.Ttot', 'Ttot_low')
 
         # high altitude
+        # need a different rotor speed and lift distribution at altitude
         self.add('high', AeroStructuralOptM())
 
-        self.connect('Omega_opt',  'high.Omega_opt')
-        self.connect('Cl_opt',     'high.Cl_opt')
+        self.connect('Omega_high', 'high.Omega_opt')
+        self.connect('Cl0_high',   'high.Cl0_opt')
+        self.connect('Cl1_high',   'high.Cl1_opt')
         self.connect('alt_high',   'high.H_opt')
         self.connect('TWire_high', 'high.TWire_opt')
 
@@ -124,7 +142,7 @@ class Multipoint(Assembly):
         # wind case
         self.add('wind', AeroStructuralOptM())
 
-        omega = '(Omega_opt**3 * OmegaRatio)**(1./3.)'
+        omega = '(Omega_high**3 * OmegaRatio)**(1./3.)'
         self.connect(omega,        'wind.Omega_opt')
         self.connect('Cl_max',     'wind.Cl_opt')
         self.connect('alt_high',   'wind.H_opt')
@@ -137,8 +155,8 @@ class Multipoint(Assembly):
         # gravity case
         self.add('grav', AeroStructuralOptM())
 
-        self.connect('Omega_opt',  'grav.Omega_opt')
-        self.connect('Cl_opt',     'grav.Cl_opt')
+        self.connect(omega,        'grav.Omega_opt')
+        self.connect('Cl_max',     'grav.Cl_opt')
         self.connect('alt_high',   'grav.H_opt')
         self.connect('TWire_grav', 'grav.TWire_opt')
         # TODO: verify that the following flags are respected
@@ -186,17 +204,25 @@ class HeliOptM(Assembly):
         self.driver.add_objective('mp.P')
 
         # parameter: rotor speed
-        self.driver.add_parameter('mp.Omega_opt',
+        self.driver.add_parameter('mp.Omega_low',
+                                  low=0.15*2*pi, high=0.25*2*pi)
+        self.mp.Omega_opt = 0.20*2*pi  # initial value
+
+        self.driver.add_parameter('mp.Omega_high',
                                   low=0.15*2*pi, high=0.19*2*pi)
         self.mp.Omega_opt = 0.17*2*pi  # initial value
 
         # parameter: lift coefficient distribution
-        # FIXME:
-        self.driver.add_parameter('mp.Cl_opt',
-                                  low=0.8, high=1.5)
+        self.driver.add_parameter('mp.Cl_opt')
         self.mp.Cl_opt = [1.5, 1.43, 1.23]
-                                  # low=[0.8, 0.8], high=[1.4, 1.3])
-        # self.mp.Cl_opt = [1.0, 1.0]  # initial value
+
+        self.driver.add_parameter('mp.Cl0_high',
+                                  low=0.8, high=1.4)
+        self.mp.Cl0_high = 1.
+
+        self.driver.add_parameter('mp.Cl1_high',
+                                  low=0.8, high=1.3)
+        self.mp.Cl1_high = 1.
 
         # constraint: lift >= weight
         self.driver.add_constraint('mp.Mtot_low*9.8-mp.Ttot_low<=0')
