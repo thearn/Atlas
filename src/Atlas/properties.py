@@ -449,145 +449,150 @@ class DiscretizeProperties(Component):
         self.nCap = np.zeros(self.Ns)
         self.lBiscuit = np.zeros(self.Ns)
         Ns100 = 100
-        yN100 = np.zeros(Ns100 + 1)
+        yN100 = np.zeros(Ns100+1)
         yE100 = np.zeros(Ns100)
         cR100 = np.zeros(100)
         cZ100 = np.zeros(100)
         self.c100 = np.zeros(100)
 
         # compute node locations
-        for s in range(1, (self.Ns + 1+1)):
-            self.yN[(s-1)] = self.R / self.Ns * (s - 1)
-            if self.yN[(s-1)] < self.ycmax[0]:
-                sTrans[0] = s
-            if self.yN[(s-1)] < self.ycmax[1]:
-                sTrans[1] = s
+        for s in range(self.Ns+1):
+            self.yN[s] = self.R / self.Ns*s
+            if self.yN[s] < self.ycmax[0]:
+                sTrans[0] = s+1
+            if self.yN[s] < self.ycmax[1]:
+                sTrans[1] = s+1
 
         # compute element locations
-        for s in range(1, (self.Ns + 1)):
-            self.yE[(s-1)] = 0.5 * (self.yN[(s-1)] + self.yN[(s + 1-1)])
+        for s in range(self.Ns):
+            self.yE[s] = 0.5 * (self.yN[s] + self.yN[s+1])
 
         # compute chord lengths at elements
-        for s in range(1, (self.Ns + 1)):
-            if s < sTrans[0]:  # root section
-                x = self.yE[(s-1)] / self.ycmax[0]
-                self.cE[(s-1)] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
-            else:  # chord section
+        for s in range(self.Ns):
+            if (s+1) < sTrans[0]:
+                # root section
+                x = self.yE[s] / self.ycmax[0]
+                self.cE[s] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
+            else:
+                # chord section
                 # compute curve component
-                x = (self.yE[(s-1)] - self.ycmax[0]) / (self.R - self.ycmax[0])
+                x = (self.yE[s] - self.ycmax[0]) / (self.R - self.ycmax[0])
                 pStart = self.c_in[2]
                 pCurve = self.c_in[3]
                 pEnd = self.c_in[4]
                 xx = x * (1 - pCurve) + sin(x * pi / 2) * pCurve
-                cZ[(s-1)] = pStart + (pEnd - pStart) * xx
+                cZ[s] = pStart + (pEnd - pStart) * xx
 
                 # compute 1/r component
                 c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax[0])
-                cR[(s-1)] = self.c_in[4] * self.R / self.yE[(s-1)] * (c3 + (1 - c3) * x)
+                cR[s] = self.c_in[4] * self.R / self.yE[s] * (c3 + (1 - c3) * x)
 
                 # average based on c_in(2)
-                self.cE[(s-1)] = cR[(s-1)] + (cZ[(s-1)] - cR[(s-1)]) * self.c_in[1]
+                self.cE[s] = cR[s] + (cZ[s] - cR[s]) * self.c_in[1]
 
-            if self.cE[(s-1)] == 0:
-                self.cE[(s-1)] = 0.001
+            if self.cE[s] == 0:
+                self.cE[s] = 0.001
 
         # compute chord for display purposes
-        for s in range(1, (Ns100 + 1 + 1)):
-            yN100[(s-1)] = self.R / Ns100 * (s - 1)
-            if all(yN100[(s-1)] < self.ycmax):
+        for s in range(1, Ns100+2):
+            yN100[s-1] = self.R / Ns100 * (s-1)
+            if all(yN100[s-1] < self.ycmax):
                 sTrans100 = s
 
-        for s in range(1, (Ns100+1)):
-            yE100[(s-1)] = 0.5 * (yN100[(s-1)] + yN100[(s + 1-1)])
+        for s in range(Ns100):
+            yE100[s] = 0.5 * (yN100[s] + yN100[s+1])
 
-        for s in range(1, (Ns100+1)):
-            if s < sTrans100:  # root section
-                x = yE100[(s-1)] / self.ycmax[0]
-                self.c100[(s-1)] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
-            else:  # chord section
+        for s in range(Ns100):
+            if (s+1) < sTrans100:
+                # root section
+                x = yE100[s] / self.ycmax[0]
+                self.c100[s] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
+            else:
+                # chord section
                 # compute chord component
-                x = (yE100[(s-1)] - self.ycmax[0]) / (self.R - self.ycmax[0])
+                x = (yE100[s] - self.ycmax[0]) / (self.R - self.ycmax[0])
                 pStart = self.c_in[2]
                 pCurve = self.c_in[3]
                 pEnd = self.c_in[4]
                 xx = x * (1 - pCurve) + sin(x * pi / 2) * pCurve
-                cZ100[(s-1)] = pStart + (pEnd - pStart) * xx
+                cZ100[s] = pStart + (pEnd - pStart) * xx
 
                 # compute 1/r component
                 c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax[0])
-                cR100[(s-1)] = self.c_in[4] * self.R / yE100[(s-1)] * (c3 + (1 - c3) * x)
+                cR100[s] = self.c_in[4] * self.R / yE100[s] * (c3 + (1 - c3) * x)
 
                 # average based on c_in(2)
-                self.c100[(s-1)] = cR100[(s-1)] + (cZ100[(s-1)] - cR100[(s-1)]) * self.c_in[1]
+                self.c100[s] = cR100[s] + (cZ100[s] - cR100[s]) * self.c_in[1]
 
-            if self.c100[(s-1)] == 0:
-                self.c100[(s-1)] = 0.001
+            if self.c100[s] == 0:
+                self.c100[s] = 0.001
 
         # Compute aero properties for each element
-        # Y = [ycmax(1) ycmax(2) R];
         Y = np.array([self.ycmax[0], self.ycmax[1], self.R])
-        for s in range(1, (self.Ns+1)):
-            if s < sTrans[0]:  # root section
-                self.Cl[(s-1)]  = self.Cl_in[0]
-                self.Cm[(s-1)]  = self.Cm_in[0]
-                self.t[(s-1)]   = self.t_in[0]
-                self.xEA[(s-1)] = self.xEA_in[0]
+        for s in range(self.Ns):
+            if (s+1) < sTrans[0]:
+                # root section
+                self.Cl[s]  = self.Cl_in[0]
+                self.Cm[s]  = self.Cm_in[0]
+                self.t[s]   = self.t_in[0]
+                self.xEA[s] = self.xEA_in[0]
             else:
                 # check which segment the element is on
-                for j in range(1, (max(Y.shape)+1)):
-                    if Y[(j-1)] > self.yE[(s-1)]:
+                for j in range(max(Y.shape)):
+                    if Y[j] > self.yE[s]:
                         break
-                if s == sTrans[0]:
-                    j = 2
-                x = (self.yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
+                if (s+1) == sTrans[0]:
+                    j = 1
+                x = (self.yE[s] - Y[j-1]) / (Y[j] - Y[j-1])
 
                 # linearly interpolate between Y(j) and Y(j-1)
-                self.Cl[(s-1)]  = self.Cl_in[(j - 1-1)] + x * (self.Cl_in[(j-1)] - self.Cl_in[(j - 1-1)])
-                self.Cm[(s-1)]  = self.Cm_in[(j - 1-1)] + x * (self.Cm_in[(j-1)] - self.Cm_in[(j - 1-1)])
-                self.t[(s-1)]   = self.t_in[(j - 1-1)] + x * (self.t_in[(j-1)] - self.t_in[(j - 1-1)])
-                self.xEA[(s-1)] = self.xEA_in[(j - 1-1)] + x * (self.xEA_in[(j-1)] - self.xEA_in[(j - 1-1)])
+                self.Cl [s] = self.Cl_in [j-1]  +  x * (self.Cl_in [j] - self.Cl_in [j-1])
+                self.Cm [s] = self.Cm_in [j-1]  +  x * (self.Cm_in [j] - self.Cm_in [j-1])
+                self.t  [s] = self.t_in  [j-1]  +  x * (self.t_in  [j] - self.t_in  [j-1])
+                self.xEA[s] = self.xEA_in[j-1]  +  x * (self.xEA_in[j] - self.xEA_in[j-1])
 
-        self.Cl[(self.Ns-1)] = self.Cl[(self.Ns-1)] * 2 / 3
+        self.Cl[self.Ns-1] = self.Cl[self.Ns-1] * 2/3
 
         # compute xtU and xtL for each element
         # changes instantly from xtU(1) to xtU(3) at point xtU(2)
-        for s in range(1, (self.Ns + 1+1)):
-            if self.yN[(s-1)] < self.ycmax[0]:
-                sTrans[0] = s
-            if self.yN[(s-1)] < self.xtU_in[1]:
-                sTrans[1] = s
+        for s in range(0, self.Ns+1):
+            if self.yN[s] < self.ycmax[0]:
+                sTrans[0] = (s+1)
+            if self.yN[s] < self.xtU_in[1]:
+                sTrans[1] = (s+1)
 
-        for s in range(1, (self.Ns + 1)):
-            if s < sTrans[0]:  # root section
-                self.xtU[(s-1)] = 0.05
-                self.xtL[(s-1)] = 0.05
+        for s in range(self.Ns):
+            if (s+1) < sTrans[0]:
+                # root section
+                self.xtU[s] = 0.05
+                self.xtL[s] = 0.05
             else:
-                if s < sTrans[1]:
-                    self.xtU[(s-1)] = self.xtU_in[0]
-                    self.xtL[(s-1)] = self.xtL_in[0]
-                elif s == sTrans[1]:
-                    x = (self.xtU_in[1] - self.yN[(s-1)]) / (self.yN[(s-1)] - self.yN[(s - 1-1)])
-                    self.xtU[(s-1)] = (1 - x) * self.xtU_in[0] + x * self.xtU_in[2]
-                    self.xtL[(s-1)] = (1 - x) * self.xtL_in[0] + x * self.xtL_in[2]
-                elif s > sTrans[1]:
-                    self.xtU[(s-1)] = self.xtU_in[2]
-                    self.xtL[(s-1)] = self.xtL_in[2]
+                if (s+1) < sTrans[1]:
+                    self.xtU[s] = self.xtU_in[0]
+                    self.xtL[s] = self.xtL_in[0]
+                elif (s+1) == sTrans[1]:
+                    x = (self.xtU_in[1] - self.yN[s]) / (self.yN[s] - self.yN[s-1])
+                    self.xtU[s] = (1-x) * self.xtU_in[0] + x * self.xtU_in[2]
+                    self.xtL[s] = (1-x) * self.xtL_in[0] + x * self.xtL_in[2]
+                elif (s+1) > sTrans[1]:
+                    self.xtU[s] = self.xtU_in[2]
+                    self.xtL[s] = self.xtL_in[2]
 
         # compute str properties for each element
         Y = np.array([0, self.yWire[0], self.R])
-        for s in range(1, (self.Ns+1)):
+        for s in range(self.Ns):
             # check which segment the lement is on
-            for j in range(1, (max(Y.shape) + 1)):
-                if Y[(j-1)] > self.yE[(s-1)]:
+            for j in range(max(Y.shape)):
+                if Y[j] > self.yE[s]:
                     break
-            x = (self.yE[(s-1)] - Y[(j - 1-1)]) / (Y[(j-1)] - Y[(j - 1-1)])
+            x = (self.yE[s] - Y[j-1]) / (Y[j] - Y[j-1])
 
             # linearly interpolate between Y(j) and Y(j-1)
-            self.d[(s-1)] = self.d_in[(j - 1-1)] + x * (self.d_in[(j-1)] - self.d_in[(j - 1-1)])
-            self.theta[(s-1)] = self.theta_in[(j - 1-1)] + x * (self.theta_in[(j-1)] - self.theta_in[(j - 1-1)])
-            self.nTube[(s-1)] = self.nTube_in[(j - 1-1)] + x * (self.nTube_in[(j-1)] - self.nTube_in[(j - 1-1)])
-            self.nCap[(s-1)] = self.nCap[(j - 1-1)] + x * (self.nCap[(j-1)] - self.nCap[(j - 1-1)])
-            self.lBiscuit[(s-1)] = self.lBiscuit_in[(j - 1-1)] + x * (self.lBiscuit_in[(j-1)] - self.lBiscuit_in[(j - 1-1)])
+            self.d       [s] = self.d_in       [j-1] + x * (self.d_in       [j] - self.d_in       [j-1])
+            self.theta   [s] = self.theta_in   [j-1] + x * (self.theta_in   [j] - self.theta_in   [j-1])
+            self.nTube   [s] = self.nTube_in   [j-1] + x * (self.nTube_in   [j] - self.nTube_in   [j-1])
+            self.nCap    [s] = self.nCap       [j-1] + x * (self.nCap       [j] - self.nCap       [j-1])
+            self.lBiscuit[s] = self.lBiscuit_in[j-1] + x * (self.lBiscuit_in[j] - self.lBiscuit_in[j-1])
 
 
 class ChordProperties(Component):
