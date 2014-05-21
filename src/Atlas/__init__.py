@@ -12,3 +12,4 @@ from aero import Aero, Aero2
 from aerostructural import AeroStructural, Results
 from helicalc import HeliCalc
 from heli_opt import HeliOpt
+from heli_opt_multipoint import Multipoint, HeliOptM

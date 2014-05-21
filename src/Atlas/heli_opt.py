@@ -1,7 +1,11 @@
-
 from openmdao.main.api import Assembly, set_as_top
 from openmdao.lib.datatypes.api import Float
 from openmdao.lib.drivers.api import SLSQPdriver
+
+try:
+    from pyopt_driver import pyopt_driver
+except ImportError:
+    pyopt_driver = None
 
 from openmdao.util.log import enable_trace  # , disable_trace
 
@@ -44,7 +48,16 @@ class HeliOpt(Assembly):
 
     def configure(self):
         # add an optimizer and an AeroStructural assembly
-        self.add('driver', SLSQPdriver())
+        if pyopt_driver and 'SNOPT' in pyopt_driver._check_imports():
+            self.add("driver", pyopt_driver.pyOptDriver())
+            self.driver.optimizer = "SNOPT"
+            self.driver.options = {
+                # any changes to default SNOPT options?
+            }
+        else:
+            print 'SNOPT not available, using SLSQP'
+            self.add('driver', SLSQPdriver())
+
         self.add('aso', AeroStructuralOpt())
 
         # objective: minimize total power
@@ -58,7 +71,15 @@ class HeliOpt(Assembly):
         # constraint: lift >= weight
         self.driver.add_constraint('aso.Mtot*9.8-aso.Ttot<=0')
 
-        # constraint: structural failure in rotor spar
+        # TODO: optional constraints
+        #
+        #    if flags.ConFail:
+        #       Structural Failure in Rotor Spar (ConFail)
+        #       Buckling failure of spar (ConFailBuck)
+        #       Tensile failure in wire (ConFailWire)
+        #
+        #    if flags.ConDef:
+        #       Constraints on Maximum Deformation (ConDelta)
 
 
 if __name__ == '__main__':
@@ -67,8 +88,12 @@ if __name__ == '__main__':
     # enable_trace()
     opt.run()
 
-    print 'Objective:  Ptot =', opt.aso.Ptot
+    print 'Parameter:  Omega =', opt.aso.config.Omega
 
     print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
 
-    print 'Parameter:  Omega =', opt.aso.config.Omega
+    print 'Objective:  Ptot =', opt.aso.Ptot
+
+    # for reference, MATLAB solution:
+    #    Omega: 1.0512
+    #    Ptot: 421.3185

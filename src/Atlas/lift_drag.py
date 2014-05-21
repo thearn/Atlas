@@ -26,11 +26,11 @@ class LiftDrag(Component):
     Ns  = Int(iotype="in", desc="number of Elements")
     yN  = Array(iotype="in", desc='node locations')
 
-    rho   = Float(0.0, iotype='in', desc='air density')
-    visc  = Float(0.0, iotype='in', desc='air viscosity')
-    vw    = Float(0.0, iotype='in', desc='wind')
-    vc    = Float(0.0, iotype='in', desc='vertical velocity')
-    Omega = Float(0.0, iotype='in', desc='Rotor angular velocity')
+    rho   = Float(iotype='in', desc='air density')
+    visc  = Float(iotype='in', desc='air viscosity')
+    vw    = Float(iotype='in', desc='wind')
+    vc    = Float(iotype='in', desc='vertical velocity')
+    Omega = Float(iotype='in', desc='Rotor angular velocity')
 
     r  = Array(iotype='in', desc='radial location of each element')
     vi = Array(iotype='in', desc='induced downwash distribution')
@@ -89,7 +89,7 @@ class LiftDrag(Component):
                 dD = 0.5 * self.rho * U**2 * self.Cd[s] * self.d[s] * self.dr[s]
 
             # add wire drag
-            for w in range(max(self.yWire.shape)):
+            for w in range(len(self.yWire)):
                 if self.yN[s] < self.yWire[w]:
                     if self.yN[s + 1] < self.yWire[w]:
                         L = self.dr[s] * sqrt(self.zWire**2 + self.yWire[w]**2) / self.yWire[w]
@@ -100,7 +100,6 @@ class LiftDrag(Component):
                     dD = dD + 0.5 * self.rho * U**2 * CdWire * self.tWire * L
 
             self.phi[s] = atan2(self.vc + self.vi[s], self.vw + self.Omega * self.r[s])
-
             self.Fblade.Fz[s] = self.chordFrac[s] * (dL * cos(self.phi[s]) - dD * sin(self.phi[s]))
             self.Fblade.Fx[s] = self.chordFrac[s] * (dD * cos(self.phi[s]) + dL * sin(self.phi[s]))
             self.Fblade.My[s] = self.chordFrac[s] * (0.5 * self.rho * U**2 * self.Cm[s] * self.c[s] * self.c[s] * self.dr[s])

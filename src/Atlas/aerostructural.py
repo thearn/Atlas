@@ -42,7 +42,7 @@ class Results(Component):
             qq[:, s] = self.q[s*6:s*6+6].T
 
         Clalpha = 2*pi
-        for s in range(0, max(self.yN.shape)-1):
+        for s in range(0, len(self.yN)-1):
             self.alphaJig[s] = self.Cl[s] / Clalpha            \
                              - (qq[4, s] + qq[4, s+1]) / 2     \
                              + self.phi[s] - self.collective
@@ -82,7 +82,6 @@ class Switch(Component):
             self.fblade = self.fblade_initial
             self.initial = False
         else:
-            self.fblade_last = self.fblade
             self.fblade = self.fblade_updated
 
 
@@ -212,6 +211,7 @@ class AeroStructural(Assembly):
         self.connect('aero2.Fblade',        'switch.fblade_updated')
 
         self.add('iterate', FixedPointIterator())
+        self.iterate.max_iteration = 2  # 2 passes to emulate MATLAB code
         self.iterate.tolerance = 1e-10
         self.iterate.add_parameter('aero2.q', low=-1e999, high=1e999)
         self.iterate.add_constraint('aero2.q = struc.q')

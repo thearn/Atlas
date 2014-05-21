@@ -29,9 +29,7 @@ class Flags(VariableTree):
 
     CFRPType     = Str('NCT301-1X HS40 G150 33 +/-2%RW', desc='type of carbon fibre reinforced polymer')
 
-    WireType     = Enum('Pianowire',
-                        ('Pianowire', 'Vectran'),
-                        desc='Material to be used for lift wire')
+    WireType     = Enum('Pianowire', ('Pianowire', 'Vectran'), desc='Material to be used for lift wire')
 
 
 class PrescribedLoad(VariableTree):
@@ -98,12 +96,11 @@ class AtlasConfiguration(Component):
     collective   = Float(0*pi/180, iotype='out', desc='collective angle in radians')
     etaP         = Float(0.0, iotype='out', desc='')
 
-    yWire        = Array(np.array([5.8852]),  # actual spars
-                    iotype='out', desc='location of wire attachment along span')
-    zWire        = Float(1.0,    iotype='out', desc='depth of wire attachement')
-    tWire        = Float(.0028,  iotype='out', desc='thickness of wire')  # vectran
-    TWire        = Array([1100], iotype='out', desc='')
-    TEtension    = Float(50.0,   iotype='out', desc='')
+    yWire        = Array([5.8852], iotype='out', desc='location of wire attachment along span')  # actual spars
+    zWire        = Float(1.0,      iotype='out', desc='depth of wire attachement')
+    tWire        = Float(.0028,    iotype='out', desc='thickness of wire')  # vectran
+    TWire        = Array([1100.],  iotype='out', desc='')
+    TEtension    = Float(50.0,     iotype='out', desc='')
 
     anhedral     = Float(0.8*pi/180, iotype='out')
 
