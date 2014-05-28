@@ -1,6 +1,6 @@
 from openmdao.main.api import Component
 from openmdao.lib.datatypes.api import Float
-from math import sqrt
+from numpy import sqrt
 
 
 def frictionCoefficient(Re, xtc):

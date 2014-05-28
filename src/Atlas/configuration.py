@@ -1,6 +1,6 @@
 import numpy as np
 
-from math import pi, sqrt
+from numpy import pi, sqrt
 
 from openmdao.main.api import Component, VariableTree
 from openmdao.main.datatypes.api import Int, Float, Array, Str, Enum, VarTree

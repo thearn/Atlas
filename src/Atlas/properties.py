@@ -2,7 +2,7 @@
 from openmdao.main.api import Component, VariableTree
 from openmdao.lib.datatypes.api import Float, Array, Int, Str, VarTree
 import numpy as np
-from math import pi, sin, cos, floor, sqrt
+from numpy import pi, sin, cos, floor, sqrt
 
 
 # Material properties of the CFRP prepregs used in the HPH Project.

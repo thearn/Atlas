@@ -1,5 +1,6 @@
 import numpy as np
-from math import pi, atan2
+from numpy import pi
+from numpy import arctan2
 
 from openmdao.main.api import Assembly, Component
 from openmdao.main.datatypes.api import Int, Float, Array, VarTree
@@ -50,7 +51,7 @@ class Results(Component):
         # Compute dihedral angle
         self.di = np.zeros((self.Ns, 1))
         for s in range(0, self.Ns):
-            self.di[s] = atan2(qq[2, s+1] - qq[2, s], self.yN[s+1] - self.yN[s])
+            self.di[s] = arctan2(qq[2, s+1] - qq[2, s], self.yN[s+1] - self.yN[s])
 
         # Compute totals
         # (Note: reshaping is due to numpy vs MATLAB 1D array shapes.. should scrub this)

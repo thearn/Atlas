@@ -1,6 +1,6 @@
 import numpy as np
 
-from math import pi, sqrt, sin, cos, tan, atan2
+from numpy import pi, sqrt, sin, cos, tan, arctan2
 
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, VarTree
@@ -10,6 +10,15 @@ from properties import JointProperties, \
                        SparProperties, JointSparProperties, QuadSparProperties, \
                        ChordProperties, wireProperties, prepregProperties
 from lift_drag import Fblade
+
+
+def abs_complex(c):
+    x, y = c.real, c.imag
+    if x < 0:
+        return -x - y*1j
+    else:
+        return x + y*1j
+
 
 
 # data structures used in structural calculations
@@ -98,7 +107,8 @@ class MassProperties(Component):
 
         wire_props = wireProperties[self.flags.WireType]
 
-        LWire = sqrt(self.zWire**2 + self.yWire**2)
+        LWire = sqrt(self.zWire**2 + self.yWire[0]**2)
+
         self.mWire = pi * (self.tWire / 2)**2 * wire_props['RHO'] * LWire
 
         if self.flags.Quad:
@@ -255,7 +265,7 @@ class FEM(Component):
                 # Wire forces (using consistent force vector)
                 for w in range(len(yWire)):
                     if (yWire[w] >= yN[s]) and (yWire[w] < yN[s+1]):
-                        thetaWire = atan2(zWire, yWire[w])
+                        thetaWire = arctan2(zWire, yWire[w])
                         a = yWire[w] - yN[s]
                         L = dy[s]
                         FxWire = -cos(thetaWire) * TWire[w]
@@ -585,7 +595,7 @@ class Failures(Component):
         k  = 0.7    # pinned-pinned = 1, fixed-pinned = 0.7 with correction factor
         #kk = 1.42  # correction factor
         kk = 1      # correction factor was in error, never saw buckling failure
-        thetaWire = atan2(zWire, yWire)
+        thetaWire = arctan2(zWire, yWire)
         L = yWire   # wire attachment provides pinned end
         F = TWire * cos(thetaWire) + TEtension
 
@@ -614,7 +624,7 @@ class Failures(Component):
         if EIQuad != 0:
             k = 1
             L = sqrt(RQuad**2 + hQuad**2)
-            alpha = atan2(hQuad, RQuad)
+            alpha = arctan2(hQuad, RQuad)
             P = TQuad / sin(alpha)
             critical_load = pi**2 * EIQuad / (k * L)**2
             fail.quad_buckling = P / critical_load
@@ -628,7 +638,7 @@ class Failures(Component):
             BM = TbottomWire * zWire + RotorMoment
             strainQuad = -np.array([BM * (dQuad / 2) / EIQuad, 0, 0]).reshape(1, -1).T  # strain on compression side
             mf = self.material_failure(1, strainQuad, [thetaQuad], [], flags)
-            fail.quad_bend = abs(mf.plus[0, 0])  # use only compressive failure in fibre direction
+            fail.quad_bend = abs_complex(mf.plus[0, 0])  # use only compressive failure in fibre direction
         else:
             fail.quad_bend = 0
 
@@ -636,7 +646,7 @@ class Failures(Component):
         if GJQuad != 0:
             strainQuad = np.array([0,  0, dQuad / 2 * RotorMoment / GJQuad]).reshape(1,  -1).T
             mf = self.material_failure(1, strainQuad, [thetaQuad], [], flags)
-            fail.quad_torsion = abs(mf.plus[0, 0])
+            fail.quad_torsion = abs_complex(mf.plus[0, 0])
         else:
             fail.quad_torsion = 0
 
@@ -859,7 +869,7 @@ class Failures(Component):
             # Calculate critical torque
             critical_torque = AF_torsional_buckling * N_x_theta * 2 * pi * (R**2)
 
-            failure[s] = abs(Finternal[4, s] / critical_torque)
+            failure[s] = abs_complex(Finternal[4, s] / critical_torque)
 
         failure[Ns] = 0  # no torsion at tip
 
