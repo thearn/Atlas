@@ -84,9 +84,20 @@ class HeliOpt(Assembly):
 
 if __name__ == '__main__':
     opt = set_as_top(HeliOpt())
+    opt.aso.Omega_opt = 1.0512
+
+    opt.driver.run_iteration()
+
+    print 'Parameter:  Omega =', opt.aso.config.Omega
+
+    print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
+
+    print 'Objective:  Ptot =', opt.aso.Ptot
 
     # enable_trace()
+    exit()
     opt.run()
+
 
     print 'Parameter:  Omega =', opt.aso.config.Omega
 
