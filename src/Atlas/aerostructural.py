@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import pi
-from numpy import arctan2
+from util import arctan2
 
 from openmdao.main.api import Assembly, Component
 from openmdao.main.datatypes.api import Int, Float, Array, VarTree

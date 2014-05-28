@@ -1,6 +1,7 @@
 import numpy as np
 
-from numpy import pi, sqrt, sin, cos, tan, arctan2
+from numpy import pi, sqrt, sin, cos, tan
+from util import arctan2
 
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, VarTree
