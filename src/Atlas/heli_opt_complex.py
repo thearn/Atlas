@@ -84,9 +84,12 @@ class HeliOpt(Assembly):
 
 if __name__ == '__main__':
     opt = set_as_top(HeliOpt())
-    opt.aso.Omega_opt = 1.0512
+    opt.driver.gradient_options.force_fd = True
+    opt.driver.gradient_options.fd_step = 1e-3
+    opt.driver.gradient_options.fd_form = "complex_step"
+    #opt.aso.Omega_opt = 1.0512
 
-    opt.driver.run_iteration()
+    #opt.driver.run_iteration()
 
     print 'Parameter:  Omega =', opt.aso.config.Omega
 
@@ -95,7 +98,7 @@ if __name__ == '__main__':
     print 'Objective:  Ptot =', opt.aso.Ptot
 
     # enable_trace()
-    exit()
+    #exit()
     opt.run()
 
 
