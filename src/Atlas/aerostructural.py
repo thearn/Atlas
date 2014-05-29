@@ -61,6 +61,8 @@ class Results(Component):
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
         self.Ptot   = Pptot + Pitot  # non-covered centre
 
+        # print self.parent.name, '\t', 'Ptot:', self.Ptot
+
 
 class Switch(Component):
     """ select the appropriate source for blade force data """

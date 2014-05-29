@@ -31,8 +31,8 @@ class ConfigLow(AtlasConfiguration):
 
         self.H     = self.H_opt + self.zWire
 
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
+        # print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        # print '\t', self.Cl
 
 
 class AeroStructuralLow(AeroStructural):
@@ -79,8 +79,8 @@ class ConfigHigh(AtlasConfiguration):
 
         self.TWire = [self.TWire_opt]
 
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
+        # print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        # print '\t', self.Cl
 
 
 class AeroStructuralHigh(AeroStructural):
@@ -133,8 +133,8 @@ class ConfigWind(AtlasConfiguration):
 
         self.vw = self.vw_opt
 
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
+        # print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        # print '\t', self.Cl
 
 
 class AeroStructuralWind(AeroStructural):
@@ -184,8 +184,8 @@ class ConfigGravity(AtlasConfiguration):
 
         self.TWire = [self.TWire_opt]
 
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
+        # print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
+        # print '\t', self.Cl
 
 
 class AeroStructuralGravity(AeroStructural):
@@ -388,8 +388,8 @@ if __name__ == '__main__':
         print '====== Multipoint ======'
         mp = set_as_top(Multipoint())
 
-        mp.alt_low = 0.5         # low altitude
-        mp.alt_high = 3.5        # high altitude
+        mp.alt_low   = 0.5       # low altitude
+        mp.alt_high  = 3.5       # high altitude
         mp.alt_ratio = 35./60.   # proportion of time near ground
 
         mp.TWire_high = 900
@@ -427,7 +427,7 @@ if __name__ == '__main__':
         print
         print 'P =', mp.P,                 ' (reference: 598.537)'
 
-    if False:
+    if True:
         print '====== HeliOptM ======'
         opt = set_as_top(HeliOptM())
 
