@@ -385,6 +385,26 @@ if __name__ == '__main__':
     # TODO: create units tests for the following
 
     if True:
+        print '====== High Altitude ======'
+        high = set_as_top(AeroStructuralHigh())
+
+        high.Omega_opt = 1.0771
+        high.Cl0_opt   = 1.4
+        high.Cl1_opt   = 1.3
+        high.H_opt     = 4.5
+        high.TWire_opt = 900
+
+        # TODO: differences from default config
+        high.config.hQuad = 3.0
+        high.config.tWire = 0.0016
+
+        high.run()
+
+        print 'high Ptot =', high.Ptot, ' (reference:  846.6429)'
+        print 'high Mtot =', high.Mtot, ' (reference:  126.1670)'
+        print 'high Ttot =', high.Ttot, ' (reference: 1236.4368)'
+
+    if False:
         print '====== Multipoint ======'
         mp = set_as_top(Multipoint())
 
@@ -427,7 +447,7 @@ if __name__ == '__main__':
         print
         print 'P =', mp.P,                 ' (reference: 598.537)'
 
-    if True:
+    if False:
         print '====== HeliOptM ======'
         opt = set_as_top(HeliOptM())
 
