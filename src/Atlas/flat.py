@@ -18,6 +18,56 @@ from Atlas import Thrust, ActuatorDiskInducedVelocity
 
 from Atlas import AtlasConfiguration
 
+class Results(Component):
+    # inputs
+    b          = Int(iotype='in', desc='number of blades')
+    Ns         = Int(iotype='in', desc='number of elements')
+    yN         = Array(iotype='in', desc='node locations')
+    yE         = Array(iotype='in', desc='')
+    cE         = Array(iotype='in', desc='chord of each element')
+    Cl         = Array(iotype='in', desc='lift coefficient distribution')
+    q          = Array(iotype='in', desc='deformation')
+    phi        = Array(iotype='in', desc='')
+    collective = Float(iotype='in', desc='collective angle in radians')
+    fblade     = VarTree(Fblade(), iotype='in')
+    Mtot       = Float(0.0, iotype='in', desc='total mass')
+
+    # outputs
+    di         = Array(iotype='out', desc='dihedral angle')
+    alphaJig   = Array(iotype='out', desc='aerodynamic jig angle')
+    Ttot       = Float(iotype='out', desc='')
+    Qtot       = Float(iotype='out', desc='')
+    MomRot     = Float(iotype='out', desc='')
+    Ptot       = Float(iotype='out', desc='')
+
+    def execute(self):
+        # Compute aerodynamic jig angle
+        self.alphaJig = np.zeros(self.cE.shape)
+
+        qq = np.zeros((6, self.Ns+1))
+        for s in range(1, self.Ns+1):
+            qq[:, s] = self.q[s*6:s*6+6].T
+
+        Clalpha = 2*pi
+        for s in range(0, len(self.yN)-1):
+            self.alphaJig[s] = self.Cl[s] / Clalpha            \
+                             - (qq[4, s] + qq[4, s+1]) / 2     \
+                             + self.phi[s] - self.collective
+
+        # Compute dihedral angle
+        self.di = np.zeros((self.Ns, 1))
+        for s in range(0, self.Ns):
+            self.di[s] = arctan2(qq[2, s+1] - qq[2, s], self.yN[s+1] - self.yN[s])
+
+        # Compute totals
+        # (Note: reshaping is due to numpy vs MATLAB 1D array shapes.. should scrub this)
+        self.Ttot   = np.sum(self.fblade.Fz.reshape(-1, 1) * np.cos(self.di)) * self.b * 4
+        self.MomRot = np.sum(self.fblade.Fz.reshape(-1, 1) * self.yE.reshape(-1, 1))
+        self.Qtot   = np.sum(self.fblade.Q)  * self.b * 4
+        Pitot       = np.sum(self.fblade.Pi) * self.b * 4
+        Pptot       = np.sum(self.fblade.Pp) * self.b * 4
+        self.Ptot   = Pptot + Pitot  # non-covered centre
+
 class Switch(Component):
     """ select the appropriate source for blade force data """
 
@@ -49,22 +99,8 @@ class HeliCalc(Assembly):
         self.add('discrete', DiscretizeProperties())
         self.driver.workflow.add("discrete")
 
-        self.connect('config.Ns',           'discrete.Ns')
-        self.connect('config.ycmax_array',  'discrete.ycmax_array')
-        self.connect('config.R',            'discrete.R')
-        self.connect('config.c',            'discrete.c_in')
-        self.connect('config.Cl',           'discrete.Cl_in')
-        self.connect('config.Cm',           'discrete.Cm_in')
-        self.connect('config.t',            'discrete.t_in')
-        self.connect('config.xtU',          'discrete.xtU_in')
-        self.connect('config.xtL',          'discrete.xtL_in')
-        self.connect('config.xEA',          'discrete.xEA_in')
-        self.connect('config.yWire',        'discrete.yWire')
-        self.connect('config.d',            'discrete.d_in')
-        self.connect('config.theta',        'discrete.theta_in')
-        self.connect('config.nTube',        'discrete.nTube_in')
-        self.connect('config.nCap',         'discrete.nCap_in')
-        self.connect('config.lBiscuit',     'discrete.lBiscuit_in')
+        self.add('results', Results())
+        self.driver.workflow.add("results")
 
         self.add('thrust', Thrust())
         self.driver.workflow.add("thrust")
@@ -97,6 +133,37 @@ class HeliCalc(Assembly):
         # self.connect('switch.fblade',       'struc.fblade')
         # # self.connect('struc.q',             'aero2.q')
         # self.connect('aero2.Fblade',        'switch.fblade_updated')
+
+        self.connect('config.b',           'results.b')
+        self.connect('config.Ns',  'results.Ns')
+        self.connect('discrete.yN',            'results.yN')
+        self.connect('discrete.yE',            'results.yE')
+        self.connect('discrete.cE',           'results.cE')
+        self.connect('config.Cl',           'results.Cl')
+        self.connect('fem.q',            'results.q')
+        self.connect('lift_drag.phi',          'results.phi')
+        self.connect('config.collective',          'results.collective')
+        self.connect('lift_drag.Fblade',          'results.fblade')
+        self.connect('mass.Mtot',        'results.Mtot')
+
+
+        self.connect('config.Ns',           'discrete.Ns')
+        self.connect('config.ycmax_array',  'discrete.ycmax_array')
+        self.connect('config.R',            'discrete.R')
+        self.connect('config.c',            'discrete.c_in')
+        self.connect('config.Cl',           'discrete.Cl_in')
+        self.connect('config.Cm',           'discrete.Cm_in')
+        self.connect('config.t',            'discrete.t_in')
+        self.connect('config.xtU',          'discrete.xtU_in')
+        self.connect('config.xtL',          'discrete.xtL_in')
+        self.connect('config.xEA',          'discrete.xEA_in')
+        self.connect('config.yWire',        'discrete.yWire')
+        self.connect('config.d',            'discrete.d_in')
+        self.connect('config.theta',        'discrete.theta_in')
+        self.connect('config.nTube',        'discrete.nTube_in')
+        self.connect('config.nCap',         'discrete.nCap_in')
+        self.connect('config.lBiscuit',     'discrete.lBiscuit_in')
+
 
         self.connect('discrete.yN', 'chord.yN')
         self.connect('discrete.yN', 'strains.yN')
@@ -272,7 +339,7 @@ class HeliCalc(Assembly):
         #self.connect('fem.q',         'induced.q')
 
         self.add('driver', FixedPointIterator())
-        self.driver.max_iteration = 5  # 2 passes to emulate MATLAB code
+        self.driver.max_iteration = 10
         self.driver.tolerance = 1e-10
         self.driver.add_parameter('induced.q', low=-1e999, high=1e999)
         self.driver.add_constraint('induced.q = fem.q')
@@ -286,3 +353,5 @@ if __name__ == "__main__":
 
     top.run()
     print np.linalg.norm(top.fem.q - top.induced.q)
+    print top.config.Omega
+    print top.results.Ptot
