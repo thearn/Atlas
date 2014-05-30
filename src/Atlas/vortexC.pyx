@@ -200,7 +200,7 @@ def main_loop(
 
     return vz, vr, z, r, Gamma, vi
 
-q_dat = np.loadtxt("q.txt")
+q_dat = np.loadtxt("q.txt").reshape((66, 1))
 
 class VortexRingC(Component):
     """

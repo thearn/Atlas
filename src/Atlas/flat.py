@@ -106,12 +106,12 @@ class HeliCalc(Assembly):
 
         self.connect('discrete.yN', 'thrust.yN')
         self.connect('discrete.yN', 'spar.yN')
-        self.connect('discrete.yN', 'joint.yN')
+        #self.connect('discrete.yN', 'joint.yN')
 
         self.connect('discrete.lBiscuit', 'failure.lBiscuit')
         self.connect('discrete.lBiscuit', 'spar.lBiscuit')
 
-        self.connect('discrete.lBiscuit', 'joint.lBiscuit')
+        #self.connect('discrete.lBiscuit', 'joint.lBiscuit')
 
         self.connect('discrete.xtU', 'chord.xtU')
         self.connect('discrete.xtU', 'lift_drag.xtU')
@@ -126,7 +126,7 @@ class HeliCalc(Assembly):
         self.connect('discrete.nCap', 'failure.nCap')
 
         self.connect('discrete.nCap', 'spar.nCap')
-        self.connect('discrete.nCap', 'joint.nCap')
+        #self.connect('discrete.nCap', 'joint.nCap')
 
         self.connect('quad.EIx',          'failure.EIQuad')
 
@@ -139,12 +139,12 @@ class HeliCalc(Assembly):
         self.connect('discrete.nTube', 'failure.nTube')
 
         self.connect('discrete.nTube', 'spar.nTube')
-        self.connect('discrete.nTube', 'joint.nTube')
+        #self.connect('discrete.nTube', 'joint.nTube')
 
         self.connect('discrete.theta', 'failure.theta')
 
         self.connect('discrete.theta', 'spar.theta')
-        self.connect('discrete.theta', 'joint.theta')
+        #self.connect('discrete.theta', 'joint.theta')
 
         self.connect('discrete.xEA', 'mass.xEA')
         self.connect('discrete.xEA', 'fem.xEA')
@@ -155,7 +155,7 @@ class HeliCalc(Assembly):
         self.connect('discrete.d', 'lift_drag.d')
         self.connect('discrete.d', 'spar.d')
 
-        self.connect('discrete.d', 'joint.d')
+        #self.connect('discrete.d', 'joint.d')
 
         self.connect('spar.EIx',     'fem.EIx')
         self.connect('spar.EIz',     'fem.EIz')
@@ -285,4 +285,4 @@ if __name__ == "__main__":
     #plot_graphs(top)
 
     top.run()
-    print top.fem.q, top.induced.q
+    print np.linalg.norm(top.fem.q - top.induced.q)

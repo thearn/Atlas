@@ -580,7 +580,7 @@ class Failures(Component):
         TWire        = self.TWire
         TEtension    = self.TEtension
         b            = self.b
-        blade       = self.blade
+        blade        = self.Fblade
         mSpar        = self.mSpar
         mChord       = self.mChord
         mElseRotor   = self.mElseRotor
