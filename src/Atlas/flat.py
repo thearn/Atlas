@@ -45,7 +45,9 @@ class HeliCalc(Assembly):
 
     def configure(self):
         self.add('config', AtlasConfiguration())
+        self.driver.workflow.add("config")
         self.add('discrete', DiscretizeProperties())
+        self.driver.workflow.add("discrete")
 
         self.connect('config.Ns',           'discrete.Ns')
         self.connect('config.ycmax_array',  'discrete.ycmax_array')
@@ -65,20 +67,31 @@ class HeliCalc(Assembly):
         self.connect('config.lBiscuit',     'discrete.lBiscuit_in')
 
         self.add('thrust', Thrust())
+        self.driver.workflow.add("thrust")
 
         #self.add('induced', ActuatorDiskInducedVelocity()) # low
         self.add('induced', VortexRingC()) # high
+        self.driver.workflow.add("induced")
 
         self.add('lift_drag', LiftDrag())
+        self.driver.workflow.add("lift_drag")
         self.add('spar', SparProperties())
+        self.driver.workflow.add("spar")
         self.add('joint', JointSparProperties())
+        self.driver.workflow.add("joint")
         self.add('chord', ChordProperties())
+        self.driver.workflow.add("chord")
         self.add('quad', QuadSparProperties())
+        self.driver.workflow.add("quad")
         self.add('mass', MassProperties())
+        self.driver.workflow.add("mass")
         self.add('fem', FEM())
+        self.driver.workflow.add("fem")
 
         self.add('strains', Strains())
+        self.driver.workflow.add("strains")
         self.add('failure', Failures())
+        self.driver.workflow.add("failure")
 
         # self.connect('aero.Fblade',         'switch.fblade_initial')
         # self.connect('switch.fblade',       'struc.fblade')

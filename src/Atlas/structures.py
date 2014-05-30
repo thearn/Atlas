@@ -365,7 +365,6 @@ class FEM(Component):
         self.k = k
         self.K = K
         self.F = F
-        print self.q.shape
 
 
 class Strains(Component):
