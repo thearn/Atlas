@@ -200,6 +200,7 @@ def main_loop(
 
     return vz, vr, z, r, Gamma, vi
 
+q_dat = np.loadtxt("q.txt")
 
 class VortexRingC(Component):
     """
@@ -216,14 +217,20 @@ class VortexRingC(Component):
     Omega    = Float(iotype='in', desc='rotor angular velocity')
     h        = Float(iotype='in', desc='height of rotor')
     dT       = Array(iotype='in', desc='thrust')
-    q        = Array(iotype='in', desc='deformation')
+    q        = Array(q_dat, iotype='in', desc='deformation')
     anhedral = Float(iotype='in')
+
+    # needed for low fi
+    dr  = Array(iotype='in', desc='length of each element')
+    R   = Float(iotype='in', desc='rotor radius')
+    r     = Array(iotype='in', desc='radial location of each element')
+
 
     # outputs
     vi       = Array(iotype='out', desc='induced velocity')
     Gamma    = Array(iotype='out', desc='vortex strength')
     z        = Array(iotype='out', desc='')
-    r        = Array(iotype='out', desc='')
+    ring        = Array(iotype='out', desc='')
     vz       = Array(iotype='out', desc='')
     vr       = Array(iotype='out', desc='')
 
@@ -250,6 +257,7 @@ class VortexRingC(Component):
 
         # Break out deformations
         qq = np.zeros((6, self.Ns+1))
+
         for s in range(1, self.Ns+1):
             qq[:, s] = self.q[s*6:s*6+6].T
         qh = (qq[2, :] - self.yN.T * self.anhedral).flatten()
@@ -261,7 +269,7 @@ class VortexRingC(Component):
         # pre-allocate
         self.Gamma = np.zeros((Nw+1, self.Ns+1))
         self.z     = np.zeros((Nw+1, self.Ns+1))
-        self.r     = np.zeros((Nw+1, self.Ns+1))
+        self.ring     = np.zeros((Nw+1, self.Ns+1))
         self.vz    = np.zeros((Nw+1, self.Ns+1))
         self.vr    = np.zeros((Nw+1, self.Ns+1))
         self.vi    = np.zeros((self.Ns, 1))
@@ -274,10 +282,10 @@ class VortexRingC(Component):
             self.Gamma[0, s] = GammaBound[s-1] - GammaBound[s]
         self.Gamma[0, self.Ns] = GammaBound[self.Ns-1]
 
-        self.r[0, :] = self.yN.T
+        self.ring[0, :] = self.yN.T
         self.z[0, :] = qh[:]
 
-        self.vz, self.vr, self.z, self.r, self.Gamma, self.vi = main_loop(
+        self.vz, self.vr, self.z, self.ring, self.Gamma, self.vi = main_loop(
             self.h,
             self.rho,
             yE,
@@ -287,7 +295,7 @@ class VortexRingC(Component):
             Ntt,
             self.Ns,
             self.z,
-            self.r,
+            self.ring,
             self.Gamma,
             self.Omega,
             self.dT,

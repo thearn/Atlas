@@ -99,8 +99,7 @@ class LiftDrag(Component):
                     ReWire = self.rho * U * self.tWire / self.visc
                     CdWire = -1e-10*ReWire**3 + 7e-07*ReWire**2 - 0.0013*ReWire + 1.7397
                     dD = dD + 0.5 * self.rho * U**2 * CdWire * self.tWire * L
-            print self.vc + self.vi[s][0], self.vw + self.Omega * self.r[s]
-            print arctan2(self.vc + self.vi[s][0], self.vw + self.Omega * self.r[s])
+
             self.phi[s] = arctan2(self.vc + self.vi[s][0], self.vw + self.Omega * self.r[s])
             self.Fblade.Fz[s] = self.chordFrac[s] * (dL * cos(self.phi[s]) - dD * sin(self.phi[s]))
             self.Fblade.Fx[s] = self.chordFrac[s] * (dD * cos(self.phi[s]) + dL * sin(self.phi[s]))

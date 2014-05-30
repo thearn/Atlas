@@ -4,7 +4,7 @@ from numpy import pi, sqrt, sin, cos, tan
 from util import arctan2
 
 from openmdao.main.api import Assembly, Component, VariableTree
-from openmdao.lib.datatypes.api import Int, Float, Array, VarTree
+from openmdao.lib.datatypes.api import Int, Str, Enum, Float, Array, VarTree
 
 from configuration import Flags, PrescribedLoad
 from properties import JointProperties, \
@@ -72,7 +72,9 @@ class MassProperties(Component):
     """
 
     # inputs
-    flags    = VarTree(Flags(), iotype='in')
+    Cover    = Int(0, iotype='in', desc='0 - no cover over root rotor blades, 1 - cover')
+    WireType = Enum('Pianowire', ('Pianowire', 'Vectran'), iotype='in', desc='Material to be used for lift wire')
+    Quad     = Int(1, iotype='in', desc='0 - prop drive, 1 - quad rotor')
     b        = Int(iotype='in', desc='number of blades')
     mSpar    = Array(iotype='in', desc='mass of spars')
     mChord   = Array(iotype='in', desc='mass of chords')
@@ -101,18 +103,18 @@ class MassProperties(Component):
     def execute(self):
         self.xCG = ((self.xCGChord * self.mChord) + (self.xEA * self.mSpar)) / (self.mChord + self.mSpar)
 
-        if self.flags.Cover:
+        if self.Cover:
             self.mCover = (self.ycmax**2 * 0.0528 + self.ycmax * 0.605 / 4) * 1.15
         else:
             self.mCover = 0
 
-        wire_props = wireProperties[self.flags.WireType]
+        wire_props = wireProperties[self.WireType]
 
         LWire = sqrt(self.zWire**2 + self.yWire[0]**2)
 
         self.mWire = pi * (self.tWire / 2)**2 * wire_props['RHO'] * LWire
 
-        if self.flags.Quad:
+        if self.Quad:
             self.Mtot = (np.sum(self.mSpar)*self.b + np.sum(self.mChord)*self.b + self.mWire*self.b + self.mQuad + self.mCover) * 4 \
                       + self.mElseRotor + self.mElseCentre + self.mElseR * self.R + self.mPilot
         else:
@@ -126,7 +128,9 @@ class FEM(Component):
     """
 
     # inputs
-    flags    = VarTree(Flags(), iotype='in')
+    #flags    = VarTree(Flags(), iotype='in')
+    Load         = Int(0, iotype='in', desc='0 - normal run, 1 - gravity forces only, 2 - prescribed load from pLoad')
+    wingWarp     = Int(0, iotype='in', desc='0 - no twist constraint, >0 - twist constraint at wingWarp')
 
     yN  = Array(iotype='in', desc='')
 
@@ -240,7 +244,7 @@ class FEM(Component):
                 K[(6*s):(6*s + 12), (6*s):(6*s + 12)] + k[:, :, s]
 
             Faero = np.zeros((6, 1))
-            if self.flags.Load == 0:  # include aero forces
+            if self.Load == 0:  # include aero forces
                 # aerodynamic forces
                 xAC = 0.25
                 Faero[0] = Fblade.Fx[s] / 2
@@ -253,7 +257,7 @@ class FEM(Component):
             Fg = np.zeros((6, 1))
             Fwire = np.zeros((12, 1))
 
-            if (self.flags.Load == 0) or (self.flags.Load == 1):
+            if (self.Load == 0) or (self.Load == 1):
                 # gravitational forces
                 g = 9.81
                 Fg[0] = 0
@@ -288,7 +292,7 @@ class FEM(Component):
 
             Fpres = np.zeros((12, 1))
 
-            if self.flags.Load == 2:
+            if self.Load == 2:
                 # Prescribed point load (using consistent force vector)
                 if (presLoad.y >= yN[s]) and (presLoad.y < yN[s+1]):
                     a = presLoad.y - yN[s]
@@ -336,11 +340,11 @@ class FEM(Component):
 
         # Add constraints to all 6 dof at root
 
-        if self.flags.wingWarp > 0:  # Also add wingWarping constraint
+        if self.wingWarp > 0:  # Also add wingWarping constraint
             raise Exception('FEM is untested and surely broken for wingWarp > 0')
             ii = np.array([])
             for ss in range((Ns+1)*6 - 1):
-                if (ss > 5) and (ss != self.flags.wingWarp*6 + 5):
+                if (ss > 5) and (ss != self.wingWarp*6 + 5):
                     ii = np.array([ii, ss]).reshape(1, -1)
             Fc = F[(ii-1)]
             Kc = K[(ii-1), (ii-1)]
@@ -351,7 +355,7 @@ class FEM(Component):
         # Solve constrained system
         qc, _, _, _ = np.linalg.lstsq(Kc, Fc)
 
-        if self.flags.wingWarp > 0:
+        if self.wingWarp > 0:
             self.q[ii, 1] = qc
         else:
             # self.q = np.array([0, 0, 0, 0, 0, 0, qc]).reshape(1, -1)
@@ -361,6 +365,7 @@ class FEM(Component):
         self.k = k
         self.K = K
         self.F = F
+        print self.q.shape
 
 
 class Strains(Component):
@@ -486,7 +491,9 @@ class Failures(Component):
     Computes the factor of safety for each of the failure modes of the spar.
     """
     # inputs
-    flags        = VarTree(Flags(), iotype='in')
+    #flags        = VarTree(Flags(), iotype='in')
+    CFRPType     = Str('NCT301-1X HS40 G150 33 +/-2%RW', iotype='in', desc='type of carbon fibre reinforced polymer')
+    WireType     = Enum('Pianowire', ('Pianowire', 'Vectran'), iotype='in', desc='Material to be used for lift wire')
 
     yN           = Array(iotype='in', desc='')
 
@@ -550,7 +557,6 @@ class Failures(Component):
         # factor of safety for each failure mode
 
         # short aliases
-        flags        = self.flags
         yN           = self.yN
         Finternal    = self.Finternal
         strain       = self.strain
@@ -587,10 +593,10 @@ class Failures(Component):
         fail = Failure()
 
         # Material failure
-        fail.top    = self.material_failure(Ns, strain.top,    theta, nCap, flags)
-        fail.bottom = self.material_failure(Ns, strain.bottom, theta, nCap, flags)
-        fail.back   = self.material_failure(Ns, strain.back,   theta, [],   flags)
-        fail.front  = self.material_failure(Ns, strain.front,  theta, [],   flags)
+        fail.top    = self.material_failure(Ns, strain.top,    theta, nCap)
+        fail.bottom = self.material_failure(Ns, strain.bottom, theta, nCap)
+        fail.back   = self.material_failure(Ns, strain.back,   theta, [])
+        fail.front  = self.material_failure(Ns, strain.front,  theta, [])
 
         # Euler Buckling failure in main spar from wire force
         k  = 0.7    # pinned-pinned = 1, fixed-pinned = 0.7 with correction factor
@@ -619,7 +625,7 @@ class Failures(Component):
 
         # Torsional Buckling failure
         fail.buckling.torsion = self.torsional_buckling_failure(Ns,
-            Finternal, d, theta, nTube, nCap, lBiscuit, flags)
+            Finternal, d, theta, nTube, nCap, lBiscuit)
 
         # Quad Buckling failure
         if EIQuad != 0:
@@ -638,7 +644,7 @@ class Failures(Component):
             TbottomWire = TQuad / tan(alpha)
             BM = TbottomWire * zWire + RotorMoment
             strainQuad = -np.array([BM * (dQuad / 2) / EIQuad, 0, 0]).reshape(1, -1).T  # strain on compression side
-            mf = self.material_failure(1, strainQuad, [thetaQuad], [], flags)
+            mf = self.material_failure(1, strainQuad, [thetaQuad], [])
             fail.quad_bend = abs_complex(mf.plus[0, 0])  # use only compressive failure in fibre direction
         else:
             fail.quad_bend = 0
@@ -646,7 +652,7 @@ class Failures(Component):
         # Quad torsional material failure
         if GJQuad != 0:
             strainQuad = np.array([0,  0, dQuad / 2 * RotorMoment / GJQuad]).reshape(1,  -1).T
-            mf = self.material_failure(1, strainQuad, [thetaQuad], [], flags)
+            mf = self.material_failure(1, strainQuad, [thetaQuad], [])
             fail.quad_torsion = abs_complex(mf.plus[0, 0])
         else:
             fail.quad_torsion = 0
@@ -654,11 +660,11 @@ class Failures(Component):
         # Quad torsional buckling failure
         FRotorMoment = np.array([0, 0, 0, 0, RotorMoment]).reshape(1,  -1).T
         tbf = self.torsional_buckling_failure(1,
-            FRotorMoment, [dQuad], [thetaQuad], [nTubeQuad], [0], [lBiscuitQuad], flags)
+            FRotorMoment, [dQuad], [thetaQuad], [nTubeQuad], [0], [lBiscuitQuad])
         fail.quad_torbuck = tbf[0]
 
         # Wire tensile failure
-        wire_props = wireProperties[flags.WireType]
+        wire_props = wireProperties[self.WireType]
         fail.wire = np.zeros(len(yWire))
         for i in range(len(yWire)):
             stress_wire = TWire[i] / (pi*(tWire/2)**2)
@@ -666,17 +672,17 @@ class Failures(Component):
 
         self.fail = fail
 
-    def material_failure(self,  Ns, strain, theta, nCap, flags):
+    def material_failure(self,  Ns, strain, theta, nCap):
         failure = MaterialFailure()
         failure.cap = np.zeros((3, Ns+1))
         failure.plus = np.zeros((3, Ns+1))
         failure.minus = np.zeros((3, Ns+1))
 
         # Material Properties
-        tube_props = prepregProperties[flags.CFRPType]
+        tube_props = prepregProperties[self.CFRPType]
 
         # Cap Prepreg Properties (MTM28-M46J 140 37 %RW 12")
-        cap_props = prepregProperties[flags.CFRPType]
+        cap_props = prepregProperties[self.CFRPType]
 
         # Populate Q matrix for tube
         Q_TUBE = np.zeros((3, 3))
@@ -793,9 +799,9 @@ class Failures(Component):
 
         return failure
 
-    def torsional_buckling_failure(self, Ns, Finternal, d, theta, nTube, nCap, lBiscuit, flags):
+    def torsional_buckling_failure(self, Ns, Finternal, d, theta, nTube, nCap, lBiscuit):
         # Material Properties
-        tube_props = prepregProperties[flags.CFRPType]
+        tube_props = prepregProperties[self.CFRPType]
         V_21_TUBE = tube_props['V_12'] * (tube_props['E_22'] / tube_props['E_11'])
 
         # Coordinate system: x is axial direction, theta is circumferential direction

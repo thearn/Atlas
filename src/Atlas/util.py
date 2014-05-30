@@ -12,4 +12,6 @@ def arctan2(x,y):
     b=x.imag
     c=y.real
     d=y.imag
+    if b == 0. and d== 0.:
+        return math.atan2(a,c)
     return complex(math.atan2(a,c),(c*b-a*d)/(a**2+c**2))
