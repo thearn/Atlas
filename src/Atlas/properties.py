@@ -394,7 +394,7 @@ class DiscretizeProperties(Component):
 
     # inputs
     Ns          = Int(iotype='in', desc='number of elements')
-    ycmax       = Array(iotype='in', desc='')
+    ycmax_array       = Array(iotype='in', desc='')
     R           = Float(iotype='in', desc='')
     c_in        = Array(iotype='in', desc='')
     Cl_in       = Array(iotype='in', desc='')
@@ -458,9 +458,9 @@ class DiscretizeProperties(Component):
         # compute node locations
         for s in range(self.Ns+1):
             self.yN[s] = self.R / self.Ns*s
-            if self.yN[s] < self.ycmax[0]:
+            if self.yN[s] < self.ycmax_array[0]:
                 sTrans[0] = s+1
-            if self.yN[s] < self.ycmax[1]:
+            if self.yN[s] < self.ycmax_array[1]:
                 sTrans[1] = s+1
 
         # compute element locations
@@ -471,12 +471,12 @@ class DiscretizeProperties(Component):
         for s in range(self.Ns):
             if (s+1) < sTrans[0]:
                 # root section
-                x = self.yE[s] / self.ycmax[0]
+                x = self.yE[s] / self.ycmax_array[0]
                 self.cE[s] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
             else:
                 # chord section
                 # compute curve component
-                x = (self.yE[s] - self.ycmax[0]) / (self.R - self.ycmax[0])
+                x = (self.yE[s] - self.ycmax_array[0]) / (self.R - self.ycmax_array[0])
                 pStart = self.c_in[2]
                 pCurve = self.c_in[3]
                 pEnd = self.c_in[4]
@@ -484,7 +484,7 @@ class DiscretizeProperties(Component):
                 cZ[s] = pStart + (pEnd - pStart) * xx
 
                 # compute 1/r component
-                c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax[0])
+                c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax_array[0])
                 cR[s] = self.c_in[4] * self.R / self.yE[s] * (c3 + (1 - c3) * x)
 
                 # average based on c_in(2)
@@ -496,7 +496,7 @@ class DiscretizeProperties(Component):
         # compute chord for display purposes
         for s in range(1, Ns100+2):
             yN100[s-1] = self.R / Ns100 * (s-1)
-            if all(yN100[s-1] < self.ycmax):
+            if all(yN100[s-1] < self.ycmax_array):
                 sTrans100 = s
 
         for s in range(Ns100):
@@ -505,12 +505,12 @@ class DiscretizeProperties(Component):
         for s in range(Ns100):
             if (s+1) < sTrans100:
                 # root section
-                x = yE100[s] / self.ycmax[0]
+                x = yE100[s] / self.ycmax_array[0]
                 self.c100[s] = self.c_in[0] + x * (self.c_in[1] - self.c_in[0])
             else:
                 # chord section
                 # compute chord component
-                x = (yE100[s] - self.ycmax[0]) / (self.R - self.ycmax[0])
+                x = (yE100[s] - self.ycmax_array[0]) / (self.R - self.ycmax_array[0])
                 pStart = self.c_in[2]
                 pCurve = self.c_in[3]
                 pEnd = self.c_in[4]
@@ -518,7 +518,7 @@ class DiscretizeProperties(Component):
                 cZ100[s] = pStart + (pEnd - pStart) * xx
 
                 # compute 1/r component
-                c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax[0])
+                c3 = self.c_in[2] / (self.c_in[4] * self.R / self.ycmax_array[0])
                 cR100[s] = self.c_in[4] * self.R / yE100[s] * (c3 + (1 - c3) * x)
 
                 # average based on c_in(2)
@@ -528,7 +528,7 @@ class DiscretizeProperties(Component):
                 self.c100[s] = 0.001
 
         # Compute aero properties for each element
-        Y = np.array([self.ycmax[0], self.ycmax[1], self.R])
+        Y = np.array([self.ycmax_array[0], self.ycmax_array[1], self.R])
         for s in range(self.Ns):
             if (s+1) < sTrans[0]:
                 # root section
@@ -556,7 +556,7 @@ class DiscretizeProperties(Component):
         # compute xtU and xtL for each element
         # changes instantly from xtU(1) to xtU(3) at point xtU(2)
         for s in range(0, self.Ns+1):
-            if self.yN[s] < self.ycmax[0]:
+            if self.yN[s] < self.ycmax_array[0]:
                 sTrans[0] = (s+1)
             if self.yN[s] < self.xtU_in[1]:
                 sTrans[1] = (s+1)
@@ -605,7 +605,7 @@ class ChordProperties(Component):
 
     # inputs
     yN = Array(iotype='in', desc='node locations')
-    c  = Array(iotype='in', desc='chord')
+    cE  = Array(iotype='in', desc='chord')
     d  = Array(iotype='in', desc='spar diameter')
     GWing = Int(iotype='in', desc='0 - Daedalus style wing, 1 - Gossamer style wing (changes amount of laminar flow)')
     xtU = Array(iotype='in', desc='')
@@ -682,11 +682,11 @@ class ChordProperties(Component):
         # Compute mChord for each element
         for s in range(1, (Ns+1)):
             # Rib Mass & Xcg
-            mass_rib_foam = RHO_EPS * (thickness_rib * ((self.c[(s-1)] ** 2) * AREA_AIRFOIL))
-            mass_rib_caps = RHO_BASSWOOD * (thickness_rib * thickness_rib_caps * (percent_rib_caps * PERIMETER_AIRFOIL * self.c[(s-1)]))
-            mass_rib_plate_spar = RHO_BALSA * (thickness_spar_plate * (pi * (((self.c[(s-1)] * percent_radius_spar_plate) ** 2) - ((self.d[(s-1)] / 2) ** 2))))
+            mass_rib_foam = RHO_EPS * (thickness_rib * ((self.cE[(s-1)] ** 2) * AREA_AIRFOIL))
+            mass_rib_caps = RHO_BASSWOOD * (thickness_rib * thickness_rib_caps * (percent_rib_caps * PERIMETER_AIRFOIL * self.cE[(s-1)]))
+            mass_rib_plate_spar = RHO_BALSA * (thickness_spar_plate * (pi * (((self.cE[(s-1)] * percent_radius_spar_plate) ** 2) - ((self.d[(s-1)] / 2) ** 2))))
             if self.GWing == 0:
-                mass_rib_plate_TE = RHO_BALSA * (thickness_TE_plate * ((1.0 / 2) * (self.c[(s-1)] ** 2) * percent_height_TE_plate * percent_length_TE_plate))
+                mass_rib_plate_TE = RHO_BALSA * (thickness_TE_plate * ((1.0 / 2) * (self.cE[(s-1)] ** 2) * percent_height_TE_plate * percent_length_TE_plate))
                 mass_rib = AF_ribs * ((dy[(s-1)] / rib_spacing) * (mass_rib_foam + mass_rib_caps + 2 * mass_rib_plate_spar + 2 * mass_rib_plate_TE))
                 Xcg_rib = XCG_AIRFOIL
             else:
@@ -696,30 +696,30 @@ class ChordProperties(Component):
             # Trailing Edge Mass & Xcg
             if self.GWing == 0:
                 mass_TE = AF_TE * (RHO_STRUCTURAL_FOAM * dy[(s-1)] * ((1.0 / 2) * (length_TE_foam * height_TE_foam)) + RHO_KEVLAR * dy[(s-1)] * T_PLY_KEVLAR * (length_TE_foam + height_TE_foam + sqrt(length_TE_foam ** 2 + height_TE_foam ** 2)))
-                Xcg_TE = (self.c[(s-1)] - (2.0 / 3) * length_TE_foam) / self.c[(s-1)]
+                Xcg_TE = (self.cE[(s-1)] - (2.0 / 3) * length_TE_foam) / self.cE[(s-1)]
             else:
                 mass_TE = RHO_STEEL_WIRE * dy[(s-1)] * pi * ((diameter_piano_wire / 2) ** 2)
                 Xcg_TE = 1
 
             # Leading Edge Sheeting Mass
             if self.GWing == 0:
-                mass_LE_sheeting = AF_leading_edge_sheeting * (RHO_XPS * dy[(s-1)] * self.c[(s-1)] * (percent_LE_sheeting_top + percent_LE_sheeting_bottom) * PERIMETER_AIRFOIL * thickness_LE_sheeting)
+                mass_LE_sheeting = AF_leading_edge_sheeting * (RHO_XPS * dy[(s-1)] * self.cE[(s-1)] * (percent_LE_sheeting_top + percent_LE_sheeting_bottom) * PERIMETER_AIRFOIL * thickness_LE_sheeting)
                 Xcg_LE_sheeting = (1.0 / 2) * ((1.0 / 2) * (percent_LE_sheeting_top) + (1.0 / 2) * (percent_LE_sheeting_bottom))
             else:
-                mass_LE_sheeting = AF_leading_edge_sheeting_GWing * (RHO_EPS * dy[(s-1)] * self.c[(s-1)] * (percent_LE_sheeting_top_GWing[(s-1)] + percent_LE_sheeting_bottom) * PERIMETER_AIRFOIL * thickness_LE_sheeting) + RHO_STEEL_WIRE * dy[(s-1)] * pi * ((diameter_piano_wire / 2) ** 2)
+                mass_LE_sheeting = AF_leading_edge_sheeting_GWing * (RHO_EPS * dy[(s-1)] * self.cE[(s-1)] * (percent_LE_sheeting_top_GWing[(s-1)] + percent_LE_sheeting_bottom) * PERIMETER_AIRFOIL * thickness_LE_sheeting) + RHO_STEEL_WIRE * dy[(s-1)] * pi * ((diameter_piano_wire / 2) ** 2)
                 Xcg_LE_sheeting = (1.0 / 2) * ((1.0 / 2) * (percent_LE_sheeting_top_GWing[(s-1)]) + (1.0 / 2) * (percent_LE_sheeting_bottom))
 
             # Covering Mass (Mylar, use perimeter estimates from HPO airfoils)
-            mass_covering = AF_covering * (RHO_MYLAR * dy[(s-1)] * self.c[(s-1)] * PERIMETER_AIRFOIL * T_MYLAR)
+            mass_covering = AF_covering * (RHO_MYLAR * dy[(s-1)] * self.cE[(s-1)] * PERIMETER_AIRFOIL * T_MYLAR)
             Xcg_covering = 0.5
 
             # Trailing Edge Spar and In-Plane Truss Mass & Xcg (TE Spar, Kevlar cross-bracing, compression members)
             if self.GWing == 0:
                 mass_TE_spar = AF_TE_spar * (RHO_CARBON * dy[(s-1)] * (pi * (((d_TE_spar / 2) + nTube_TE_spar * T_PLY_CARBON) ** 2 - (d_TE_spar / 2) ** 2)))
                 Xcg_TE_spar = 0.9
-                mass_comp_member = AF_comp_member * (dy[(s-1)] / spacing_comp_member) * RHO_CARBON * (self.c[(s-1)] * percent_length_comp_member) * (pi * (((d_comp_member / 2) + nTube_comp_member * T_PLY_CARBON) ** 2 - (d_comp_member / 2) ** 2))
+                mass_comp_member = AF_comp_member * (dy[(s-1)] / spacing_comp_member) * RHO_CARBON * (self.cE[(s-1)] * percent_length_comp_member) * (pi * (((d_comp_member / 2) + nTube_comp_member * T_PLY_CARBON) ** 2 - (d_comp_member / 2) ** 2))
                 Xcg_comp_member = 0.25 + (1.0 / 2) * (percent_length_comp_member)
-                mass_cross_bracing = AF_cross_bracing * RHO_KEVLAR * (dy[(s-1)] / spacing_comp_member) * 2 * (pi * (d_cross_bracing / 2) ** 2) * ((((self.c[(s-1)] * percent_length_comp_member) ** 2) + ((spacing_comp_member) ** 2)) ** (1.0 / 2))
+                mass_cross_bracing = AF_cross_bracing * RHO_KEVLAR * (dy[(s-1)] / spacing_comp_member) * 2 * (pi * (d_cross_bracing / 2) ** 2) * ((((self.cE[(s-1)] * percent_length_comp_member) ** 2) + ((spacing_comp_member) ** 2)) ** (1.0 / 2))
                 Xcg_cross_bracing = 0.25 + (1.0 / 2) * (percent_length_comp_member)
             else:
                 mass_TE_spar = 0

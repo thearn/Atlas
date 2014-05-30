@@ -45,7 +45,28 @@ class AtlasConfiguration(Component):
     ''' Atlas configuration
     '''
     # outputs (manual configuration)
-    flags = VarTree(Flags(), iotype='out')
+
+    # flags
+    Opt          = Int(1, iotype='out', desc='0 - single run, 1 - optimization')
+    ConFail      = Int(0, iotype='out', desc='1 - use structural failure as a constraint on optimization')
+    ConWireCont  = Int(0, iotype='out', desc='1 - use wire length continuity as a constraint to set appropriate wire forces in multi-point optimizations')
+    ConJigCont   = Int(0, iotype='out', desc='1 - use jig continuity')
+    ConDef       = Int(0, iotype='out', desc='1 - constraints on maximum deformation of the rotor')
+    MultiPoint   = Int(4, iotype='out', desc='0 - single point optimization, 1 - 4 point optimization (h=0.5, h=3, wind case, gravity load)')
+    Quad         = Int(1, iotype='out', desc='0 - prop drive, 1 - quad rotor')
+    FreeWake     = Int(1, iotype='out', desc='0 - momentum theory, 1 - free vortex ring wake')
+    PlotWake     = Int(0, iotype='out', desc='0 - dont plot wake, 1 - plot wake ')
+    DynamicClimb = Int(0, iotype='out', desc='0 - vc imposes downward velocity, 1 - vc represents climb (final altitude depends on Nw)')
+    Cover        = Int(0, iotype='out', desc='0 - no cover over root rotor blades, 1 - cover')
+    Load         = Int(0, iotype='out', desc='0 - normal run, 1 - gravity forces only, 2 - prescribed load from pLoad')
+    Cdfit        = Int(1, iotype='out', desc='0 - analytic model for drag coefficient, 1 - curve fit on BE airfoils')
+    GWing        = Int(1, iotype='out', desc='0 - Daedalus style wing, 1 - Gossamer style wing (changes amount of laminar flow)')
+    AeroStr      = Int(1, iotype='out', desc='0 - Assume flat wing, 1 - take deformation into account')
+    Movie        = Int(0, iotype='out', desc='0 - dont save animation, 1 - save animation')
+    wingWarp     = Int(0, iotype='out', desc='0 - no twist constraint, >0 - twist constraint at wingWarp')
+    CFRPType     = Str('NCT301-1X HS40 G150 33 +/-2%RW', iotype='out', desc='type of carbon fibre reinforced polymer')
+    WireType     = Enum('Pianowire', ('Pianowire', 'Vectran'), iotype='out', desc='Material to be used for lift wire')
+
 
     b  = Int(2,  iotype='out', desc='number of blades')
     Ns = Int(10, iotype='out', desc='number of elements')
@@ -53,7 +74,8 @@ class AtlasConfiguration(Component):
     R     = Float(10.0, iotype='out', desc='rotor radius')
     H     = Float(0.5,  iotype='out', desc='height of aircraft')
 
-    ycmax = Array(np.array([1.4656, 3.2944]), iotype='out')
+    ycmax_array = Array(np.array([1.4656, 3.2944]), iotype='out')
+    ycmax = Float(1.4656, iotype='out')
 
     rho   = Float(1.18, iotype='out', desc='air density')
     vw    = Float(0.0,  iotype='out', desc='wind velocity')
@@ -126,6 +148,7 @@ class AtlasConfiguration(Component):
         self.force_execute = True
 
     def execute(self):
+        self.ycmax = self.ycmax_array[0]
         self.yN = np.linspace(0, self.R, self.Ns+1)
 
         self.dr = np.zeros(self.Ns)

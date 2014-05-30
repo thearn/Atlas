@@ -138,7 +138,7 @@ class FEM(Component):
     cE  = Array(iotype='in', desc='chord of each element')
     xEA = Array(iotype='in', desc='')
 
-    fblade = VarTree(Fblade(), iotype='in')
+    Fblade = VarTree(Fblade(), iotype='in')
 
     mSpar  = Array(iotype='in', desc='mass of spars')
     mChord = Array(iotype='in', desc='mass of chords')
@@ -171,7 +171,7 @@ class FEM(Component):
         yWire = self.yWire
         zWire = self.zWire
         TWire = self.TWire
-        fblade = self.fblade
+        Fblade = self.Fblade
         presLoad = self.presLoad
 
         Ns = len(yN) - 1  # number of elements
@@ -243,12 +243,12 @@ class FEM(Component):
             if self.flags.Load == 0:  # include aero forces
                 # aerodynamic forces
                 xAC = 0.25
-                Faero[0] = fblade.Fx[s] / 2
+                Faero[0] = Fblade.Fx[s] / 2
                 Faero[1] = 0
-                Faero[2] = fblade.Fz[s] / 2
-                Faero[3] = fblade.Fz[s] * dy[s] / 12
-                Faero[4] = fblade.My[s] / 2 + (xEA[s] - xAC) * cE[s] * fblade.Fz[s] / 2
-                Faero[5] = -fblade.Fx[s] * dy[s] / 12
+                Faero[2] = Fblade.Fz[s] / 2
+                Faero[3] = Fblade.Fz[s] * dy[s] / 12
+                Faero[4] = Fblade.My[s] / 2 + (xEA[s] - xAC) * cE[s] * Fblade.Fz[s] / 2
+                Faero[5] = -Fblade.Fx[s] * dy[s] / 12
 
             Fg = np.zeros((6, 1))
             Fwire = np.zeros((12, 1))
@@ -518,7 +518,7 @@ class Failures(Component):
 
     # all this to get TQuad... maybe should be split out
     b            = Int(iotype='in', desc='number of blades')
-    fblade       = VarTree(Fblade(), iotype='in')
+    Fblade       = VarTree(Fblade(), iotype='in')
     mSpar        = Array(iotype='in', desc='mass of spars')
     mChord       = Array(iotype='in', desc='mass of chords')
     mElseRotor   = Float(iotype='in', desc='')
@@ -575,12 +575,12 @@ class Failures(Component):
         TWire        = self.TWire
         TEtension    = self.TEtension
         b            = self.b
-        fblade       = self.fblade
+        blade       = self.blade
         mSpar        = self.mSpar
         mChord       = self.mChord
         mElseRotor   = self.mElseRotor
 
-        TQuad = np.sum(fblade.Fz)*b - (np.sum(mSpar + mChord)*b + mElseRotor/4) * 9.81
+        TQuad = np.sum(blade.Fz)*b - (np.sum(mSpar + mChord)*b + mElseRotor/4) * 9.81
 
         Ns = max(yN.shape) - 1  # number of elements
 
@@ -931,7 +931,7 @@ class Structures(Assembly):
     mPilot       = Float(iotype='in', desc='mass of pilot')
 
     # inputs for FEM
-    fblade       = VarTree(Fblade(), iotype='in')
+    blade       = VarTree(Fblade(), iotype='in')
     presLoad     = VarTree(PrescribedLoad(), iotype='in')
 
     def configure(self):
@@ -1028,7 +1028,7 @@ class Structures(Assembly):
         self.connect('RQuad',             'failure.RQuad')
         self.connect('hQuad',             'failure.hQuad')
         self.connect('quad.EIx',          'failure.EIQuad')
-        self.connect('quad.GJ',           'failure.GJQuad')
+        self.connect('quad.GJ',           'failure.GJ')
         self.connect('tWire',             'failure.tWire')
         self.connect('TWire',             'failure.TWire')
         self.connect('TEtension',         'failure.TEtension')
