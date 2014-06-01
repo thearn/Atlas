@@ -29,10 +29,7 @@ class ConfigLow(AtlasConfiguration):
         # use optimizer provided values
         self.Omega = self.Omega_opt
 
-        self.H     = self.H_opt + self.zWire
-
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
+        self.h     = self.H_opt + self.zWire
 
 
 class AeroStructuralLow(AeroStructural):
@@ -75,12 +72,9 @@ class ConfigHigh(AtlasConfiguration):
         self.Cl[0] = self.Cl0_opt
         self.Cl[1] = self.Cl1_opt
 
-        self.H = self.H_opt + self.zWire
+        self.h = self.H_opt + self.zWire
 
         self.TWire = [self.TWire_opt]
-
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
 
 
 class AeroStructuralHigh(AeroStructural):
@@ -127,14 +121,11 @@ class ConfigWind(AtlasConfiguration):
 
         self.Cl = self.Cl_opt
 
-        self.H = self.H_opt + self.zWire
+        self.h = self.H_opt + self.zWire
 
         self.TWire = [self.TWire_opt]
 
         self.vw = self.vw_opt
-
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
 
 
 class AeroStructuralWind(AeroStructural):
@@ -180,12 +171,9 @@ class ConfigGravity(AtlasConfiguration):
 
         self.Cl = self.Cl_opt
 
-        self.H = self.H_opt + self.zWire
+        self.h = self.H_opt + self.zWire
 
         self.TWire = [self.TWire_opt]
-
-        print self.parent.name, '\t', self.H, '\t',  self.Omega, '\t', self.vw, '\t', self.TWire
-        print '\t', self.Cl
 
 
 class AeroStructuralGravity(AeroStructural):
@@ -384,12 +372,28 @@ class HeliOptM(Assembly):
 if __name__ == '__main__':
     # TODO: create units tests for the following
 
+    if False:
+        print '====== High Altitude ======'
+        high = set_as_top(AeroStructuralHigh())
+
+        high.Omega_opt = 1.0771
+        high.Cl0_opt   = 1.4
+        high.Cl1_opt   = 1.3
+        high.H_opt     = 3.5
+        high.TWire_opt = 900
+
+        high.run()
+
+        print 'high Ptot =', high.Ptot, ' (reference:  846.6429)'
+        print 'high Mtot =', high.Mtot, ' (reference:  126.1670)'
+        print 'high Ttot =', high.Ttot, ' (reference: 1236.4368)'
+
     if True:
         print '====== Multipoint ======'
         mp = set_as_top(Multipoint())
 
-        mp.alt_low = 0.5         # low altitude
-        mp.alt_high = 3.5        # high altitude
+        mp.alt_low   = 0.5       # low altitude
+        mp.alt_high  = 3.5       # high altitude
         mp.alt_ratio = 35./60.   # proportion of time near ground
 
         mp.TWire_high = 900

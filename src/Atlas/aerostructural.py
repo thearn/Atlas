@@ -61,6 +61,8 @@ class Results(Component):
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
         self.Ptot   = Pptot + Pitot  # non-covered centre
 
+        # print self.parent.name, '\t', 'Ptot:', self.Ptot
+
 
 class Switch(Component):
     """ select the appropriate source for blade force data """
@@ -211,7 +213,7 @@ class AeroStructural(Assembly):
         self.connect('aero2.Fblade',        'switch.fblade_updated')
 
         self.add('iterate', FixedPointIterator())
-        self.iterate.max_iteration = 2  # 2 passes to emulate MATLAB code
+        # self.iterate.max_iteration = 2  # 2 passes to emulate MATLAB code
         self.iterate.tolerance = 1e-10
         self.iterate.add_parameter('aero2.q', low=-1e999, high=1e999)
         self.iterate.add_constraint('aero2.q = struc.q')

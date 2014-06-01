@@ -91,14 +91,14 @@ class AtlasConfiguration(Component):
     thetaQuad    = Float(35*pi/180,   iotype='out', desc='wrap angle of quad rotor struts')
     nTubeQuad    = Int(4,             iotype='out', desc='number of CFRP layers in quad rotor struts')
     lBiscuitQuad = Float(12*2.54/100, iotype='out', desc='')
-    hQuad        = Float(3.2,         iotype='out', desc='height of quad-rotor truss')
+    hQuad        = Float(3.0,         iotype='out', desc='height of quad-rotor truss')
 
     collective   = Float(0*pi/180, iotype='out', desc='collective angle in radians')
     etaP         = Float(0.0, iotype='out', desc='')
 
     yWire        = Array([5.8852], iotype='out', desc='location of wire attachment along span')  # actual spars
     zWire        = Float(1.0,      iotype='out', desc='depth of wire attachement')
-    tWire        = Float(.0028,    iotype='out', desc='thickness of wire')  # vectran
+    tWire        = Float(.0016,    iotype='out', desc='thickness of wire')  # steel
     TWire        = Array([1100.],  iotype='out', desc='')
     TEtension    = Float(50.0,     iotype='out', desc='')
 
@@ -145,3 +145,45 @@ class AtlasConfiguration(Component):
         self.Jprop.nTube = int(self.nTube[1])
         self.Jprop.nCap  = int(self.nCap[1])
         self.Jprop.lBiscuit = self.lBiscuit[1]
+
+    def display(self):
+        """ print values used in AeroStructural/HeliCalc (for debugging)
+        """
+        print 'Cl:', self.Cl
+        print 'Cm:', self.Cm
+        print 'Ns:', self.Ns
+        print 'R:', self.R
+        print 'TEtension:', self.TEtension
+        print 'TWire:', self.TWire
+        print 'anhedral:', self.anhedral
+        print 'b:', self.b
+        print 'c:', self.c
+        print 'collective:', self.collective
+        print 'dQuad:', self.dQuad
+        print 'd:', self.d
+        print 'etaP:', self.etaP
+        print 'h:', self.h
+        print 'hQuad:', self.hQuad
+        print 'lBiscuitQuad:', self.lBiscuitQuad
+        print 'lBiscuit:', self.lBiscuit
+        print 'mElseCentre:', self.mElseCentre
+        print 'mElseR:', self.mElseR
+        print 'mElseRotor:', self.mElseRotor
+        print 'mPilot:', self.mPilot
+        print 'nCap:', self.nCap
+        print 'nTubeQuad:', self.nTubeQuad
+        print 'nTube:', self.nTube
+        print 'rho:', self.rho
+        print 'tWire:', self.tWire
+        print 't:', self.t
+        print 'thetaQuad:', self.thetaQuad
+        print 'theta:', self.theta
+        print 'vc:', self.vc
+        print 'visc:', self.visc
+        print 'vw:', self.vw
+        print 'xEA:', self.xEA
+        print 'xtL:', self.xtL
+        print 'xtU:', self.xtU
+        print 'yWire:', self.yWire
+        print 'ycmax:', self.ycmax
+        print 'zWire:', self.zWire
