@@ -102,16 +102,16 @@ class AeroStructuralHigh(AeroStructural):
 class ConfigWind(AtlasConfiguration):
     """ Atlas configuration for wind case """
 
-    Omega_opt = Float(iotype='in', desc='rotor angular velocity')
+    Omega_opt  = Float(iotype='in', desc='rotor angular velocity')
     OmegaRatio = Float(iotype='in')
 
-    Cl_opt    = Array(iotype='in')
+    Cl_opt     = Array(iotype='in')
 
-    H_opt     = Float(iotype='in', desc='height of aircraft')
+    H_opt      = Float(iotype='in', desc='height of aircraft')
 
-    TWire_opt = Float(iotype='in', desc='')
+    TWire_opt  = Float(iotype='in', desc='')
 
-    vw_opt    = Float(iotype='in', desc='wind velocity')
+    vw_opt     = Float(iotype='in', desc='wind velocity')
 
     def execute(self):
         super(ConfigWind, self).execute()
@@ -126,6 +126,10 @@ class ConfigWind(AtlasConfiguration):
         self.TWire = [self.TWire_opt]
 
         self.vw = self.vw_opt
+
+        # FIXME: the following two flags are ignored
+        self.flags.FreeWake = 0  # momentum theory
+        self.flags.AeroStr  = 0  # assume flat wing (no deformation)
 
 
 class AeroStructuralWind(AeroStructural):
@@ -157,11 +161,11 @@ class ConfigGravity(AtlasConfiguration):
     Omega_opt  = Float(iotype='in', desc='rotor angular velocity')
     OmegaRatio = Float(iotype='in')
 
-    Cl_opt    = Array(iotype='in')
+    Cl_opt     = Array(iotype='in')
 
-    H_opt     = Float(iotype='in', desc='height of aircraft')
+    H_opt      = Float(iotype='in', desc='height of aircraft')
 
-    TWire_opt = Float(iotype='in', desc='')
+    TWire_opt  = Float(iotype='in', desc='')
 
     def execute(self):
         super(ConfigGravity, self).execute()
@@ -174,6 +178,12 @@ class ConfigGravity(AtlasConfiguration):
         self.h = self.H_opt + self.zWire
 
         self.TWire = [self.TWire_opt]
+
+        self.flags.Load     = 1  # gravity and wire forces only
+
+        # FIXME: the following two flags are ignored
+        self.flags.FreeWake = 0  # momentum theory
+        self.flags.AeroStr  = 0  # assume flat wing (no deformation)
 
 
 class AeroStructuralGravity(AeroStructural):
@@ -264,9 +274,6 @@ class Multipoint(Assembly):
         self.connect('alt_high',   'wind.H_opt')
         self.connect('TWire_wind', 'wind.TWire_opt')
         self.connect('vw',         'wind.vw_opt')
-        # FIXME: the following two flags are ignored
-        self.wind.config.flags.FreeWake = 0  # momentum theory
-        self.wind.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
 
         # gravity case
         self.add('grav', AeroStructuralGravity())
@@ -277,11 +284,7 @@ class Multipoint(Assembly):
         self.connect('alt_high',   'grav.H_opt')
         self.connect('TWire_grav', 'grav.TWire_opt')
 
-        self.grav.config.flags.Load     = 1  # gravity and wire forces only
-        # FIXME: the following two flags are ignored
-        self.grav.config.flags.FreeWake = 0  # momentum theory
-        self.grav.config.flags.AeroStr  = 0  # assume flat wing (no deformation)
-
+        # total power
         self.connect('alt_ratio*low.Ptot + (1 - alt_ratio)*high.Ptot', 'P')
 
         self.driver.workflow.add(['low', 'high', 'wind', 'grav'])
@@ -372,22 +375,6 @@ class HeliOptM(Assembly):
 if __name__ == '__main__':
     # TODO: create units tests for the following
 
-    if False:
-        print '====== High Altitude ======'
-        high = set_as_top(AeroStructuralHigh())
-
-        high.Omega_opt = 1.0771
-        high.Cl0_opt   = 1.4
-        high.Cl1_opt   = 1.3
-        high.H_opt     = 3.5
-        high.TWire_opt = 900
-
-        high.run()
-
-        print 'high Ptot =', high.Ptot, ' (reference:  846.6429)'
-        print 'high Mtot =', high.Mtot, ' (reference:  126.1670)'
-        print 'high Ttot =', high.Ttot, ' (reference: 1236.4368)'
-
     if True:
         print '====== Multipoint ======'
         mp = set_as_top(Multipoint())
@@ -425,13 +412,13 @@ if __name__ == '__main__':
         print 'wind Mtot =', mp.wind.Mtot, ' (reference:  126.1670)'
         print 'wind Ttot =', mp.wind.Ttot, ' (reference: 2239.7556)'
         print
-        print 'grav Ptot =', mp.grav.Ptot, ' (reference:    0.00000'
+        print 'grav Ptot =', mp.grav.Ptot, ' (reference:   0.00000)'
         print 'grav Mtot =', mp.grav.Mtot, ' (reference:  126.1670)'
         print 'grav Ttot =', mp.grav.Ttot, ' (reference:    0.0000)'
         print
         print 'P =', mp.P,                 ' (reference: 598.537)'
 
-    if False:
+    if True:
         print '====== HeliOptM ======'
         opt = set_as_top(HeliOptM())
 
