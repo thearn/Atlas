@@ -1,3 +1,4 @@
+import time
 
 from openmdao.main.api import Assembly, set_as_top
 from openmdao.main.api import VariableTree
@@ -373,62 +374,23 @@ class HeliOptM(Assembly):
 
 
 if __name__ == '__main__':
-    # TODO: create units tests for the following
+    # enable_trace()
 
-    if True:
-        print '====== Multipoint ======'
-        mp = set_as_top(Multipoint())
+    opt = set_as_top(HeliOptM())
 
-        mp.alt_low   = 0.5       # low altitude
-        mp.alt_high  = 3.5       # high altitude
-        mp.alt_ratio = 35./60.   # proportion of time near ground
+    print 'Starting multipoint optimization at %s ...' % time.strftime('%X')
+    time1 = time.time()
+    opt.run()
+    time2 = time.time()
+    print 'Optimization complete at %s (elapsed time: %5.2f minutes)' \
+        % (time.strftime('%X'), ((time2-time1)/60))
 
-        mp.TWire_high = 900
-        mp.TWire_wind = 2100
-        mp.TWire_grav = 110
+    print
 
-        mp.OmegaRatio = 2
+    print 'Objective:  P =', opt.mp.P
 
-        mp.vw = 0/3.6
+    print 'Constraint: Low Weight-Lift =',  opt.mp.Mtot_low*9.8-opt.mp.Ttot_low
+    print 'Constraint: High Weight-Lift =', opt.mp.Mtot_high*9.8-opt.mp.Ttot_high
 
-        mp.Cl_max = [1.4, 1.35, 1.55]  # max control
-
-        mp.Omega_low  = 1.0512
-        mp.Omega_high = 1.0771
-        mp.Cl0_high   = 1.4000
-        mp.Cl1_high   = 1.3000
-
-        mp.run()
-
-        print 'low Ptot  =', mp.low.Ptot,  ' (reference:  421.3185)'
-        print 'low Mtot  =', mp.Mtot_low,  ' (reference:  126.1670)'
-        print 'low Ttot  =', mp.Ttot_low,  ' (reference: 1236.4369)'
-        print
-        print 'high Ptot =', mp.high.Ptot, ' (reference:  846.6429)'
-        print 'high Mtot =', mp.Mtot_high, ' (reference:  126.1670)'
-        print 'high Ttot =', mp.Ttot_high, ' (reference: 1236.4368)'
-        print
-        print 'wind Ptot =', mp.wind.Ptot, ' (reference: 1815.7617)'
-        print 'wind Mtot =', mp.wind.Mtot, ' (reference:  126.1670)'
-        print 'wind Ttot =', mp.wind.Ttot, ' (reference: 2239.7556)'
-        print
-        print 'grav Ptot =', mp.grav.Ptot, ' (reference:   0.00000)'
-        print 'grav Mtot =', mp.grav.Mtot, ' (reference:  126.1670)'
-        print 'grav Ttot =', mp.grav.Ttot, ' (reference:    0.0000)'
-        print
-        print 'P =', mp.P,                 ' (reference: 598.537)'
-
-    if True:
-        print '====== HeliOptM ======'
-        opt = set_as_top(HeliOptM())
-
-        # enable_trace()
-        opt.run()
-
-        print 'Objective:  P =', opt.mp.P
-
-        print 'Constraint: Low Weight-Lift =', opt.mp.Mtot_low*9.8-opt.mp.Ttot_low
-        print 'Constraint: High Weight-Lift =', opt.mp.Mtot_high*9.8-opt.mp.Ttot_high
-
-        print 'Parameter:  Omega (Low) =', opt.mp.Omega_low
-        print 'Parameter:  Omega (High) =', opt.mp.Omega_high
+    print 'Parameter:  Omega (Low) =',  opt.mp.Omega_low
+    print 'Parameter:  Omega (High) =', opt.mp.Omega_high
