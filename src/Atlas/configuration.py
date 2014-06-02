@@ -152,6 +152,7 @@ class AtlasConfiguration(Component):
         print 'Cl:', self.Cl
         print 'Cm:', self.Cm
         print 'Ns:', self.Ns
+        print 'Omega:', self.Omega
         print 'R:', self.R
         print 'TEtension:', self.TEtension
         print 'TWire:', self.TWire

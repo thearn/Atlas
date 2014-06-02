@@ -261,15 +261,15 @@ class FEM(Component):
                         FxWire = -cos(thetaWire) * TWire[w]
                         FzWire = -sin(thetaWire) * TWire[w]
                         Fwire[0] = 0
-                        Fwire[1] = FxWire * (1 - a / L)
-                        Fwire[2] = FzWire * (2 * (a / L)**3 - 3 * (a / L)**2 + 1)
-                        Fwire[3] = FzWire * a * ((a / L)**2 - 2 * (a / L) + 1)
+                        Fwire[1] = FxWire * (1 - a/L)
+                        Fwire[2] = FzWire * (2 * (a/L)**3 - 3 * (a/L)**2 + 1)
+                        Fwire[3] = FzWire * a * ((a/L)**2 - 2 * (a/L) + 1)
                         Fwire[4] = 0
                         Fwire[5] = 0
                         Fwire[6] = 0
-                        Fwire[7] = FxWire * (a / L)
-                        Fwire[8] = FzWire * (- 2 * (a / L)**3 + 3 * (a / L)**2)
-                        Fwire[9] = FzWire * a * ((a / L)**2 - (a / L))
+                        Fwire[7] = FxWire * (a/L)
+                        Fwire[8] = FzWire * (-2 * (a/L)**3 + 3*(a/L)**2)
+                        Fwire[9] = FzWire * a * ((a/L)**2 - (a/L))
                         Fwire[10] = 0
                         Fwire[11] = 0
                     else:
