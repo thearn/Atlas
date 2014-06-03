@@ -2,7 +2,7 @@ import numpy as np
 from numpy import pi
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.main.datatypes.api import Int, Float, Array, Str, Enum, VarTree
-
+from openmdao.lib.drivers.api import SLSQPdriver
 from openmdao.lib.drivers.api import FixedPointIterator
 
 from Atlas import DragCoefficient, frictionCoefficient
@@ -94,6 +94,11 @@ class Switch(Component):
 class HeliCalc(Assembly):
 
     def configure(self):
+
+
+        #self.add('driver', SLSQPdriver())
+
+
         self.add('config', AtlasConfiguration())
         self.driver.workflow.add("config")
         self.add('discrete', DiscretizeProperties())
@@ -338,11 +343,12 @@ class HeliCalc(Assembly):
 
         #self.connect('fem.q',         'induced.q')
 
-        self.add('driver', FixedPointIterator())
-        self.driver.max_iteration = 10
-        self.driver.tolerance = 1e-10
-        self.driver.add_parameter('induced.q', low=-1e999, high=1e999)
-        self.driver.add_constraint('induced.q = fem.q')
+        fpi = self.add('fpi', FixedPointIterator())
+        fpi.max_iteration = 10
+        fpi.tolerance = 1e-10
+        fpi.add_parameter('induced.q', low=-1e999, high=1e999)
+        fpi.add_constraint('induced.q = fem.q')
+        self.driver.workflow.add("fpi")
 
 
 if __name__ == "__main__":
