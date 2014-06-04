@@ -5,8 +5,10 @@ import warnings
 warnings.simplefilter("ignore", np.ComplexWarning)
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.main.datatypes.api import Int, Float, Array, Str, Enum, VarTree
+
 from openmdao.lib.drivers.api import SLSQPdriver
 from openmdao.lib.drivers.api import FixedPointIterator
+from pyopt_driver import pyopt_driver
 
 from Atlas import DragCoefficient, frictionCoefficient
 from Atlas import prepregProperties, wireProperties, DiscretizeProperties, \
@@ -99,7 +101,9 @@ class HeliCalc(Assembly):
     def configure(self):
 
 
-        self.add('driver', SLSQPdriver())
+        #self.add('driver', SLSQPdriver())
+        self.add("driver", pyopt_driver.pyOptDriver())
+        self.driver.optimizer = "SNOPT"
 
         fpi = self.add('fpi', FixedPointIterator())
 
@@ -352,7 +356,7 @@ class HeliCalc(Assembly):
 
         self.driver.add_parameter("config.Omega", low=0.15*2*pi, high=0.25*2*pi)
         self.driver.add_objective("results.Ptot")
-        self.driver.add_constraint('results.Mtot*9.8-results.Ttot=0')
+        self.driver.add_constraint('results.Mtot*9.8-results.Ttot <= 0')
 
 
 if __name__ == "__main__":
