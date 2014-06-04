@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import pi
+from util import arctan2
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.main.datatypes.api import Int, Float, Array, Str, Enum, VarTree
 from openmdao.lib.drivers.api import SLSQPdriver
@@ -49,10 +50,10 @@ class Results(Component):
             qq[:, s] = self.q[s*6:s*6+6].T
 
         Clalpha = 2*pi
-        for s in range(0, len(self.yN)-1):
-            self.alphaJig[s] = self.Cl[s] / Clalpha            \
-                             - (qq[4, s] + qq[4, s+1]) / 2     \
-                             + self.phi[s] - self.collective
+        # for s in range(0, len(self.yN)-1):
+        #     self.alphaJig[s] = self.Cl[s] / Clalpha            \
+        #                      - (qq[4, s] + qq[4, s+1]) / 2     \
+        #                      + self.phi[s] - self.collective
 
         # Compute dihedral angle
         self.di = np.zeros((self.Ns, 1))
@@ -96,7 +97,7 @@ class HeliCalc(Assembly):
     def configure(self):
 
 
-        #self.add('driver', SLSQPdriver())
+        fpi = self.add('driver', FixedPointIterator())
 
 
         self.add('config', AtlasConfiguration())
@@ -133,11 +134,6 @@ class HeliCalc(Assembly):
         self.driver.workflow.add("strains")
         self.add('failure', Failures())
         self.driver.workflow.add("failure")
-
-        # self.connect('aero.Fblade',         'switch.fblade_initial')
-        # self.connect('switch.fblade',       'struc.fblade')
-        # # self.connect('struc.q',             'aero2.q')
-        # self.connect('aero2.Fblade',        'switch.fblade_updated')
 
         self.connect('config.b',           'results.b')
         self.connect('config.Ns',  'results.Ns')
@@ -343,21 +339,22 @@ class HeliCalc(Assembly):
 
         #self.connect('fem.q',         'induced.q')
 
-        fpi = self.add('fpi', FixedPointIterator())
+
         fpi.max_iteration = 10
         fpi.tolerance = 1e-10
         fpi.add_parameter('induced.q', low=-1e999, high=1e999)
         fpi.add_constraint('induced.q = fem.q')
-        self.driver.workflow.add("fpi")
 
 
 if __name__ == "__main__":
 
     top = HeliCalc()
-    #from openmdao.util.dotgraph import plot_graphs
-    #plot_graphs(top)
+    from openmdao.util.dotgraph import plot_graphs
+    plot_graphs(top)
 
+    top.config.Omega = 1.0512
     top.run()
+
     print np.linalg.norm(top.fem.q - top.induced.q)
     print top.config.Omega
     print top.results.Ptot
