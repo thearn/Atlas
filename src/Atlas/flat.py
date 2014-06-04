@@ -1,6 +1,8 @@
 import numpy as np
 from numpy import pi
 from util import arctan2
+import warnings
+warnings.simplefilter("ignore", np.ComplexWarning)
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.main.datatypes.api import Int, Float, Array, Str, Enum, VarTree
 from openmdao.lib.drivers.api import SLSQPdriver
@@ -97,7 +99,9 @@ class HeliCalc(Assembly):
     def configure(self):
 
 
-        fpi = self.add('driver', FixedPointIterator())
+        self.add('driver', SLSQPdriver())
+
+        fpi = self.add('fpi', FixedPointIterator())
 
 
         self.add('config', AtlasConfiguration())
@@ -344,17 +348,23 @@ class HeliCalc(Assembly):
         fpi.tolerance = 1e-10
         fpi.add_parameter('induced.q', low=-1e999, high=1e999)
         fpi.add_constraint('induced.q = fem.q')
+        self.driver.workflow.add("fpi")
+
+        self.driver.add_parameter("config.Omega", low=0.15*2*pi, high=0.25*2*pi)
+        self.driver.add_objective("results.Ptot")
+        self.driver.add_constraint('results.Mtot*9.8-results.Ttot=0')
 
 
 if __name__ == "__main__":
-
-    top = HeliCalc()
     from openmdao.util.dotgraph import plot_graphs
-    plot_graphs(top)
+    top = HeliCalc()
+    #top.driver.gradient_options.fd_form = 'complex_step'
+    #plot_graphs(top)
 
-    top.config.Omega = 1.0512
+    #top.config.Omega = 1.0512
     top.run()
-
-    print np.linalg.norm(top.fem.q - top.induced.q)
-    print top.config.Omega
-    print top.results.Ptot
+    print
+    print "aero structural residual:", np.linalg.norm(top.fem.q - top.induced.q)
+    print "lift weight residual:", top.results.Mtot*9.8-top.results.Ttot
+    print "Omega:", top.config.Omega
+    print "Ptot:", top.results.Ptot
