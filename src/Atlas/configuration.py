@@ -81,7 +81,7 @@ class AtlasConfiguration(Component):
     vw    = Float(0.0,  iotype='out', desc='wind velocity')
     vc    = Float(0.0,  iotype='out', desc='vertical velocity')
     visc  = Float(1.78e-5, iotype='out', desc='air viscosity')
-    Omega = Float(0.165*2*pi, iotype='out', desc='rotor angular velocity')
+    Omega = Float(0.165*2*pi, iotype='in', desc='rotor angular velocity')
 
     c     = Array(np.array([0, 0.8, 1.4, 0.4, 0.36]),  # ideal curve
                 iotype='out', desc='chord distribution')
