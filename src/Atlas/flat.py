@@ -15,7 +15,7 @@ from Atlas import prepregProperties, wireProperties, DiscretizeProperties, \
                        JointProperties, SparProperties, ChordProperties, \
                        JointSparProperties, QuadSparProperties
 from Atlas import PrescribedLoad, Strain, \
-                       MassProperties, FEM, Strains, Failures
+                       MassProperties, FEM, Strains, Failures, Failure
 from Atlas import LiftDrag, Fblade
 from Atlas import VortexRing
 from Atlas import VortexRingC
@@ -36,6 +36,7 @@ class Results(Component):
     collective = Float(iotype='in', desc='collective angle in radians')
     fblade     = VarTree(Fblade(), iotype='in')
     Mtot       = Float(0.0, iotype='in', desc='total mass')
+    fail         = VarTree(Failure(), iotype='in')
 
     # outputs
     di         = Array(iotype='out', desc='dihedral angle')
@@ -44,6 +45,24 @@ class Results(Component):
     Qtot       = Float(iotype='out', desc='')
     MomRot     = Float(iotype='out', desc='')
     Ptot       = Float(iotype='out', desc='')
+
+    # Structural constraints
+    c1       = Array(iotype='out', desc='')
+    c2       = Array(iotype='out', desc='')
+    c3      = Array(iotype='out', desc='')
+    c4       = Array(iotype='out', desc='')
+    c5       = Array(iotype='out', desc='')
+    c6       = Array(iotype='out', desc='')
+    c7       = Array(iotype='out', desc='')
+    c8       = Array(iotype='out', desc='')
+    c9       = Array(iotype='out', desc='')
+    c10       = Array(iotype='out', desc='')
+    c11       = Array(iotype='out', desc='')
+    c12       = Array(iotype='out', desc='')
+    c13       = Array(iotype='out', desc='')
+    c14       = Array(iotype='out', desc='')
+    c15       = Array(iotype='out', desc='')
+    c16       = Array(iotype='out', desc='')
 
     def execute(self):
         # Compute aerodynamic jig angle
@@ -72,6 +91,36 @@ class Results(Component):
         Pitot       = np.sum(self.fblade.Pi) * self.b * 4
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
         self.Ptot   = Pptot + Pitot  # non-covered centre
+
+        # MaxDelta    = -0.1
+        # MinDelta    = 0.1
+        FOS     = 0.55    # 1.3
+        FOSbuck     = 0.5     # 1.3
+        # FOSquadbuck = 5.
+        FOStorbuck  = 0.5     # 1.5
+        FOSwire     = 0.5     # 2
+
+        # rotor spar failure
+        self.c1 = -1+FOS*abs(self.fail.top.cap)
+        self.c2 = -1+FOS*abs(self.fail.top.plus)
+        self.c3 = -1+FOS*abs(self.fail.top.minus)
+        self.c4 = -1+FOS*abs(self.fail.bottom.cap)
+        self.c5 = -1+FOS*abs(self.fail.bottom.plus)
+        self.c6 = -1+FOS*abs(self.fail.bottom.minus)
+        self.c7 = -1+FOS*abs(self.fail.front.cap)
+        self.c8 = -1+FOS*abs(self.fail.front.plus)
+        self.c9 = -1+FOS*abs(self.fail.front.minus)
+        self.c10 = -1+FOS*abs(self.fail.back.cap)
+        self.c11 = -1+FOS*abs(self.fail.back.plus)
+        self.c12 = -1+FOS*abs(self.fail.back.minus)
+
+        # buckling failure
+        self.c13 = -1+FOStorbuck*abs(self.fail.buckling.torsion)
+        self.c14 = -1+FOSbuck*abs(self.fail.buckling.x)
+        self.c15 = -1+FOSbuck*abs(self.fail.buckling.z)
+
+        # tensile failure in wire
+        self.c16 = -1+FOSwire*abs(self.fail.wire)
 
 
 class HeliCalc(Assembly):
@@ -257,14 +306,17 @@ class HeliCalc(Assembly):
                                            "results.fblade"])
         self.connect('lift_drag.phi',          'results.phi')
 
-        # Induced
+        # Induced (wrapper around vortecC.c)
         self.connect("induced.vi" , "lift_drag.vi")
 
         # Strains
         self.connect("strains.Finternal" , "failure.Finternal")
         self.connect("strains.strain" , "failure.strain")
 
+        # Failure
+        self.connect("failure.fail" , "results.fail")
 
+        # Configure aero-structural fixed point iteration
         fpi.max_iteration = 10
         fpi.tolerance = 1e-10
         fpi.add_parameter('induced.q', low=-1e999, high=1e999)
@@ -272,8 +324,15 @@ class HeliCalc(Assembly):
         optimizer.workflow.add("fpi")
 
         optimizer.add_parameter("config.Omega", low=0.15*2*pi, high=0.25*2*pi)
+
         optimizer.add_objective("results.Ptot")
+
+        # Weight - lift constraint
         optimizer.add_constraint('results.Mtot * 9.8 - results.Ttot <= 0')
+
+        # Structural constraints
+        for i in xrange(1, 17):
+            optimizer.add_constraint('results.c%s <= 0' % str(i))
 
 
 if __name__ == "__main__":
@@ -284,6 +343,7 @@ if __name__ == "__main__":
     plot_graphs(top)
     print
     top.driver.run_iteration()
+
     print "BASELINE:"
     print "aero structural residual:", np.linalg.norm(top.fem.q - top.induced.q)
     print "lift weight residual:", top.results.Mtot*9.8-top.results.Ttot
@@ -296,3 +356,4 @@ if __name__ == "__main__":
     print "lift weight residual:", top.results.Mtot*9.8-top.results.Ttot
     print "Omega:", top.config.Omega
     print "Ptot:", top.results.Ptot
+
