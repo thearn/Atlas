@@ -79,15 +79,15 @@ class HeliCalc(Assembly):
     def configure(self):
 
 
-        optimizer = self.add('driver', SLSQPdriver())
-        #self.add("driver", pyopt_driver.pyOptDriver())
-        #self.driver.optimizer = "SNOPT"
+        #optimizer = self.add('driver', SLSQPdriver())
+        optimizer = self.add("driver", pyopt_driver.pyOptDriver())
+        optimizer.optimizer = "SNOPT"
 
         fpi = self.add('fpi', FixedPointIterator())
 
-
         self.add('config', AtlasConfiguration())
         optimizer.workflow.add("config")
+
         self.add('discrete', DiscretizeProperties())
         optimizer.workflow.add("discrete")
 
@@ -102,21 +102,28 @@ class HeliCalc(Assembly):
 
         self.add('lift_drag', LiftDrag())
         optimizer.workflow.add("lift_drag")
+
         self.add('spar', SparProperties())
         optimizer.workflow.add("spar")
+
         self.add('joint', JointSparProperties())
         optimizer.workflow.add("joint")
+
         self.add('chord', ChordProperties())
         optimizer.workflow.add("chord")
+
         self.add('quad', QuadSparProperties())
         optimizer.workflow.add("quad")
+
         self.add('mass', MassProperties())
         optimizer.workflow.add("mass")
+
         self.add('fem', FEM())
         optimizer.workflow.add("fem")
 
         self.add('strains', Strains())
         optimizer.workflow.add("strains")
+
         self.add('failure', Failures())
         optimizer.workflow.add("failure")
 
@@ -266,17 +273,25 @@ class HeliCalc(Assembly):
 
         optimizer.add_parameter("config.Omega", low=0.15*2*pi, high=0.25*2*pi)
         optimizer.add_objective("results.Ptot")
-        optimizer.add_constraint('results.Mtot*9.8-results.Ttot <= 0')
+        optimizer.add_constraint('results.Mtot * 9.8 - results.Ttot <= 0')
 
 
 if __name__ == "__main__":
     from openmdao.util.dotgraph import plot_graphs
     top = HeliCalc()
-    #top.driver.gradient_options.fd_form = 'complex_step'
-    #plot_graphs(top)
 
+    #top.driver.gradient_options.fd_form = 'complex_step'
+    plot_graphs(top)
+    print
+    top.driver.run_iteration()
+    print "BASELINE:"
+    print "aero structural residual:", np.linalg.norm(top.fem.q - top.induced.q)
+    print "lift weight residual:", top.results.Mtot*9.8-top.results.Ttot
+    print "Omega:", top.config.Omega
+    print "Ptot:", top.results.Ptot
     top.run()
     print
+    print "OPTIMIZED:"
     print "aero structural residual:", np.linalg.norm(top.fem.q - top.induced.q)
     print "lift weight residual:", top.results.Mtot*9.8-top.results.Ttot
     print "Omega:", top.config.Omega
