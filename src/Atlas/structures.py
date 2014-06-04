@@ -6,7 +6,7 @@ from util import arctan2
 from openmdao.main.api import Assembly, Component, VariableTree
 from openmdao.lib.datatypes.api import Int, Str, Enum, Float, Array, VarTree
 
-from configuration import Flags, PrescribedLoad
+from configuration import PrescribedLoad
 from properties import JointProperties, \
                        SparProperties, JointSparProperties, QuadSparProperties, \
                        ChordProperties, wireProperties, prepregProperties
@@ -891,7 +891,7 @@ class Structures(Assembly):
     """
 
     # flags
-    flags    = VarTree(Flags(), iotype='in')
+    #flags    = VarTree(Flags(), iotype='in')
 
     # inputs for spars
     yN       = Array(iotype='in', desc='node locations for each element along the span')

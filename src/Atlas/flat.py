@@ -54,10 +54,10 @@ class Results(Component):
             qq[:, s] = self.q[s*6:s*6+6].T
 
         Clalpha = 2*pi
-        # for s in range(0, len(self.yN)-1):
-        #     self.alphaJig[s] = self.Cl[s] / Clalpha            \
-        #                      - (qq[4, s] + qq[4, s+1]) / 2     \
-        #                      + self.phi[s] - self.collective
+        for s in range(0, len(self.yN)-1):
+            self.alphaJig[s] = self.Cl[s] / Clalpha            \
+                             - (qq[4, s] + qq[4, s+1]) / 2     \
+                             + self.phi[s] - self.collective
 
         # Compute dihedral angle
         self.di = np.zeros((self.Ns, 1))
@@ -73,290 +73,200 @@ class Results(Component):
         Pptot       = np.sum(self.fblade.Pp) * self.b * 4
         self.Ptot   = Pptot + Pitot  # non-covered centre
 
-class Switch(Component):
-    """ select the appropriate source for blade force data """
-
-    # inputs
-    fblade_initial  = VarTree(Fblade(), iotype='in')
-    fblade_updated  = VarTree(Fblade(), iotype='in')
-
-    # outputs
-    fblade          = VarTree(Fblade(), iotype='out')
-
-    def __init__(self):
-        super(Switch, self).__init__()
-        self.initial = True
-        self.force_execute = True
-
-    def execute(self):
-        if self.initial:
-            self.fblade = self.fblade_initial
-            self.initial = False
-        else:
-            self.fblade = self.fblade_updated
-
 
 class HeliCalc(Assembly):
 
     def configure(self):
 
 
-        #self.add('driver', SLSQPdriver())
-        self.add("driver", pyopt_driver.pyOptDriver())
-        self.driver.optimizer = "SNOPT"
+        optimizer = self.add('driver', SLSQPdriver())
+        #self.add("driver", pyopt_driver.pyOptDriver())
+        #self.driver.optimizer = "SNOPT"
 
         fpi = self.add('fpi', FixedPointIterator())
 
 
         self.add('config', AtlasConfiguration())
-        self.driver.workflow.add("config")
+        optimizer.workflow.add("config")
         self.add('discrete', DiscretizeProperties())
-        self.driver.workflow.add("discrete")
+        optimizer.workflow.add("discrete")
 
         self.add('results', Results())
-        self.driver.workflow.add("results")
+        optimizer.workflow.add("results")
 
         self.add('thrust', Thrust())
-        self.driver.workflow.add("thrust")
+        optimizer.workflow.add("thrust")
 
-        #self.add('induced', ActuatorDiskInducedVelocity()) # low
-        self.add('induced', VortexRingC()) # high
-        self.driver.workflow.add("induced")
+        self.add('induced', VortexRingC())
+        optimizer.workflow.add("induced")
 
         self.add('lift_drag', LiftDrag())
-        self.driver.workflow.add("lift_drag")
+        optimizer.workflow.add("lift_drag")
         self.add('spar', SparProperties())
-        self.driver.workflow.add("spar")
+        optimizer.workflow.add("spar")
         self.add('joint', JointSparProperties())
-        self.driver.workflow.add("joint")
+        optimizer.workflow.add("joint")
         self.add('chord', ChordProperties())
-        self.driver.workflow.add("chord")
+        optimizer.workflow.add("chord")
         self.add('quad', QuadSparProperties())
-        self.driver.workflow.add("quad")
+        optimizer.workflow.add("quad")
         self.add('mass', MassProperties())
-        self.driver.workflow.add("mass")
+        optimizer.workflow.add("mass")
         self.add('fem', FEM())
-        self.driver.workflow.add("fem")
+        optimizer.workflow.add("fem")
 
         self.add('strains', Strains())
-        self.driver.workflow.add("strains")
+        optimizer.workflow.add("strains")
         self.add('failure', Failures())
-        self.driver.workflow.add("failure")
+        optimizer.workflow.add("failure")
 
-        self.connect('config.b',           'results.b')
-        self.connect('config.Ns',  'results.Ns')
-        self.connect('discrete.yN',            'results.yN')
-        self.connect('discrete.yE',            'results.yE')
-        self.connect('discrete.cE',           'results.cE')
-        self.connect('config.Cl',           'results.Cl')
-        self.connect('fem.q',            'results.q')
-        self.connect('lift_drag.phi',          'results.phi')
-        self.connect('config.collective',          'results.collective')
-        self.connect('lift_drag.Fblade',          'results.fblade')
-        self.connect('mass.Mtot',        'results.Mtot')
-
-
-        self.connect('config.Ns',           'discrete.Ns')
+        # Config
+        self.connect("config.rho" , ["induced.rho", "lift_drag.rho",
+                                     "thrust.rho"])
+        self.connect("config.Ns" , ["induced.Ns", "lift_drag.Ns", "thrust.Ns",
+                                    "results.Ns"])
+        self.connect("config.lBiscuitQuad" , ["failure.lBiscuitQuad",
+                                              "quad.lBiscuitQuad"])
+        self.connect("config.tWire" , ["failure.tWire", "lift_drag.tWire",
+                                       "mass.tWire"])
+        self.connect("config.mElseRotor" , ["failure.mElseRotor",
+                                            "mass.mElseRotor"])
+        self.connect("config.zWire" , ["failure.zWire", "lift_drag.zWire",
+                                       "mass.zWire", "fem.zWire"])
+        self.connect("config.nTubeQuad" , ["failure.nTubeQuad",
+                                           "quad.nTubeQuad"])
+        self.connect("config.yWire" , ["failure.yWire", "lift_drag.yWire",
+                                       "mass.yWire", "fem.yWire"])
+        self.connect("config.thetaQuad" , ["failure.thetaQuad",
+                                           "quad.thetaQuad"])
+        self.connect('config.b', 'results.b')
+        self.connect('config.collective', 'results.collective')
+        self.connect('config.Ns', 'discrete.Ns')
         self.connect('config.ycmax_array',  'discrete.ycmax_array')
-        self.connect('config.R',            'discrete.R')
-        self.connect('config.c',            'discrete.c_in')
-        self.connect('config.Cl',           'discrete.Cl_in')
-        self.connect('config.Cm',           'discrete.Cm_in')
-        self.connect('config.t',            'discrete.t_in')
-        self.connect('config.xtU',          'discrete.xtU_in')
-        self.connect('config.xtL',          'discrete.xtL_in')
-        self.connect('config.xEA',          'discrete.xEA_in')
-        self.connect('config.yWire',        'discrete.yWire')
-        self.connect('config.d',            'discrete.d_in')
-        self.connect('config.theta',        'discrete.theta_in')
-        self.connect('config.nTube',        'discrete.nTube_in')
-        self.connect('config.nCap',         'discrete.nCap_in')
-        self.connect('config.lBiscuit',     'discrete.lBiscuit_in')
-
-
-        self.connect('discrete.yN', 'chord.yN')
-        self.connect('discrete.yN', 'strains.yN')
-        self.connect('discrete.yN', 'failure.yN')
-        self.connect('discrete.yN', 'lift_drag.yN')
-        self.connect('discrete.yN', 'fem.yN')
-
-        self.connect('discrete.yN', 'thrust.yN')
-        self.connect('discrete.yN', 'spar.yN')
-        #self.connect('discrete.yN', 'joint.yN')
-
-        self.connect('discrete.lBiscuit', 'failure.lBiscuit')
-        self.connect('discrete.lBiscuit', 'spar.lBiscuit')
-
-        #self.connect('discrete.lBiscuit', 'joint.lBiscuit')
-
-        self.connect('discrete.xtU', 'chord.xtU')
-        self.connect('discrete.xtU', 'lift_drag.xtU')
-
-        self.connect('discrete.xtL', 'lift_drag.xtL')
-
-        self.connect('discrete.Cm', 'lift_drag.Cm')
-
-        self.connect('discrete.Cl', 'lift_drag.Cl')
-        self.connect('discrete.Cl', 'thrust.Cl')
-
-        self.connect('discrete.nCap', 'failure.nCap')
-
-        self.connect('discrete.nCap', 'spar.nCap')
-        #self.connect('discrete.nCap', 'joint.nCap')
-
-        self.connect('quad.EIx',          'failure.EIQuad')
-
-        self.connect('joint.EIx',         'failure.EIxJ')
-        self.connect('joint.EIz',         'failure.EIzJ')
-
-        self.connect('spar.GJ',  'fem.GJ')
-        self.connect('spar.GJ',  'failure.GJQuad')
-
-        self.connect('discrete.nTube', 'failure.nTube')
-
-        self.connect('discrete.nTube', 'spar.nTube')
-        #self.connect('discrete.nTube', 'joint.nTube')
-
-        self.connect('discrete.theta', 'failure.theta')
-
-        self.connect('discrete.theta', 'spar.theta')
-        #self.connect('discrete.theta', 'joint.theta')
-
-        self.connect('discrete.xEA', 'mass.xEA')
-        self.connect('discrete.xEA', 'fem.xEA')
-
-        self.connect('discrete.d', 'strains.d')
-        self.connect('discrete.d', 'chord.d')
-        self.connect('discrete.d', 'failure.d')
-        self.connect('discrete.d', 'lift_drag.d')
-        self.connect('discrete.d', 'spar.d')
-
-        #self.connect('discrete.d', 'joint.d')
-
-        self.connect('spar.EIx',     'fem.EIx')
-        self.connect('spar.EIz',     'fem.EIz')
-        self.connect('spar.EA',      'fem.EA')
-        self.connect('spar.mSpar',   'failure.mSpar')
-        self.connect('spar.mSpar',   'fem.mSpar')
-        self.connect('spar.mSpar',     'mass.mSpar')
-
-        self.connect("mass.xCG" , "fem.xCG")
+        self.connect('config.R', 'discrete.R')
+        self.connect('config.c', 'discrete.c_in')
+        self.connect('config.Cl', 'discrete.Cl_in')
+        self.connect('config.Cm', 'discrete.Cm_in')
+        self.connect('config.t', 'discrete.t_in')
+        self.connect('config.xtU', 'discrete.xtU_in')
+        self.connect('config.xtL', 'discrete.xtL_in')
+        self.connect('config.xEA', 'discrete.xEA_in')
+        self.connect('config.yWire', 'discrete.yWire')
+        self.connect('config.d', 'discrete.d_in')
+        self.connect('config.theta', 'discrete.theta_in')
+        self.connect('config.nTube', 'discrete.nTube_in')
+        self.connect('config.nCap', 'discrete.nCap_in')
+        self.connect('config.lBiscuit', 'discrete.lBiscuit_in')
         self.connect("config.presLoad" , "fem.presLoad")
-        self.connect("config.hQuad" , "failure.hQuad")
-        self.connect("config.hQuad" , "quad.hQuad")
-        self.connect("config.RQuad" , "failure.RQuad")
-        self.connect("config.RQuad" , "quad.RQuad")
+        self.connect("config.hQuad" , ["failure.hQuad", "quad.hQuad"])
+        self.connect("config.RQuad" , ["failure.RQuad", "quad.RQuad"])
         self.connect("config.GWing" , "chord.GWing")
-        self.connect("config.lBiscuitQuad" , "failure.lBiscuitQuad")
-        self.connect("config.lBiscuitQuad" , "quad.lBiscuitQuad")
         self.connect("config.mElseR" , "mass.mElseR")
-
-        self.connect("config.dr" , "induced.dr")
-        self.connect("config.dr" , "lift_drag.dr")
-        self.connect("config.dr" , "thrust.dr")
-
-        self.connect("config.tWire" , "failure.tWire")
-        self.connect("config.tWire" , "lift_drag.tWire")
-        self.connect("config.tWire" , "mass.tWire")
-
-        self.connect("config.mElseRotor" , "failure.mElseRotor")
-        self.connect("config.mElseRotor" , "mass.mElseRotor")
-
-        self.connect("config.zWire" , "failure.zWire")
-        self.connect("config.zWire" , "lift_drag.zWire")
-        self.connect("config.zWire" , "mass.zWire")
-        self.connect("config.zWire" , "fem.zWire")
-
+        self.connect("config.dr" , ["induced.dr", "lift_drag.dr", "thrust.dr"])
         self.connect("config.h" , "induced.h")
-        self.connect("thrust.dT" , "induced.dT")
-        self.connect("config.TWire" , "failure.TWire")
-        self.connect("config.TWire" , "fem.TWire")
-        self.connect("config.yWire" , "failure.yWire")
-        self.connect("config.yWire" , "lift_drag.yWire")
-        self.connect("config.yWire" , "mass.yWire")
-        self.connect("config.yWire" , "fem.yWire")
+        self.connect("config.TWire" , ["failure.TWire", "fem.TWire"])
         self.connect("config.mElseCentre" , "mass.mElseCentre")
-        self.connect("config.thetaQuad" , "failure.thetaQuad")
-        self.connect("config.thetaQuad" , "quad.thetaQuad")
-        self.connect("chord.xCGChord" , "mass.xCGChord")
-        self.connect("discrete.cE" , "lift_drag.c")
-        self.connect("discrete.cE" , "thrust.c")
-        self.connect("fem.k" , "strains.k")
-
-        self.connect("lift_drag.Fblade" , "failure.Fblade")
-        self.connect("lift_drag.Fblade" , "fem.Fblade")
         self.connect("config.TEtension" , "failure.TEtension")
-        self.connect("config.nTubeQuad" , "failure.nTubeQuad")
-        self.connect("config.nTubeQuad" , "quad.nTubeQuad")
-        self.connect("quad.mQuad" , "mass.mQuad")
-        self.connect("chord.mChord" , "failure.mChord")
-        self.connect("chord.mChord" , "mass.mChord")
-        self.connect("chord.mChord" , "fem.mChord")
-        self.connect("config.Ns" , "induced.Ns")
-        self.connect("config.Ns" , "lift_drag.Ns")
-        self.connect("config.Ns" , "thrust.Ns")
-        self.connect("discrete.cE" , "chord.cE")
-        self.connect("discrete.cE" , "fem.cE")
-        self.connect("induced.vi" , "lift_drag.vi")
-        self.connect("config.ycmax" , "thrust.ycmax")
-        self.connect("config.ycmax" , "mass.ycmax")
-        self.connect("strains.Finternal" , "failure.Finternal")
-
-        self.connect("config.R" , "induced.R")
-        self.connect("config.R" , "mass.R")
-        self.connect("config.b" , "failure.b")
-        self.connect("config.b" , "induced.b")
-        self.connect("config.b" , "mass.b")
-        self.connect("config.r" , "induced.r")
-        self.connect("config.r" , "lift_drag.r")
-        self.connect("config.r" , "thrust.r")
-        self.connect("config.vc" , "induced.vc")
-        self.connect("config.vc" , "lift_drag.vc")
-
-        self.connect("strains.strain" , "failure.strain")
-        self.connect("config.vw" , "lift_drag.vw")
-        self.connect("fem.F" , "strains.F")
+        self.connect("config.R" , ["induced.R", "mass.R"])
+        self.connect("config.b" , ["failure.b", "induced.b", "mass.b"])
+        self.connect("config.r" , ["induced.r", "lift_drag.r", "thrust.r"])
+        self.connect("config.vc" , ["induced.vc", "lift_drag.vc"])
+        self.connect("config.ycmax" , ["thrust.ycmax", "mass.ycmax"])
         self.connect("config.mPilot" , "mass.mPilot")
-        self.connect("config.Omega" , "lift_drag.Omega")
-        self.connect("config.Omega" , "thrust.Omega")
+        self.connect("config.Omega" , ["lift_drag.Omega", "thrust.Omega"])
         self.connect("config.Jprop" , "joint.Jprop")
-        self.connect("thrust.chordFrac" , "lift_drag.chordFrac")
         self.connect("config.visc" , "lift_drag.visc")
-        self.connect("config.dQuad" , "failure.dQuad")
-        self.connect("config.dQuad" , "quad.dQuad")
-        self.connect("config.rho" , "induced.rho")
-        self.connect("config.rho" , "lift_drag.rho")
-        self.connect("config.rho" , "thrust.rho")
-        self.connect("config.CFRPType" , "spar.CFRPType")
-        self.connect("config.CFRPType" , "quad.CFRPType")
-        self.connect("config.CFRPType" , "joint.CFRPType")
-        self.connect("fem.q" , "strains.q")
+        self.connect("config.dQuad" , ["failure.dQuad", "quad.dQuad"])
+        self.connect("config.vw" , "lift_drag.vw")
 
+
+        # Config - FLAGS
         self.connect("config.Load" , "fem.Load")
         self.connect("config.wingWarp" , "fem.wingWarp")
         self.connect("config.Cover" , "mass.Cover")
         self.connect("config.WireType" , "mass.WireType")
-
-        self.connect("config.CFRPType" , "failure.CFRPType")
         self.connect("config.WireType" , "failure.WireType")
         self.connect("config.Quad" , "mass.Quad")
-
-        self.connect('discrete.yN',        'induced.yN')
         self.connect('config.Omega',     'induced.Omega')
         self.connect('config.anhedral',  'induced.anhedral')
+        self.connect("config.CFRPType" , ["spar.CFRPType", "quad.CFRPType",
+                                          "joint.CFRPType", "failure.CFRPType"])
 
-        #self.connect('fem.q',         'induced.q')
+        # Discrete
+        self.connect('discrete.yN', ['chord.yN', 'strains.yN', 'failure.yN',
+                                     'lift_drag.yN', 'fem.yN', 'thrust.yN',
+                                     'spar.yN', 'induced.yN', 'results.yN'])
+        self.connect('discrete.d', ['strains.d', 'chord.d', 'failure.d',
+                                    'lift_drag.d', 'spar.d'])
+        self.connect("discrete.cE" , ["chord.cE", "fem.cE", "lift_drag.c",
+                                      "thrust.c", "results.cE"])
+        self.connect('discrete.lBiscuit', ['failure.lBiscuit', 'spar.lBiscuit'])
+        self.connect('discrete.yE', 'results.yE')
+        self.connect('discrete.xtU', ['chord.xtU', 'lift_drag.xtU'])
+        self.connect('discrete.xtL', 'lift_drag.xtL')
+        self.connect('discrete.Cm', 'lift_drag.Cm')
+        self.connect('discrete.Cl', ['lift_drag.Cl', 'thrust.Cl', 'results.Cl'])
+        self.connect('discrete.nCap', ['failure.nCap', 'spar.nCap'])
+        self.connect('discrete.nTube', ['failure.nTube', 'spar.nTube'])
+        self.connect('discrete.theta', ['failure.theta', 'spar.theta'])
+        self.connect('discrete.xEA', ['mass.xEA', 'fem.xEA'])
+
+        # Quad
+        self.connect('quad.EIx', 'failure.EIQuad')
+        self.connect("quad.mQuad" , "mass.mQuad")
+
+        # Joint
+        self.connect('joint.EIx', 'failure.EIxJ')
+        self.connect('joint.EIz', 'failure.EIzJ')
+
+        # Spar
+        self.connect('spar.GJ',  ['fem.GJ', 'failure.GJQuad'])
+        self.connect('spar.EIx',     'fem.EIx')
+        self.connect('spar.EIz',     'fem.EIz')
+        self.connect('spar.EA',      'fem.EA')
+        self.connect('spar.mSpar',   ['failure.mSpar', 'fem.mSpar',
+                                      'mass.mSpar'])
+
+        # Mass
+        self.connect("mass.xCG" , "fem.xCG")
+        self.connect('mass.Mtot',        'results.Mtot')
+
+        # Thrust
+        self.connect("thrust.dT" , "induced.dT")
+        self.connect("thrust.chordFrac" , "lift_drag.chordFrac")
+
+        # Chord
+        self.connect("chord.xCGChord" , "mass.xCGChord")
+        self.connect("chord.mChord" , ["failure.mChord", "mass.mChord",
+                                       "fem.mChord"])
+
+        # FEM
+        self.connect("fem.k" , "strains.k")
+        self.connect("fem.F" , "strains.F")
+        self.connect("fem.q" , ["strains.q", 'results.q'])
+
+        # LiftDrag
+        self.connect("lift_drag.Fblade" , ["failure.Fblade", "fem.Fblade",
+                                           "results.fblade"])
+        self.connect('lift_drag.phi',          'results.phi')
+
+        # Induced
+        self.connect("induced.vi" , "lift_drag.vi")
+
+        # Strains
+        self.connect("strains.Finternal" , "failure.Finternal")
+        self.connect("strains.strain" , "failure.strain")
 
 
         fpi.max_iteration = 10
         fpi.tolerance = 1e-10
         fpi.add_parameter('induced.q', low=-1e999, high=1e999)
         fpi.add_constraint('induced.q = fem.q')
-        self.driver.workflow.add("fpi")
+        optimizer.workflow.add("fpi")
 
-        self.driver.add_parameter("config.Omega", low=0.15*2*pi, high=0.25*2*pi)
-        self.driver.add_objective("results.Ptot")
-        self.driver.add_constraint('results.Mtot*9.8-results.Ttot <= 0')
+        optimizer.add_parameter("config.Omega", low=0.15*2*pi, high=0.25*2*pi)
+        optimizer.add_objective("results.Ptot")
+        optimizer.add_constraint('results.Mtot*9.8-results.Ttot <= 0')
 
 
 if __name__ == "__main__":
@@ -365,7 +275,6 @@ if __name__ == "__main__":
     #top.driver.gradient_options.fd_form = 'complex_step'
     #plot_graphs(top)
 
-    #top.config.Omega = 1.0512
     top.run()
     print
     print "aero structural residual:", np.linalg.norm(top.fem.q - top.induced.q)

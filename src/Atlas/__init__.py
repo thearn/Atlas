@@ -1,4 +1,4 @@
-from configuration import Flags, AtlasConfiguration
+from configuration import AtlasConfiguration
 from coefficients import DragCoefficient, frictionCoefficient
 from properties import prepregProperties, wireProperties, DiscretizeProperties, \
                        JointProperties, SparProperties, ChordProperties, \
