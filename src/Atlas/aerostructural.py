@@ -1,5 +1,5 @@
 import numpy as np
-from math import pi, atan2
+from numpy import pi, arctan2
 
 from openmdao.main.api import Assembly, Component
 from openmdao.main.datatypes.api import Int, Float, Array, VarTree
@@ -50,7 +50,7 @@ class Results(Component):
         # Compute dihedral angle
         self.di = np.zeros((self.Ns, 1))
         for s in range(0, self.Ns):
-            self.di[s] = atan2(qq[2, s+1] - qq[2, s], self.yN[s+1] - self.yN[s])
+            self.di[s] = arctan2(qq[2, s+1] - qq[2, s], self.yN[s+1] - self.yN[s])
 
         # Compute totals
         # (Note: reshaping is due to numpy vs MATLAB 1D array shapes.. should scrub this)
@@ -208,9 +208,9 @@ class AeroStructural(Assembly):
         # converge aero and structures via fixed point iteration
         self.add('switch', Switch())
         self.connect('aero.Fblade',         'switch.fblade_initial')
-        self.connect('switch.fblade',       'struc.fblade')
-        # self.connect('struc.q',             'aero2.q')
         self.connect('aero2.Fblade',        'switch.fblade_updated')
+        self.connect('switch.fblade',       'struc.fblade')
+        # self.connect('struc.q',             'aero2.q')  # via constraint
 
         self.add('iterate', FixedPointIterator())
         # self.iterate.max_iteration = 2  # 2 passes to emulate MATLAB code
@@ -221,9 +221,6 @@ class AeroStructural(Assembly):
         # make sure we have a valid parameter value for first iteration
         q_dim = 6*(self.config.Ns+1)
         self.aero2.q = np.zeros((q_dim, 1))
-
-        # force aero2 to run (due to bug in invalidation logic)
-        self.aero2.force_execute = True
 
         # calculate results
         self.add('results', Results())
@@ -247,8 +244,14 @@ class AeroStructural(Assembly):
 
 
 if __name__ == "__main__":
+    # enable_trace()
+
     top = AeroStructural()
-
-    enable_trace()
-
     top.run()
+
+    print 'AeroStructural Results'
+    print '----------------------'
+    print 'Ttot   =', top.results.Ttot
+    print 'MomRot =', top.results.MomRot
+    print 'Qtot   =', top.results.Qtot
+    print 'Ptot   =', top.results.Ptot
