@@ -83,6 +83,8 @@ class HeliOpt(Assembly):
 
 
 if __name__ == '__main__':
+    import pylab
+    from makeplot import plot
     opt = set_as_top(HeliOpt())
     opt.aso.Omega_opt = 1.0512
 
@@ -95,8 +97,6 @@ if __name__ == '__main__':
     print 'Objective:  Ptot =', opt.aso.Ptot
 
     # enable_trace()
-    exit()
-    opt.run()
 
 
     print 'Parameter:  Omega =', opt.aso.config.Omega
@@ -105,6 +105,10 @@ if __name__ == '__main__':
 
     print 'Objective:  Ptot =', opt.aso.Ptot
 
+    #opt.run()
+
+    plot(opt)
+    pylab.show()
     # for reference, MATLAB solution:
     #    Omega: 1.0512
     #    Ptot: 421.3185
