@@ -6,7 +6,7 @@ from math import pi, sin, cos, floor, sqrt
 
 
 # Material properties of the CFRP prepregs used in the HPH Project.
-# Input Variables:
+# Input dy:
 #   	type_flag - flag indicating prepreg to be used
 #           1 - NCT301-1X HS40 G150 33 +/-2#RW
 #           2 - HexPly 6376 HTS-12K 268gsm 35#RW
@@ -150,6 +150,7 @@ class SparProperties(Component):
     EA  = Array(iotype='out', desc='description')
     GJ  = Array(iotype='out', desc='description')
     mSpar = Array(iotype='out', desc='description')
+    dy = Array(iotype='out', desc='description')
 
     # yN = Array(np.zeros(2), iotype='in', desc='description')
     # d = Float(0, iotype='in', desc='description')
@@ -197,9 +198,9 @@ class SparProperties(Component):
 
         # determine length of each spar element
         Ns = max(self.yN.shape) - 1
-        dy = np.zeros(Ns)
+        self.dy = np.zeros(Ns)
         for s in range(1, (Ns+1)):
-            dy[(s-1)] = self.yN[(s)] - self.yN[(s-1)]
+            self.dy[(s-1)] = self.yN[(s)] - self.yN[(s-1)]
 
         # Pre-allocate EIx, EIz, EA, GJ, mSpar
         self.EIx = np.zeros(Ns)
@@ -318,14 +319,14 @@ class SparProperties(Component):
             self.GJ[(s-1)] = (4 * (pi ** 2) * (r_spar_avg ** 4)) / (((2 * pi * r_tube_avg - 2 * width_cap_avg) / (G_xy_tube * self.nTube[(s-1)] * T_PLY_TUBE)) + ((2 * width_cap_avg) / (G_xy_tube * self.nTube[(s-1)] * T_PLY_TUBE + G_12_CAP * t_cap_avg)))
 
             # Biscuit mass
-            mass_biscuit = (AF_biscuit) * (dy[(s-1)] / self.lBiscuit[(s-1)]) * ((pi * (self.d[(s-1)] / 2) ** 2) * (RHO_BALSA * thickness_biscuit_plate * biscuit_face_fraction + RHO_STRUCTURAL_FOAM * thickness_biscuit_core))
+            mass_biscuit = (AF_biscuit) * (self.dy[(s-1)] / self.lBiscuit[(s-1)]) * ((pi * (self.d[(s-1)] / 2) ** 2) * (RHO_BALSA * thickness_biscuit_plate * biscuit_face_fraction + RHO_STRUCTURAL_FOAM * thickness_biscuit_core))
 
             # Determine Total Spar Properties
             self.EIx[(s-1)] = E_xx_tube * I_tube + E_11_CAP * Ix_cap
             self.EIz[(s-1)] = E_xx_tube * I_tube + E_11_CAP * Iz_cap
             self.EA[(s-1)] = E_xx_tube * A_tube + E_11_CAP * A_cap
-            #print A_tube, RHO_TUBE , A_cap , RHO_CAP, dy[(s-1)] , mass_biscuit
-            self.mSpar[(s-1)] = (A_tube * RHO_TUBE + A_cap * RHO_CAP) * dy[(s-1)] + mass_biscuit
+            #print A_tube, RHO_TUBE , A_cap , RHO_CAP, self.dy[(s-1)] , mass_biscuit
+            self.mSpar[(s-1)] = (A_tube * RHO_TUBE + A_cap * RHO_CAP) * self.dy[(s-1)] + mass_biscuit
 
 
 class JointProperties(VariableTree):
