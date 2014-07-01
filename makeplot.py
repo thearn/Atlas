@@ -90,7 +90,7 @@ def aero_velocity_and_angles(opt):
     vi = opt.aso.aero2.vi
     phi = opt.aso.aero2.phi
     alphaJig = opt.aso.results.alphaJig
-    
+
     zeros = np.linspace(-1.0, 11.0, 10000)
     plt.plot(zeros, np.zeros(zeros.shape), color='black')
     plt.plot(yE, vi/(10**-1), label='v$\mathregular{_i}$ ($\mathregular{10^{-1}}$ m/s)')
@@ -99,9 +99,9 @@ def aero_velocity_and_angles(opt):
     plt.title('Aerodynamic Velocities and Angles')
     plt.xlabel('r(m)')
     plt.legend(loc=4)
-    
+
     plt.axis([0.0, 10.0, -20.0, 20.0])
-    
+
 def aerodynamic_forces_and_power(opt):
     yE = opt.aso.discrete.yE
     drag = opt.aso.aero2.Fblade.Fx
@@ -111,7 +111,7 @@ def aerodynamic_forces_and_power(opt):
     power  = opt.aso.aero2.Fblade.P
     Pi = opt.aso.aero2.Fblade.Pi
     Pp = opt.aso.aero2.Fblade.Pp
-    
+
     plt.plot(yE, thrust, label='Thrust (N/M)')
     plt.plot(yE, drag/(10**-1), label='Drag ($\mathregular{10^{-1}}$ N/M)')
     plt.plot(yE, torque, label='Torque (Nm/m)')
@@ -122,7 +122,7 @@ def aerodynamic_forces_and_power(opt):
     plt.title('Aerodynamic Forces and Power')
     plt.xlabel('r(m)')
     plt.legend(loc=2)
-    
+
 def structural_loads(opt):
     yN = opt.aso.discrete.yN
     Z = opt.aso.struc.Finternal[2,:]
@@ -144,74 +144,74 @@ def structural_loads(opt):
 
 def structural_deformation(opt):
     yN = opt.aso.discrete.yN
-    
+
     plt.title('Structural Deformation')
     plt.xlabel('r(m)')
     plt.legend(loc=1)
-    
+
 def out_of_plane_failure(opt):
     yN = opt.aso.discrete.yN
     fail_top_cap_11 = opt.aso.struc.fail.top.cap[0, :]
     fail_top_cap_22 = opt.aso.struc.fail.top.cap[1, :]
     fail_top_cap_12 = opt.aso.struc.fail.top.cap[2, :]
-    
+
     fail_top_plus_11 = opt.aso.struc.fail.top.plus[0, :]
     fail_top_plus_22 = opt.aso.struc.fail.top.plus[1, :]
     fail_top_plus_12 = opt.aso.struc.fail.top.plus[2, :]
-    
+
     fail_top_minus_11 = opt.aso.struc.fail.top.minus[0, :]
     fail_top_minus_22 = opt.aso.struc.fail.top.minus[1, :]
     fail_top_minus_12 = opt.aso.struc.fail.top.minus[2, :]
-    
-    plt.plot(yN, fail_top_cap_11, 'k-',  label='Top$\mathregular{_c}$ 11') 
+
+    plt.plot(yN, fail_top_cap_11, 'k-',  label='Top$\mathregular{_c}$ 11')
     plt.plot(yN, fail_top_cap_22, 'k--', label='Top$\mathregular{_c}$ 22')
     plt.plot(yN, fail_top_cap_12, 'k-.', label='Top$\mathregular{_c}$ 12')
-    
-    plt.plot(yN, fail_top_plus_11, 'k-',  color='blue', label='Top$\mathregular{_+}$ 11') 
+
+    plt.plot(yN, fail_top_plus_11, 'k-',  color='blue', label='Top$\mathregular{_+}$ 11')
     plt.plot(yN, fail_top_plus_22, 'k--', color='blue', label='Top$\mathregular{_+}$ 22')
     plt.plot(yN, fail_top_plus_12, 'k-.', color='blue', label='Top$\mathregular{_+}$ 12')
-    
-    plt.plot(yN, fail_top_minus_11, 'k-',  color='red', label='Top$\mathregular{_-}$ 11') 
+
+    plt.plot(yN, fail_top_minus_11, 'k-',  color='red', label='Top$\mathregular{_-}$ 11')
     plt.plot(yN, fail_top_minus_22, 'k--', color='red', label='Top$\mathregular{_-}$ 22')
     plt.plot(yN, fail_top_minus_12, 'k-.', color='red', label='Top$\mathregular{_-}$ 12')
-    
+
     plt.title('Out-of-Plane Failure')
     plt.xlabel('r(m)')
     plt.legend(loc=1)
-    
+
 def in_plane_failure(opt):
     yN = opt.aso.discrete.yN
-    
+
     fail_back_plus_11 = opt.aso.struc.fail.back.plus[0, :]
     fail_back_plus_22 = opt.aso.struc.fail.back.plus[1, :]
     fail_back_plus_12 = opt.aso.struc.fail.back.plus[2, :]
-    
+
     fail_back_minus_11 = opt.aso.struc.fail.back.minus[0, :]
     fail_back_minus_22 = opt.aso.struc.fail.back.minus[1, :]
     fail_back_minus_12 = opt.aso.struc.fail.back.minus[2, :]
-    
-    plt.plot(yN, fail_back_plus_11, 'k-',  color='blue', label='back$\mathregular{_+}$ 11') 
+
+    plt.plot(yN, fail_back_plus_11, 'k-',  color='blue', label='back$\mathregular{_+}$ 11')
     plt.plot(yN, fail_back_plus_22, 'k--', color='blue', label='back$\mathregular{_+}$ 22')
     plt.plot(yN, fail_back_plus_12, 'k-.', color='blue', label='back$\mathregular{_+}$ 12')
-    
-    plt.plot(yN, fail_back_minus_11, 'k-',  color='red', label='back$\mathregular{_-}$ 11') 
+
+    plt.plot(yN, fail_back_minus_11, 'k-',  color='red', label='back$\mathregular{_-}$ 11')
     plt.plot(yN, fail_back_minus_22, 'k--', color='red', label='back$\mathregular{_-}$ 22')
     plt.plot(yN, fail_back_minus_12, 'k-.', color='red', label='back$\mathregular{_-}$ 12')
-    
+
     plt.title('In-Plane Failure')
     plt.xlabel('r(m)')
     plt.legend(loc=1)
-    
+
 def buckling_failure(opt):
     yN = opt.aso.discrete.yN
     yWire = opt.aso.discrete.yWire
-    
+
     buckle_z = opt.aso.struc.fail.buckling.z
     buckle_x = opt.aso.struc.fail.buckling.x
     buckle_torsion = opt.aso.struc.fail.buckling.torsion
     quad_buckling = opt.aso.struc.fail.quad_buckling
     wire = opt.aso.struc.fail.wire
-        
+
     plt.plot(yN, buckle_z, color='blue', label='Buckle$\mathregular{_Z}$')
     plt.plot(yN, buckle_z, color='red', label='Buckle$\mathregular{_X}$')
     plt.plot(yN, buckle_torsion, color='green', label='Buckle$\mathregular{_{Tor}}$')
@@ -220,12 +220,12 @@ def buckling_failure(opt):
     plt.title('Buckling Failure')
     plt.xlabel('r(m)')
     plt.legend(loc=1, numpoints=1)
-    
+
     plt.axis([0.0, 10.0, 0.0, 1.4])
-    
+
 def plot(opt):
-    #plt.figure()
-    #aero_def(opt)
+    plt.figure()
+    aero_def(opt)
 
     plt.figure()
     struct_def(opt)
@@ -235,44 +235,69 @@ def plot(opt):
 
     plt.figure()
     wake(opt)
-    
+
     plt.figure()
     aero_velocity_and_angles(opt)
-    
+
     plt.figure()
     aerodynamic_forces_and_power(opt)
-    
+
     plt.figure()
     structural_loads(opt)
-    
+
     #plt.figure()
     #structural_deformation(opt)
-    
+
     plt.figure()
     out_of_plane_failure(opt)
-    
+
     plt.figure()
     in_plane_failure(opt)
-    
+
     plt.figure()
     buckling_failure(opt)
-    
+
     plt.show()
 
 def plot_single(opt):
     plt.figure()
-    plt.subplot(2,2,1)
+    plt.subplot(3,4,1)
+
+    plt.subplot(3,4,2)
     aero_def(opt)
 
-    plt.subplot(2,2,2)
+    plt.subplot(3,4,3)
     struct_def(opt)
 
-    plt.subplot(2,2,3)
+    plt.subplot(3,4,4)
     struc_prop(opt)
 
-    plt.subplot(2,2,4)
+    plt.subplot(3,4,5)
+    aero_velocity_and_angles(opt)
+
+    plt.subplot(3,4,6)
+    aerodynamic_forces_and_power(opt)
+
+    plt.subplot(3,4,7)
+    structural_loads(opt)
+
+    plt.subplot(3,4,8)
+    structural_deformation(opt)
+
+    plt.subplot(3,4,9)
     wake(opt)
-    
+
+    plt.subplot(3,4,10)
+    out_of_plane_failure(opt)
+
+    plt.subplot(3,4,11)
+    in_plane_failure(opt)
+
+    plt.subplot(3,4,12)
+    buckling_failure(opt)
+
+    plt.show()
+
 
 if __name__ == "__main__":
     import pylab
@@ -299,7 +324,7 @@ if __name__ == "__main__":
 
     #opt.run()
 
-    plot(opt)
+    plot_single(opt)
 
 
 
