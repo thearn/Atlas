@@ -88,7 +88,9 @@ if __name__ == '__main__':
     opt = set_as_top(HeliOpt())
     opt.aso.Omega_opt = 1.0512
 
+    #opt.driver.start_iteration()
     opt.driver.run_iteration()
+
 
     print 'Parameter:  Omega =', opt.aso.config.Omega
 
