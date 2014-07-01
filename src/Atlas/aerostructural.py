@@ -28,10 +28,10 @@ class Results(Component):
     # outputs
     di         = Array(iotype='out', desc='dihedral angle')
     alphaJig   = Array(iotype='out', desc='aerodynamic jig angle')
-    Ttot       = Float(iotype='out', desc='')
-    Qtot       = Float(iotype='out', desc='')
-    MomRot     = Float(iotype='out', desc='')
-    Ptot       = Float(iotype='out', desc='')
+    Ttot       = Float(iotype='out', desc='total thrust')
+    Qtot       = Float(iotype='out', desc='total torque')
+    MomRot     = Float(iotype='out', desc='total moment')
+    Ptot       = Float(iotype='out', desc='total powers')
 
     def execute(self):
         # Compute aerodynamic jig angle

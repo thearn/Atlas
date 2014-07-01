@@ -9,11 +9,11 @@ from openmdao.main.api import Component, VariableTree
 
 
 class Fblade(VariableTree):
-    Fx = Array(desc='')
-    Fz = Array(desc='')
+    Fx = Array(units='N/m', desc='drag axis')
+    Fz = Array(units='N/m', desc='lift axis')
     My = Array(desc='')
-    Q  = Array(desc='')
-    P  = Array(desc='')
+    Q  = Array(desc='Torque')
+    P  = Array(desc='Power')
     Pi = Array(desc='')
     Pp = Array(desc='')
 
