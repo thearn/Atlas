@@ -233,29 +233,29 @@ def plot(opt):
     plt.figure()
     struc_prop(opt)
 
-    #plt.figure()
-    #wake(opt)
+    plt.figure()
+    wake(opt)
     
-    #plt.figure()
-    #aero_velocity_and_angles(opt)
+    plt.figure()
+    aero_velocity_and_angles(opt)
     
-    #plt.figure()
-    #aerodynamic_forces_and_power(opt)
+    plt.figure()
+    aerodynamic_forces_and_power(opt)
     
-    #plt.figure()
-    #structural_loads(opt)
+    plt.figure()
+    structural_loads(opt)
     
     #plt.figure()
     #structural_deformation(opt)
     
-    #plt.figure()
-    #out_of_plane_failure(opt)
+    plt.figure()
+    out_of_plane_failure(opt)
     
-    #plt.figure()
-    #in_plane_failure(opt)
+    plt.figure()
+    in_plane_failure(opt)
     
-    #plt.figure()
-    #buckling_failure(opt)
+    plt.figure()
+    buckling_failure(opt)
     
     plt.show()
 
