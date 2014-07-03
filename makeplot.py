@@ -93,9 +93,9 @@ def aero_velocity_and_angles(opt):
 
     zeros = np.linspace(-1.0, 11.0, 10000)
     plt.plot(zeros, np.zeros(zeros.shape), color='black')
-    plt.plot(yE, vi/(10**-1), label='v$\mathregular{_i}$ ($\mathregular{10^{-1}}$ m/s)')
-    plt.plot(yE, np.rad2deg(phi), label='$\mathregular{phi}$ (deg)')
-    plt.plot(yE, np.rad2deg(alphaJig), label='alpha$\mathregular{_{jig}}$ (deg)')
+    plt.plot(yE, vi/(10**-1), label='$\mathregular{v_i}$ ($\mathregular{10^{-1}}$ m/s)')
+    plt.plot(yE, np.rad2deg(phi), label='$\mathregular{\phi}$ (deg)')
+    plt.plot(yE, np.rad2deg(alphaJig), label='$\mathregular{\\alpha_{jig}}$ (deg)')
     plt.title('Aerodynamic Velocities and Angles')
     plt.xlabel('r(m)')
     plt.legend(loc=4)
@@ -260,6 +260,15 @@ def plot(opt):
     plt.show()
 
 def plot_single(opt):
+
+    params = {'size':15,
+          'font.size' : 10.5,
+          'legend.fontsize': 9,
+          'legend.linewidth': 1,
+          #'text.usetex': True
+          }
+          
+    plt.rcParams.update(params)
     plt.figure()
     plt.subplot(3,4,1)
 
