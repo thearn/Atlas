@@ -7,8 +7,6 @@ try:
 except ImportError:
     pyopt_driver = None
 
-from openmdao.util.log import enable_trace  # , disable_trace
-
 from numpy import pi
 
 from Atlas import AtlasConfiguration, AeroStructural
@@ -83,34 +81,53 @@ class HeliOpt(Assembly):
 
 
 if __name__ == '__main__':
-    import pylab
-    from makeplot import plot
-    opt = set_as_top(HeliOpt())
-    opt.aso.Omega_opt = 1.0512
+    import pylab as plt
+    from makeplot import *
 
-    #opt.driver.start_iteration()
+    from openmdao.lib.casehandlers.api import JSONCaseRecorder, CaseDataset
+    import json
+
+    opt = set_as_top(HeliOpt())
+    # opt.recorders = [JSONCaseRecorder(out='heli_opt.json'), ]
+    # opt.run()
+
+    # compare results for Omega=1.0512 to MATLAB code
+    opt.aso.Omega_opt = 1.0512
+    opt.driver.start_iteration()
     opt.driver.run_iteration()
 
-
-    print 'Parameter:  Omega =', opt.aso.config.Omega
-
-    print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
-
-    print 'Objective:  Ptot =', opt.aso.Ptot
-
-    # enable_trace()
-
-
-    print 'Parameter:  Omega =', opt.aso.config.Omega
-
-    print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
-
-    print 'Objective:  Ptot =', opt.aso.Ptot
-
-    #opt.run()
-
-    plot(opt)
-    pylab.show()
     # for reference, MATLAB solution:
-    #    Omega: 1.0512
-    #    Ptot: 421.3185
+    #    Omega:   1.0512
+    #    Ptot:  421.3185
+    print 'Parameter:  Omega =', opt.aso.config.Omega
+    print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
+    print 'Objective:  Ptot =', opt.aso.Ptot
+
+    # plot(opt)
+
+    plt.figure()
+    plt.subplot(1,2,1)
+    wake(opt)
+
+    dataset = CaseDataset('heli_opt.json', 'json')
+    data = dataset.data.by_case().fetch()
+    case = data[-1]
+
+    print 'Parameter:  Omega =', case['aso.config.Omega']
+    print 'Constraint: Weight-Lift =', case['aso.Mtot']*9.8-case['aso.Ttot']
+    print 'Objective:  Ptot =', case['aso.Ptot']
+
+    import numpy
+    r = numpy.array(case['aso.aero2.induced.r'])
+    z = numpy.array(case['aso.aero2.induced.z'])
+
+    plt.subplot(1,2,2)
+    plt.title("Free Wake")
+    plt.plot(r,z, "b-")
+    plt.plot(r,z, "bo")
+    plt.plot(-r,z, "b-")
+    plt.plot(-r,z, "bo")
+    plt.xlabel("r(m)")
+
+
+    plt.show()

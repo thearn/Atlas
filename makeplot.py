@@ -267,7 +267,7 @@ def plot_single(opt):
           'legend.linewidth': 1,
           #'text.usetex': True
           }
-          
+
     plt.rcParams.update(params)
     plt.figure()
     plt.subplot(3,4,1)
