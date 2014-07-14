@@ -7,8 +7,6 @@ try:
 except ImportError:
     pyopt_driver = None
 
-from openmdao.util.log import enable_trace  # , disable_trace
-
 from numpy import pi
 
 from Atlas import AtlasConfiguration, AeroStructural
@@ -83,34 +81,25 @@ class HeliOpt(Assembly):
 
 
 if __name__ == '__main__':
-    import pylab
-    from makeplot import plot
+    import pylab as plt
+    from makeplot import plot_single
+
+    from openmdao.lib.casehandlers.api import JSONCaseRecorder
+
     opt = set_as_top(HeliOpt())
-    opt.aso.Omega_opt = 1.0512
+    opt.recorders.append(JSONCaseRecorder(out='heli_opt.json'))
+    opt.run()
 
-    #opt.driver.start_iteration()
-    opt.driver.run_iteration()
-
-
-    print 'Parameter:  Omega =', opt.aso.config.Omega
-
-    print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
-
-    print 'Objective:  Ptot =', opt.aso.Ptot
-
-    # enable_trace()
-
-
-    print 'Parameter:  Omega =', opt.aso.config.Omega
-
-    print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
-
-    print 'Objective:  Ptot =', opt.aso.Ptot
-
-    #opt.run()
-
-    plot(opt)
-    pylab.show()
     # for reference, MATLAB solution:
-    #    Omega: 1.0512
-    #    Ptot: 421.3185
+    #    Omega:   1.0512
+    #    Ptot:  421.3185
+    print 'Parameter:  Omega       =', opt.aso.config.Omega
+    print 'Constraint: Weight-Lift =', (opt.aso.Mtot*9.8-opt.aso.Ttot)
+    print 'Objective:  Ptot        =', opt.aso.Ptot
+
+    from openmdao.lib.casehandlers.api import CaseDataset
+    dataset = CaseDataset('heli_opt.json', 'json')
+    data = dataset.data.by_case().fetch()
+    case = data[-1]
+
+    plot_single(case)
