@@ -3,16 +3,18 @@ import numpy as np
 
 pi = np.pi
 
+
 def wake(case):
     plt.title("Free Wake")
     r = np.array(case['aso.aero2.induced.r'])
     z = np.array(case['aso.aero2.induced.z'])
-    plt.plot(r,z, "b-")
-    plt.plot(r,z, "bo")
-    plt.plot(-r,z, "b-")
-    plt.plot(-r,z, "bo")
+    plt.plot(r, z, "b-")
+    plt.plot(r, z, "bo")
+    plt.plot(-r, z, "b-")
+    plt.plot(-r, z, "bo")
 
     plt.xlabel("r(m)")
+
 
 def aero_def(case):
     yE = np.array(case['aso.discrete.yE'])
@@ -21,18 +23,19 @@ def aero_def(case):
     cd = np.array(case['aso.aero2.Cd'])
     re = np.array(case['aso.aero2.Re'])
     R  = np.array(case['aso.config.R'])
-    y100 = np.linspace(0,R,100)
+    y100 = np.linspace(0, R, 100)
     c100 = np.array(case['aso.discrete.c100'])
 
     plt.plot(yE, cE, label='Chord (m)')
     plt.plot(yE, Cl, label='C_l')
     plt.plot(yE, 100*cd, label='C_d ($\mathregular{10^{-2}}$)')
     plt.plot(yE, Cl/cd/100., label='L/D ($\mathregular{10^{2}}$)')
-    plt.plot(yE, re/1000000.,label='Re ($\mathregular{10^{6}}$)')
+    plt.plot(yE, re/1000000., label='Re ($\mathregular{10^{6}}$)')
     plt.plot(y100, c100)
     plt.xlabel("r(m)")
     plt.title('Aerodynamic Definition')
     plt.legend()
+
 
 def struct_def(case):
     yE           = np.array(case['aso.discrete.yE'])
@@ -50,16 +53,17 @@ def struct_def(case):
     hQuad        = np.array(case['aso.config.hQuad'])
 
     plt.title('Structural Definition')
-    plt.plot(yE,d*100/2.54, label='Spar diameter (in)')
-    plt.plot(yE,theta*180/pi/10, label='Wrap angle ($\mathregular{10^{1}}$ deg)')
-    plt.plot(yE,nTube, label='Tube layers')
-    plt.plot(yE,nCap, label='Cap layers')
-    plt.plot(yE,lBiscuit*100/2.54/12, label='Biscuit spacing (ft)')
-    plt.plot(yWire,zWire, "o", color='red', label='Wire location (m)', linewidth=3, markersize=9., fillstyle='none')
-    plt.plot(0,dQuad*100/2.54, "s", color='black', clip_on=False, label='Quad definition', linewidth=3, fillstyle='none', markersize=9.)
+    plt.plot(yE, d*100/2.54, label='Spar diameter (in)')
+    plt.plot(yE, theta*180/pi/10, label='Wrap angle ($\mathregular{10^{1}}$ deg)')
+    plt.plot(yE, nTube, label='Tube layers')
+    plt.plot(yE, nCap, label='Cap layers')
+    plt.plot(yE, lBiscuit*100/2.54/12, label='Biscuit spacing (ft)')
+    plt.plot(yWire, zWire, "o", color='red', label='Wire location (m)', linewidth=3, markersize=9.)
+    plt.plot(0, dQuad*100/2.54, "s", color='black', clip_on=False, label='Quad definition', linewidth=3, markersize=9.)
 
     plt.xlabel("r(m)")
     plt.legend(numpoints=1)
+
 
 def struc_prop(case):
     yE     = np.array(case['aso.discrete.yE'])
@@ -73,17 +77,18 @@ def struc_prop(case):
     GJQuad = np.array(case['aso.struc.quad.GJ'])
     dy     = np.array(case['aso.struc.spar.dy'])
 
-    plt.plot(yE,EA/(10**7), label='EA ($\mathregular{10^{7}}$)')
-    plt.plot(yE,EIz/(10**4), label='EIz ($\mathregular{10^{4}}$)')
-    plt.plot(yE,EIx/(10**4), label='EIx ($\mathregular{10^{4}}$)')
-    plt.plot(yE,GJ/(10**4), label='GJ ($\mathregular{10^{4}}$)')
-    plt.plot(yE,mSpar/dy, label='mSpar (kg/m)')
-    plt.plot(yE,mChord/dy,'k--', label='mChord (kg/m)')
-    plt.plot(0,EIQuad/(10**4),'s', clip_on=False, color='blue', label='EIquad ($\mathregular{10^{4}}$)',  linewidth=3, markersize=8., fillstyle='none')
-    plt.plot(0,GJQuad/(10**4),'s', clip_on=False, color='green', label='GJquad ($\mathregular{10^{4}}$)', linewidth=3, markersize=8., fillstyle='none')
+    plt.plot(yE, EA/(10**7),  label='EA ($\mathregular{10^{7}}$)')
+    plt.plot(yE, EIz/(10**4), label='EIz ($\mathregular{10^{4}}$)')
+    plt.plot(yE, EIx/(10**4), label='EIx ($\mathregular{10^{4}}$)')
+    plt.plot(yE, GJ/(10**4),  label='GJ ($\mathregular{10^{4}}$)')
+    plt.plot(yE, mSpar/dy,    label='mSpar (kg/m)')
+    plt.plot(yE, mChord/dy, 'k--', label='mChord (kg/m)')
+    plt.plot(0, EIQuad/(10**4), 's', clip_on=False, color='blue', label='EIquad ($\mathregular{10^{4}}$)',  linewidth=3, markersize=8.)
+    plt.plot(0, GJQuad/(10**4), 's', clip_on=False, color='green', label='GJquad ($\mathregular{10^{4}}$)', linewidth=3, markersize=8.)
     plt.title('Structural Properties')
     plt.xlabel('r(m)')
     plt.legend(numpoints=1)
+
 
 def aero_velocity_and_angles(case):
     yE       = np.array(case['aso.discrete.yE'])
@@ -102,6 +107,7 @@ def aero_velocity_and_angles(case):
 
     plt.axis([0.0, 10.0, -20.0, 20.0])
 
+
 def aerodynamic_forces_and_power(case):
     yE     = np.array(case['aso.discrete.yE'])
     thrust = np.array(case['aso.aero2.thrust.dT'])
@@ -116,21 +122,22 @@ def aerodynamic_forces_and_power(case):
     plt.plot(yE, drag/(10**-1), label='Drag ($\mathregular{10^{-1}}$ N/M)')
     plt.plot(yE, torque, label='Torque (Nm/m)')
     plt.plot(yE, moment, color='green', label='Moment (Nm/m)')
-    plt.plot(yE, power, color='black', label='Power (W/m)')
+    plt.plot(yE, power,  color='black', label='Power (W/m)')
     plt.plot(yE, Pi, 'k-.', label='Pi (W/m)')
     plt.plot(yE, Pp, 'k--', label='Pp (W/m)')
     plt.title('Aerodynamic Forces and Power')
     plt.xlabel('r(m)')
     plt.legend(loc=2)
 
+
 def structural_loads(case):
     yN      = np.array(case['aso.discrete.yN'])
-    Z       = np.array(case['aso.struc.Finternal'])[2,:]
-    Z_prime = np.array(case['aso.struc.Finternal'])[3,:]
-    X       = np.array(case['aso.struc.Finternal'])[0,:]
-    X_prime = np.array(case['aso.struc.Finternal'])[5,:]
-    Y       = np.array(case['aso.struc.Finternal'])[1,:]
-    torque  = np.array(case['aso.struc.Finternal'])[4,:]
+    Z       = np.array(case['aso.struc.Finternal'])[2, :]
+    Z_prime = np.array(case['aso.struc.Finternal'])[3, :]
+    X       = np.array(case['aso.struc.Finternal'])[0, :]
+    X_prime = np.array(case['aso.struc.Finternal'])[5, :]
+    Y       = np.array(case['aso.struc.Finternal'])[1, :]
+    torque  = np.array(case['aso.struc.Finternal'])[4, :]
 
     plt.plot(yN, Z, 'k--', color='blue', label='Z (N)')
     plt.plot(yN, Z_prime, color='blue', label="Z' (Nm)")
@@ -142,12 +149,14 @@ def structural_loads(case):
     plt.xlabel('r(m)')
     plt.legend(loc=4)
 
+
 def structural_deformation(case):
     yN = np.array(case['aso.discrete.yN'])
 
     plt.title('Structural Deformation')
     plt.xlabel('r(m)')
     plt.legend(loc=1)
+
 
 def out_of_plane_failure(case):
     yN = np.array(case['aso.discrete.yN'])
@@ -179,6 +188,7 @@ def out_of_plane_failure(case):
     plt.xlabel('r(m)')
     plt.legend(loc=1)
 
+
 def in_plane_failure(case):
     yN = np.array(case['aso.discrete.yN'])
 
@@ -202,6 +212,7 @@ def in_plane_failure(case):
     plt.xlabel('r(m)')
     plt.legend(loc=1)
 
+
 def buckling_failure(case):
     yN    = np.array(case['aso.discrete.yN'])
     yWire = np.array(case['aso.config.yWire'])
@@ -215,13 +226,14 @@ def buckling_failure(case):
     plt.plot(yN, buckle_z, color='blue', label='Buckle$\mathregular{_Z}$')
     plt.plot(yN, buckle_z, color='red', label='Buckle$\mathregular{_X}$')
     plt.plot(yN, buckle_torsion, color='green', label='Buckle$\mathregular{_{Tor}}$')
-    plt.plot(0, quad_buckling, 's', clip_on=False, color='black', label='Quad$\mathregular{_{Buckle}}$', markersize=9., fillstyle='none', linewidth=3)
-    plt.plot(yWire, wire, 'o', color='blue', label='Wire', markersize=9., fillstyle='none', linewidth=3)
+    plt.plot(0, quad_buckling, 's', clip_on=False, color='black', label='Quad$\mathregular{_{Buckle}}$', markersize=9., linewidth=3)
+    plt.plot(yWire, wire, 'o', color='blue', label='Wire', markersize=9., linewidth=3)
     plt.title('Buckling Failure')
     plt.xlabel('r(m)')
     plt.legend(loc=1, numpoints=1)
 
     plt.axis([0.0, 10.0, 0.0, 1.4])
+
 
 def plot(case):
     plt.figure()
@@ -259,50 +271,52 @@ def plot(case):
 
     plt.show()
 
+
 def plot_single(case):
 
-    params = {'size':15,
-          'font.size' : 10.5,
-          'legend.fontsize': 9,
-          'legend.linewidth': 1,
-          #'text.usetex': True
-          }
+    params = {
+        'size': 15,
+        'font.size': 10.5,
+        'legend.fontsize': 9,
+        'legend.linewidth': 1,
+        #'text.usetex': True
+    }
 
     plt.rcParams.update(params)
     plt.figure()
-    plt.subplot(3,4,1)
+    plt.subplot(3, 4, 1)
 
-    plt.subplot(3,4,2)
+    plt.subplot(3, 4, 2)
     aero_def(case)
 
-    plt.subplot(3,4,3)
+    plt.subplot(3, 4, 3)
     struct_def(case)
 
-    plt.subplot(3,4,4)
+    plt.subplot(3, 4, 4)
     struc_prop(case)
 
-    plt.subplot(3,4,5)
+    plt.subplot(3, 4, 5)
     aero_velocity_and_angles(case)
 
-    plt.subplot(3,4,6)
+    plt.subplot(3, 4, 6)
     aerodynamic_forces_and_power(case)
 
-    plt.subplot(3,4,7)
+    plt.subplot(3, 4, 7)
     structural_loads(case)
 
-    plt.subplot(3,4,8)
+    plt.subplot(3, 4, 8)
     structural_deformation(case)
 
-    plt.subplot(3,4,9)
+    plt.subplot(3, 4, 9)
     wake(case)
 
-    plt.subplot(3,4,10)
+    plt.subplot(3, 4, 10)
     out_of_plane_failure(case)
 
-    plt.subplot(3,4,11)
+    plt.subplot(3, 4, 11)
     in_plane_failure(case)
 
-    plt.subplot(3,4,12)
+    plt.subplot(3, 4, 12)
     buckling_failure(case)
 
     plt.show()
