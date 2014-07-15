@@ -152,6 +152,14 @@ def structural_loads(case):
 
 def structural_deformation(case):
     yN = np.array(case['aso.discrete.yN'])
+    qq = np.array(case["aso.struc.fem.q"]).reshape((6,11), order='F')
+    a = np.array(case["aso.config.anhedral"])
+    # qh = qq(3,:)-yN'*anhedral;
+    qh = qq[2] - yN * a
+    #plot(yN,qh,yN,qq(1,:),yN,qq(5,:)*180/pi);
+    plt.plot(yN, qh, label="Z deflection")
+    plt.plot(yN, qq[0], label="X deflection")
+    plt.plot(yN, qq[-2]*180./np.pi, label="Twist")
 
     plt.title('Structural Deformation')
     plt.xlabel('r(m)')
@@ -257,8 +265,8 @@ def plot(case):
     plt.figure()
     structural_loads(case)
 
-    #plt.figure()
-    #structural_deformation(case)
+    plt.figure()
+    structural_deformation(case)
 
     plt.figure()
     out_of_plane_failure(case)
@@ -327,5 +335,4 @@ if __name__ == "__main__":
     dataset = CaseDataset('heli_opt.json', 'json')
     data = dataset.data.by_case().fetch()
     case = data[-1]
-
     plot_single(case)
