@@ -8,5 +8,6 @@ Contents:
    :maxdepth: 2
 
    overview
+   structure
    running
 
