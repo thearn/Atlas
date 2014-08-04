@@ -8,11 +8,20 @@ structural from aeronautical analysis through the use of OpenMDAO assemblies.
 The `Aero()` assembly contains all components related to thrust, lift, drag, and
 induced velocity calculations, which total 3 components.
 
+.. image:: aero.png
+    :align: center
+
 The 'Structures()' assembly contains all components related to FEA, structural deformation,
 and materials properties, which total 8 components.
+
+.. image:: struc.png
+    :align: center
 
 The `AeroStructural()` assembly contains both a low-fidelity and high fidelity
 `Aero()` instance, along with a `Structures()` instance. It also contains
 a `DiscretizeProperties()` component, which takes discretization parameters
 as input, and outputs variables discretized in space (typically along the
 rotor blades).
+
+.. image:: aerostruc.png
+    :align: center
