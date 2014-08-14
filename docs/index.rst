@@ -11,4 +11,6 @@ Contents:
    structure
    running
    running_multi
+   srcdocs
+   pkgdocs
 
