@@ -417,4 +417,4 @@ This can be run similar to the single-point optimization:
 
 
 The multipoint optimization can be peformed by running the `heli_opt_multipoint.py`
-file located in the top-level Atlas source directory.
+file located in the "examples" directory.

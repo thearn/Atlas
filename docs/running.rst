@@ -88,7 +88,7 @@ will fall back to SLSQP.
             self.driver.add_constraint('aso.Mtot*9.8-aso.Ttot<=0')
 
 
-Next, from the ``makeplot.py`` file in the Atlas plugin source directory,
+Next, from the ``makeplot.py`` file in the "examples" directory in the Atlas plugin source directory,
 load in the `plot_single` function. This function will generate a plot of model
 performance and structural deformation information.
 
@@ -142,7 +142,7 @@ Optimized:
     :align: center
 
 The full Atlas model can also be run by executing the ``heli_opt.py`` file in the
-top-level plugin directory.
+"examples" directory.
 
 
 
