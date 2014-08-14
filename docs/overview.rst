@@ -3,7 +3,8 @@ Overview of the Atlas model
 ============================================================
 
 The Atlas plugin is an OpenMDAO implementation of the design code used to model
-the AeroVelo Atlas quad-rotor human-powered helicopter. In 2012, the Atlas won the
+the `Aerovelo Atlas
+<http://www.aerovelo.com>`_ quad-rotor human-powered helicopter. In 2012, the Atlas won the
 Igor I. Sikorsky Human Powered Helicopter Competition by successfully hovering for
 over 60 seconds at an altitude over 3 meters.
 
