@@ -1,3 +1,3 @@
 graft src/Atlas/sphinx_build/html
-recursive-include src/Atlas/test *.py
+recursive-include src/Atlas/test *.py *.c *.pyx
 
