@@ -53,7 +53,7 @@ rotor blades).
 Finally, the `results()` component aggregates the final results of the
 assembly execution, and computes several values relevant to the objective and
 constraints for the optimization problem. These include total power, aerodynamic
- jig and dihedral angles.
+jig and dihedral angles.
 
 
 .. image:: aerostruc.png
