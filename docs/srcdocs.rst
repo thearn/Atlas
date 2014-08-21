@@ -59,14 +59,27 @@ configuration.py
    :show-inheritance:
 
         
-.. index:: heli_opt.py
+.. index:: heli_opt_complex.py
 
-.. _Atlas.heli_opt.py:
+.. _Atlas.heli_opt_complex.py:
 
-heli_opt.py
------------
+heli_opt_complex.py
+-------------------
 
-.. automodule:: Atlas.heli_opt
+.. automodule:: Atlas.heli_opt_complex
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: heli_opt_multipoint.py
+
+.. _Atlas.heli_opt_multipoint.py:
+
+heli_opt_multipoint.py
+----------------------
+
+.. automodule:: Atlas.heli_opt_multipoint
    :members:
    :undoc-members:
    :show-inheritance:
@@ -197,6 +210,19 @@ test_lift_drag.py
 -----------------
 
 .. automodule:: Atlas.test.test_lift_drag
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: test_multipoint.py
+
+.. _Atlas.test.test_multipoint.py:
+
+test_multipoint.py
+------------------
+
+.. automodule:: Atlas.test.test_multipoint
    :members:
    :undoc-members:
    :show-inheritance:
